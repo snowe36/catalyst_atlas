@@ -23,6 +23,12 @@ from catalyst_atlas.eval.baselines import (
     same_cluster_neighbor_transfer,
     sequence_similarity_transfer,
 )
+from catalyst_atlas.eval.diagnostics import (
+    IDENTITY_BINS,
+    fold_chemistry_audits,
+    nearest_train_sequence_identity,
+    sequence_identity_stratified_transfer,
+)
 from catalyst_atlas.eval.external_baselines import (
     prepare_retrieval_baselines,
     retrieval_chemistry_transfer,
@@ -82,7 +88,7 @@ def _neighbor_label_lists(
     return [[y_train[i] for i in inds] for inds in indices]
 
 
-def evaluate_split(
+def _method_predictions(
     meta: pd.DataFrame,
     X_full: np.ndarray,
     X_comp: np.ndarray,
@@ -93,7 +99,8 @@ def evaluate_split(
     label_col: str | None = None,
     mmseqs_hits: pd.DataFrame | None = None,
     foldseek_hits: pd.DataFrame | None = None,
-) -> dict[str, Any]:
+) -> tuple[list[str], dict[str, list[str]], np.ndarray, np.ndarray]:
+    """Return y_test, method→preds, and scaled full train/test matrices."""
     label_col = label_col or chemistry_label_col(meta)
     y_train = meta.iloc[train_idx][label_col].tolist()
     y_test = meta.iloc[test_idx][label_col].tolist()
@@ -128,6 +135,35 @@ def evaluate_split(
         methods["foldseek_transfer"] = retrieval_chemistry_transfer(
             foldseek_hits, meta, train_idx, test_idx, label_col=label_col
         )
+    return y_test, methods, X_full_train, X_full_test
+
+
+def evaluate_split(
+    meta: pd.DataFrame,
+    X_full: np.ndarray,
+    X_comp: np.ndarray,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    k: int = 5,
+    seq_sim: np.ndarray | None = None,
+    label_col: str | None = None,
+    mmseqs_hits: pd.DataFrame | None = None,
+    foldseek_hits: pd.DataFrame | None = None,
+) -> dict[str, Any]:
+    label_col = label_col or chemistry_label_col(meta)
+    y_train = meta.iloc[train_idx][label_col].tolist()
+    y_test, methods, X_full_train, X_full_test = _method_predictions(
+        meta,
+        X_full,
+        X_comp,
+        train_idx,
+        test_idx,
+        k=k,
+        seq_sim=seq_sim,
+        label_col=label_col,
+        mmseqs_hits=mmseqs_hits,
+        foldseek_hits=foldseek_hits,
+    )
 
     neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
     out: dict[str, Any] = {
@@ -192,6 +228,10 @@ def _plot_results(results: dict[str, Any]) -> None:
     plt.close(fig)
 
     _plot_fold_disconnected_hero(results)
+    if results.get("sequence_identity_stratified"):
+        _plot_identity_stratified(results["sequence_identity_stratified"])
+    if results.get("fold_chemistry_audits"):
+        _plot_fold_chemistry_audits(results["fold_chemistry_audits"])
 
 
 def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
@@ -236,6 +276,117 @@ def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
     )
     fig.tight_layout(rect=(0, 0.08, 1, 1))
     fig.savefig(FIGURES / "fig_fold_disconnected_chemistry.png", dpi=180)
+    plt.close(fig)
+
+
+def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
+    """Catalyst vs MMseqs vs Foldseek by nearest-train sequence identity."""
+    methods_payload = identity_results.get("methods") or {}
+    keep = [
+        ("catalyst_microenvironment", "Catalyst Atlas", "#0E7490"),
+        ("foldseek_transfer", "Foldseek", "#6B7280"),
+        ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
+    ]
+    bin_order = [name for name, _, _ in IDENTITY_BINS]
+    rows = []
+    for key, label, color in keep:
+        if key not in methods_payload:
+            continue
+        for b in bin_order:
+            if b in methods_payload[key]:
+                rows.append(
+                    {
+                        "bin": b,
+                        "method": label,
+                        "accuracy": methods_payload[key][b],
+                        "color": color,
+                    }
+                )
+    if not rows:
+        return
+    plot_df = pd.DataFrame(rows)
+    sns.set_theme(style="whitegrid", context="talk")
+    fig, ax = plt.subplots(figsize=(9.5, 5.0))
+    palette = {
+        "Catalyst Atlas": "#0E7490",
+        "Foldseek": "#6B7280",
+        "MMseqs2": "#9CA3AF",
+    }
+    sns.barplot(
+        data=plot_df,
+        x="bin",
+        y="accuracy",
+        hue="method",
+        order=bin_order,
+        palette=palette,
+        ax=ax,
+    )
+    ax.set_ylim(0, 1.05)
+    ax.set_xlabel("Nearest train sequence identity")
+    ax.set_ylabel("Chemistry-family accuracy")
+    ax.set_title("Chemistry transfer vs evolutionary distance")
+    ax.legend(title="", loc="upper right", fontsize=9)
+    counts = identity_results.get("bin_counts") or {}
+    count_note = "  ·  ".join(f"{b} n={counts.get(b, 0)}" for b in bin_order)
+    fig.text(0.02, 0.02, count_note, fontsize=8, color="#374151")
+    src = identity_results.get("identity_source") or ""
+    if src:
+        fig.text(0.98, 0.02, f"identity: {src}", fontsize=8, color="#6B7280", ha="right")
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    fig.savefig(FIGURES / "fig_chemistry_by_seq_identity.png", dpi=180)
+    plt.close(fig)
+
+
+def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
+    """Two-panel: same-fold traps vs different-fold chemistry recovery."""
+    panels = [
+        (
+            "same_fold_different_chemistry",
+            "Same fold, different chemistry",
+            "False-transfer trap",
+        ),
+        (
+            "different_fold_same_chemistry",
+            "Different fold, same chemistry",
+            "Convergent recovery",
+        ),
+    ]
+    method_order = [
+        ("catalyst_microenvironment", "Catalyst", "#0E7490"),
+        ("foldseek_transfer", "Foldseek", "#6B7280"),
+        ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
+        ("fold_cluster_transfer", "CATH fold", "#D1D5DB"),
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2), sharey=True)
+    for ax, (key, title, subtitle) in zip(axes, panels, strict=True):
+        block = audits.get(key) or {}
+        methods = block.get("methods") or {}
+        n = int(block.get("n") or 0)
+        labels, values, colors = [], [], []
+        for mkey, label, color in method_order:
+            if mkey not in methods:
+                continue
+            labels.append(label)
+            values.append(float(methods[mkey]["accuracy"]))
+            colors.append(color)
+        if not labels:
+            ax.set_title(f"{title}\n(n=0)")
+            ax.axis("off")
+            continue
+        y = list(range(len(labels)))
+        ax.barh(y, values, color=colors, height=0.62, edgecolor="none")
+        ax.set_yticks(y)
+        ax.set_yticklabels(labels)
+        ax.set_xlim(0, 1.05)
+        ax.set_xlabel("Accuracy")
+        ax.set_title(f"{title}\n{subtitle} (n={n})")
+        for yi, v in zip(y, values, strict=True):
+            ax.text(min(v + 0.02, 0.98), yi, f"{v:.2f}", va="center", fontsize=10)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+    fig.suptitle("Fold–chemistry relationship audits (random split)", fontsize=13, y=1.02)
+    fig.tight_layout()
+    fig.savefig(FIGURES / "fig_fold_chemistry_audits.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -310,6 +461,57 @@ def run_eval(
             foldseek_hits=foldseek_hits,
         )
         results["cryptic_seq_holdout"] = sub
+
+    # Secondary analyses on the random split (evolutionary distance + wow-tests).
+    rand_train, rand_test = splits["random"]
+    y_rand, preds_rand, _, _ = _method_predictions(
+        meta,
+        X_full,
+        X_comp,
+        rand_train,
+        rand_test,
+        k=k,
+        seq_sim=seq_sim,
+        label_col=label_col,
+        mmseqs_hits=mmseqs_hits,
+        foldseek_hits=foldseek_hits,
+    )
+    nearest_id, id_source = nearest_train_sequence_identity(
+        meta,
+        rand_train,
+        rand_test,
+        mmseqs_hits=mmseqs_hits,
+        seq_sim=seq_sim,
+    )
+    focus_preds = {
+        name: preds_rand[name]
+        for name in (
+            "catalyst_microenvironment",
+            "mmseqs_transfer",
+            "foldseek_transfer",
+            "fold_cluster_transfer",
+            "sequence_similarity_transfer",
+        )
+        if name in preds_rand
+    }
+    identity_block = sequence_identity_stratified_transfer(
+        y_rand, focus_preds, nearest_id
+    )
+    identity_block["identity_source"] = id_source
+    identity_block["split"] = "random"
+    results["sequence_identity_stratified"] = identity_block
+    results["fold_chemistry_audits"] = fold_chemistry_audits(
+        meta,
+        rand_train,
+        rand_test,
+        focus_preds,
+        label_col=label_col,
+    )
+    logger.info(
+        "Identity-stratified bins (%s): %s",
+        id_source,
+        identity_block.get("bin_counts"),
+    )
 
     out_path = PROCESSED / "eval_metrics.json"
     out_path.write_text(json.dumps(results, indent=2))

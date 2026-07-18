@@ -11,6 +11,7 @@ Chemistry-aware reaction-center representations on curated M-CSA sites.
 | Cofactors / metals | PDB HETATM within 8 Å of catalytic core (324 / 959 sites tagged) |
 | Ontology labels | `chemistry_family` + `mechanistic_pattern` (not EC-digit spam) |
 | External baselines | Live MMseqs2 + Foldseek chemistry-transfer (when binaries present) |
+| Diagnostics | Sequence-identity stratification + fold–chemistry relationship audits |
 | Feature dim | 84 → 97 (cofactor vocabulary + coordination / ligand stats) |
 
 Top site tags: Mg, Zn, Mn, Ca, PLP, Fe, heme, ATP+Mg, FMN, …
@@ -25,7 +26,7 @@ Top site tags: Mg, Zn, Mn, Ca, PLP, Fe, heme, ATP+Mg, FMN, …
 | MMseqs2 | 0.037 |
 | **Catalyst microenvironment** | **0.369** |
 
-When fold neighborhoods are held out, sequence and structure retrieval collapse; the microenvironment retains chemistry signal. That is the designed experiment.
+When fold neighborhoods are held out, sequence and structure retrieval collapse; the microenvironment retains chemistry signal.
 
 ## Full chemistry accuracy (`chemistry_family`)
 
@@ -35,9 +36,33 @@ When fold neighborhoods are held out, sequence and structure retrieval collapse;
 | seq_cluster | 0.425 | 0.226 | **0.489** | 0.210 | 0.441 |
 | fold_cluster | **0.369** | 0.037 | 0.132 | 0.202 | 0.000 |
 
-Foldseek dominating on random / seq_cluster is expected: fold neighbors carry chemistry when available. Leaving that visible validates the evaluation framework.
+Foldseek dominating on random / seq_cluster is expected. Leaving that visible validates the evaluation framework.
 
-Majority-class floor ≈ 0.32 (hydrolysis). Scaler fit on train only.
+## Chemistry transfer vs evolutionary distance
+
+Nearest-train MMseqs2 `%id` on the random split:
+
+| Bin | n | Catalyst | MMseqs2 | Foldseek |
+|---|--:|---:|---:|---:|
+| >80% | 2 | 0.50 | **1.00** | 0.00 |
+| 40–80% | 16 | 0.62 | 0.69 | **0.75** |
+| 20–40% | 60 | 0.50 | **0.70** | 0.68 |
+| <20% | 114 | 0.35 | **0.00** | 0.38 |
+
+![identity stratification](figures/fig_chemistry_by_seq_identity.png)
+
+Expected pattern: MMseqs2 wins near homologs and collapses when evolutionary signal disappears; Catalyst remains informative in the remote bin.
+
+## Fold–chemistry relationship audits
+
+| Audit | n | Catalyst | Foldseek | MMseqs2 | CATH fold |
+|---|--:|---:|---:|---:|---:|
+| Same fold, different chemistry (false-transfer trap) | 131 | 0.39 | **0.51** | 0.26 | 0.34 |
+| Different fold, same chemistry (convergent recovery) | 26 | **0.50** | 0.04 | 0.08 | 0.00 |
+
+![fold chemistry audits](figures/fig_fold_chemistry_audits.png)
+
+Foldseek still helps when a shared fold is present. Catalyst is the method that recovers chemistry across folds.
 
 ## Case studies
 
@@ -60,7 +85,6 @@ Requires `mmseqs` / `foldseek` on `PATH` (or under `tools/{mmseqs,foldseek}/bin`
 
 ## Still open
 
-- Stratify accuracy by nearest-neighbor sequence identity (>80 / 40–80 / 20–40 / <20)
-- Same-fold / different-chemistry false-transfer audit at scale
 - Richer cofactor geometry (coordination shell, not just presence)
+- Broader remote-homology coverage for identity bins
 - Keep deep models deferred until they beat this engineered baseline on hard holdouts

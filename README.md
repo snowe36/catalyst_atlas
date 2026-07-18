@@ -47,8 +47,10 @@ This is an evaluation-hygiene / representation problem with explicit negative co
 | Fold-disconnected Catalyst accuracy | **0.37** |
 | Fold-disconnected MMseqs2 / Foldseek | **0.04** / **0.13** |
 | Random-split Foldseek accuracy (optimistic) | **0.50** (as expected — fold neighbors carry chemistry) |
+| MMseqs2 at nearest-train identity **<20%** | **0.00** (collapses) |
+| Different-fold / same-chemistry recovery (Catalyst) | **0.50** vs Foldseek **0.04** |
 | Does Catalyst beat Foldseek on random / seq holdouts? | **No** — and that is left visible on purpose |
-| Is the representation just recovering fold? | **No** — fold_cluster is where Catalyst retains signal and retrieval collapses |
+| Is the representation just recovering fold? | **No** — fold_cluster + convergent-chemistry audits |
 
 Full writeup: [`reports/mcsa_v02_n959_results.md`](reports/mcsa_v02_n959_results.md).
 
@@ -135,13 +137,43 @@ M-CSA n=959 chemistry-family accuracy:
 
 **Takeaway:** sequence and structure tell you evolutionary relationships. Catalyst Atlas tries to recover chemical capability. Foldseek dominating on random / seq_cluster validates the framework; fold_cluster is where the complementary claim lives.
 
+### Chemistry transfer vs evolutionary distance
+
+Stratify the random-split test set by nearest-train MMseqs2 `%id`:
+
+| Nearest train identity | n | Catalyst | MMseqs2 | Foldseek |
+|------------------------|--:|---------:|--------:|---------:|
+| >80% | 2 | 0.50 | **1.00** | 0.00 |
+| 40–80% | 16 | 0.62 | 0.69 | **0.75** |
+| 20–40% | 60 | 0.50 | **0.70** | 0.68 |
+| <20% | 114 | 0.35 | **0.00** | 0.38 |
+
+<p align="center">
+  <img src="reports/figures/fig_chemistry_by_seq_identity.png" alt="Chemistry transfer accuracy stratified by nearest-train sequence identity" width="720"/>
+</p>
+
+<p align="center"><em>MMseqs2 dominates near homologs and collapses below 20% identity; Catalyst retains chemistry signal when sequence neighborhoods disappear.</em></p>
+
+### Fold–chemistry relationship audits
+
+| Audit | Question | n | Catalyst | Foldseek | MMseqs2 |
+|-------|----------|--:|---------:|---------:|--------:|
+| Same fold, different chemistry | Avoid false functional transfer? | 131 | 0.39 | **0.51** | 0.26 |
+| Different fold, same chemistry | Recognize convergent chemistry? | 26 | **0.50** | 0.04 | 0.08 |
+
+<p align="center">
+  <img src="reports/figures/fig_fold_chemistry_audits.png" alt="Same-fold different-chemistry trap vs different-fold same-chemistry recovery" width="720"/>
+</p>
+
+<p align="center"><em>Foldseek still helps when a shared fold is available; Catalyst is the method that recovers chemistry across folds.</em></p>
+
 Full metrics: [`data/processed/eval_metrics.json`](data/processed/eval_metrics.json).
 
 ---
 
 ## Case studies & interpretation
 
-Three stories, not a metrics dump — generated with `cat-cases` → [`reports/case_studies/`](reports/case_studies/):
+Three narrative cards — generated with `cat-cases` → [`reports/case_studies/`](reports/case_studies/):
 
 | Case | Question |
 |------|----------|
@@ -184,12 +216,11 @@ Chemistry cards (`cat-search`) surface predicted family, pattern, cofactors, and
 
 ## Future directions
 
-- Stratify accuracy by nearest-neighbor **sequence identity** (>80 / 40–80 / 20–40 / <20)
-- Same-fold / different-chemistry **false-transfer audit** at scale
 - Richer cofactor geometry (coordination shell, not just presence)
+- Larger remote-homology bins (more enzymes with true BLAST/MMseqs %id coverage)
 - Learned representations **only if** they beat this baseline on fold-disconnected holdouts
 
-Done in v0.2: cofactor/metal enrichment · chemistry ontology · live MMseqs2/Foldseek baselines · fold-disconnected hero figure · three case studies · chemistry cards.
+Done in v0.2: cofactor/metal enrichment · chemistry ontology · live MMseqs2/Foldseek baselines · fold-disconnected hero · sequence-identity stratification · fold–chemistry audits · three case studies · chemistry cards.
 
 ---
 
@@ -220,6 +251,8 @@ On Apple Silicon with a Rosetta (x86_64) Python, eval wraps MMseqs/Foldseek with
 |----------|------|
 | Hero (fold-disconnected) | `reports/figures/fig_fold_disconnected_chemistry.png` |
 | Leakage bar chart | `reports/figures/fig_chemistry_leakage.png` |
+| Identity stratification | `reports/figures/fig_chemistry_by_seq_identity.png` |
+| Fold–chemistry audits | `reports/figures/fig_fold_chemistry_audits.png` |
 | Microenvironment gallery | `reports/figures/fig_microenv_gallery.png` |
 | Case studies | `reports/case_studies/` |
 | Metrics | `data/processed/eval_metrics.json` |
