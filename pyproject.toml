@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "catalyst-atlas"
+version = "0.1.0"
+description = "Infer what chemistry a protein can perform from its catalytic microenvironment"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Eric Snow" }]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "scikit-learn>=1.3",
+  "scipy>=1.11",
+  "matplotlib>=3.7",
+  "seaborn>=0.13",
+  "pyarrow>=14.0",
+  "tqdm>=4.66",
+  "PyYAML>=6.0",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.6"]
+structure = ["biopython>=1.83"]
+
+[project.scripts]
+cat-download = "catalyst_atlas.cli:download_main"
+cat-sites = "catalyst_atlas.cli:sites_main"
+cat-embed = "catalyst_atlas.cli:embed_main"
+cat-eval = "catalyst_atlas.cli:eval_main"
+cat-search = "catalyst_atlas.cli:search_main"
+cat-figures = "catalyst_atlas.cli:figures_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+catalyst_atlas = ["resources/*.yaml", "resources/*.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "data", "reports", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["catalyst_atlas"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
