@@ -5,13 +5,23 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from catalyst_atlas.eval.external_baselines import retrieval_chemistry_transfer, tool_status
+from catalyst_atlas.eval.external_baselines import (
+    _normalize_hit_id,
+    retrieval_chemistry_transfer,
+    tool_status,
+)
 
 
 def test_tool_status_keys():
     status = tool_status()
     assert "mmseqs" in status
     assert "foldseek" in status
+
+
+def test_normalize_hit_id_strips_foldseek_chain():
+    assert _normalize_hit_id("MCSA00335_B") == "MCSA00335"
+    assert _normalize_hit_id("MCSA00001.pdb") == "MCSA00001"
+    assert _normalize_hit_id("MCSA00001") == "MCSA00001"
 
 
 def test_retrieval_chemistry_transfer():

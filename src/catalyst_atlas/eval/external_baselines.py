@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import os
 import platform
+import re
 import shutil
 import subprocess
 import tempfile
@@ -25,6 +26,19 @@ import pandas as pd
 from catalyst_atlas.paths import PROCESSED, RAW, ROOT, ensure_dirs
 
 logger = logging.getLogger(__name__)
+
+# Foldseek often reports chain-qualified ids (MCSA00335_A); strip trailing chain.
+_CHAIN_SUFFIX = re.compile(r"_[A-Za-z0-9]{1,2}$")
+
+
+def _normalize_hit_id(raw: str) -> str:
+    """Map Foldseek/MMseqs hit ids back to atlas enzyme_id keys."""
+    eid = str(raw).split(".")[0]
+    stem = _CHAIN_SUFFIX.sub("", eid)
+    # Only strip when the stem still looks like an enzyme id (avoid eating real ids).
+    if stem != eid and (stem.startswith("MCSA") or stem.startswith("D")):
+        return stem
+    return eid
 
 
 def _repo_tool(name: str) -> str | None:
@@ -54,16 +68,33 @@ def write_fasta(meta: pd.DataFrame, path: Path) -> int:
     return n
 
 
+def _apple_silicon() -> bool:
+    """True on Apple Silicon, even when this Python is running under Rosetta."""
+    if platform.system() != "Darwin":
+        return False
+    if platform.machine() == "arm64":
+        return True
+    try:
+        # 1 when hw can run arm64 (Apple Silicon), including under Rosetta.
+        out = subprocess.check_output(
+            ["sysctl", "-n", "hw.optional.arm64"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+        return out == "1"
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return False
+
+
 def _prefer_native_arch(cmd: list[str]) -> list[str]:
     """Force arm64 on Apple Silicon.
 
-    Universal mmseqs/foldseek binaries can be launched under Rosetta (x86_64
-    translated) from some Python/subprocess contexts and then hang forever in
-    ``_GLOBAL__sub_I_mmseqs.cpp`` during dyld init. ``arch -arm64`` avoids that.
+    Universal mmseqs/foldseek binaries hang forever under Rosetta in
+    ``_GLOBAL__sub_I_mmseqs.cpp`` during dyld init. A Rosetta-translated Python
+    (``platform.machine() == "x86_64"``) would otherwise spawn that path —
+    so we detect Apple Silicon via ``hw.optional.arm64`` and wrap with
+    ``arch -arm64``.
     """
-    if platform.system() == "Darwin" and platform.machine() == "arm64":
-        if shutil.which("arch") and cmd and not (cmd[0] == "arch"):
-            return ["arch", "-arm64", *cmd]
+    if _apple_silicon() and shutil.which("arch") and cmd and cmd[0] != "arch":
+        return ["arch", "-arm64", *cmd]
     return cmd
 
 
@@ -168,10 +199,24 @@ def ensure_foldseek_hits(
         logger.warning("No PDB cache at %s", pdb_dir)
         return None
 
-    # Symlink/copy only PDBs present in meta into a flat search dir with enzyme ids?
+    # Embedding meta often drops pdb_id; recover from atlas / microenvironments.
+    work = meta
+    if "pdb_id" not in work.columns or work["pdb_id"].fillna("").astype(str).str.len().eq(0).all():
+        for src in (RAW / "catalytic_atlas.parquet", PROCESSED / "microenvironments.parquet"):
+            if not src.exists():
+                continue
+            extra = pd.read_parquet(src, columns=["enzyme_id", "pdb_id"])
+            work = work.drop(columns=["pdb_id"], errors="ignore").merge(
+                extra, on="enzyme_id", how="left"
+            )
+            if work["pdb_id"].fillna("").astype(str).str.len().gt(0).any():
+                logger.info("Joined pdb_id for Foldseek from %s", src.name)
+                break
+
+    # Symlink/copy only PDBs present in meta into a flat search dir with enzyme ids.
     # Foldseek keys = filenames. Map pdb_id -> enzyme_id (first wins if duplicates).
     pdb_to_enzyme: dict[str, str] = {}
-    for _, row in meta.iterrows():
+    for _, row in work.iterrows():
         pid = str(row.get("pdb_id") or "").lower()
         if pid and pid not in pdb_to_enzyme:
             pdb_to_enzyme[pid] = str(row["enzyme_id"])
@@ -229,8 +274,8 @@ def ensure_foldseek_hits(
             parts = line.split("\t")
             if len(parts) < 2:
                 continue
-            q = parts[0].split(".")[0]
-            t = parts[1].split(".")[0]
+            q = _normalize_hit_id(parts[0])
+            t = _normalize_hit_id(parts[1])
             if q == t:
                 continue
             parts[0], parts[1] = q, t
@@ -259,8 +304,8 @@ def load_hits(path: Path, kind: str = "mmseqs") -> pd.DataFrame:
         df = df.copy()
         df.columns = ["query", "target"] + [f"c{i}" for i in range(2, df.shape[1])]
         df["score"] = 1.0
-    df["query"] = df["query"].astype(str).str.split(".").str[0]
-    df["target"] = df["target"].astype(str).str.split(".").str[0]
+    df["query"] = df["query"].astype(str).map(_normalize_hit_id)
+    df["target"] = df["target"].astype(str).map(_normalize_hit_id)
     return df
 
 

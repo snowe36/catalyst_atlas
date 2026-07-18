@@ -191,6 +191,53 @@ def _plot_results(results: dict[str, Any]) -> None:
     fig.savefig(FIGURES / "fig_chemistry_leakage.png", dpi=160)
     plt.close(fig)
 
+    _plot_fold_disconnected_hero(results)
+
+
+def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
+    """Hero figure: chemistry transfer when homologous folds are unavailable."""
+    fold = results.get("splits", {}).get("fold_cluster", {})
+    methods = fold.get("methods") or {}
+    order = [
+        ("foldseek_transfer", "Foldseek", "#6B7280"),
+        ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
+        ("catalyst_microenvironment", "Catalyst Atlas", "#0E7490"),
+    ]
+    labels, values, colors = [], [], []
+    for key, label, color in order:
+        if key not in methods:
+            continue
+        labels.append(label)
+        values.append(float(methods[key]["accuracy"]))
+        colors.append(color)
+    if not labels:
+        return
+
+    fig, ax = plt.subplots(figsize=(8.5, 3.8))
+    y = list(range(len(labels)))
+    ax.barh(y, values, color=colors, height=0.62, edgecolor="none")
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels)
+    ax.set_xlim(0, max(0.55, max(values) * 1.35))
+    ax.set_xlabel("Chemistry-family accuracy")
+    ax.set_title("Chemistry transfer under fold-disconnected evaluation")
+    for yi, v in zip(y, values):
+        ax.text(v + 0.012, yi, f"{v:.2f}", va="center", ha="left", fontsize=12, color="#1B2A2F")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.text(
+        0.02,
+        0.02,
+        "When homologous folds are unavailable, catalytic microenvironment "
+        "representations preserve chemistry information.",
+        fontsize=9,
+        color="#374151",
+        wrap=True,
+    )
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.savefig(FIGURES / "fig_fold_disconnected_chemistry.png", dpi=180)
+    plt.close(fig)
+
 
 def run_eval(
     k: int = 5,
