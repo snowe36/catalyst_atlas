@@ -22,6 +22,12 @@ def search_enzyme(enzyme_id: str, k: int = 5) -> dict[str, Any]:
     return transfer_chemistry(index, int(matches[0]), k=k)
 
 
+def _chem_label(row) -> str:
+    if hasattr(row, "get"):
+        return str(row.get("chemistry_family") or row.get("chemistry_class") or "unknown")
+    return str(getattr(row, "chemistry_family", None) or getattr(row, "chemistry_class", "unknown"))
+
+
 def _baseline_from_cluster(index, query_idx: int, cluster_col: str) -> str:
     q = index.meta.iloc[query_idx]
     same = index.meta[
@@ -29,7 +35,8 @@ def _baseline_from_cluster(index, query_idx: int, cluster_col: str) -> str:
     ]
     if same.empty:
         return "unrelated / no confident transfer"
-    return Counter(same["chemistry_class"]).most_common(1)[0][0]
+    labels = [_chem_label(r) for _, r in same.iterrows()]
+    return Counter(labels).most_common(1)[0][0]
 
 
 def find_cryptic_hero(k: int = 5) -> dict[str, Any]:
@@ -39,7 +46,9 @@ def find_cryptic_hero(k: int = 5) -> dict[str, Any]:
     candidates = []
     for i in range(len(meta)):
         card = transfer_chemistry(index, i, k=k)
-        if card["predicted_chemistry_class"] != card["true_chemistry_class"]:
+        pred = card.get("predicted_chemistry_family") or card.get("predicted_chemistry_class")
+        true = card.get("true_chemistry_family") or card.get("true_chemistry_class")
+        if pred != true:
             continue
         seq_base = _baseline_from_cluster(index, i, "seq_cluster")
         fold_base = _baseline_from_cluster(index, i, "fold_cluster")
@@ -48,8 +57,8 @@ def find_cryptic_hero(k: int = 5) -> dict[str, Any]:
             (meta["seq_cluster"] == meta.iloc[i]["seq_cluster"])
             & (meta["enzyme_id"] != meta.iloc[i]["enzyme_id"])
         ]
-        seq_wrong = seq_base != card["true_chemistry_class"] or same_seq.empty
-        fold_wrong = fold_base != card["true_chemistry_class"]
+        seq_wrong = seq_base != true or same_seq.empty
+        fold_wrong = fold_base != true
         # Neighbors should come from different sequence clusters (cryptic).
         neigh_seq = {n["seq_cluster"] for n in card["neighbors"]}
         cryptic_neighbors = meta.iloc[i]["seq_cluster"] not in neigh_seq or len(neigh_seq) > 1
@@ -72,7 +81,9 @@ def find_cryptic_hero(k: int = 5) -> dict[str, Any]:
         # Fallback: first correct prediction.
         for i in range(len(meta)):
             card = transfer_chemistry(index, i, k=k)
-            if card["predicted_chemistry_class"] == card["true_chemistry_class"]:
+            pred = card.get("predicted_chemistry_family") or card.get("predicted_chemistry_class")
+            true = card.get("true_chemistry_family") or card.get("true_chemistry_class")
+            if pred == true:
                 return {
                     "card": card,
                     "seq_baseline": _baseline_from_cluster(index, i, "seq_cluster"),
@@ -103,8 +114,10 @@ def write_hero_case(k: int = 5) -> tuple[Path, dict[str, Any]]:
         __import__("json").dumps(
             {
                 "enzyme_id": hero["card"]["query_enzyme_id"],
-                "predicted": hero["card"]["predicted_chemistry_class"],
-                "true": hero["card"]["true_chemistry_class"],
+                "predicted": hero["card"].get("predicted_chemistry_family")
+                or hero["card"].get("predicted_chemistry_class"),
+                "true": hero["card"].get("true_chemistry_family")
+                or hero["card"].get("true_chemistry_class"),
                 "seq_baseline": hero["seq_baseline"],
                 "fold_baseline": hero["fold_baseline"],
             },

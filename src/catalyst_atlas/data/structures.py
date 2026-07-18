@@ -103,11 +103,15 @@ def build_site_from_structure(
     pdb_text: str,
     catalytic_spec: list[dict[str, Any]],
     first_shell_radius: float = 8.0,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Map catalytic residue specs to CA coords and collect first-shell neighbors.
+    cofactor_radius: float = 8.0,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], str]:
+    """Map catalytic residues, first-shell neighbors, and nearby cofactors/metals.
 
     ``catalytic_spec`` entries need ``chain``, ``resnum``, and ``aa`` (1-letter).
+    Returns ``(catalytic, neighbors, ligands, cofactor_tags)``.
     """
+    from catalyst_atlas.data.cofactors import cofactors_near_site
+
     atoms = parse_ca_atoms(pdb_text)
     by_key = {(a["chain"], a["resnum"]): a for a in atoms}
 
@@ -139,7 +143,7 @@ def build_site_from_structure(
         )
 
     if not catalytic:
-        return [], []
+        return [], [], [], "none"
 
     core = np.array([r["xyz"] for r in catalytic], dtype=float)
     center = core.mean(axis=0)
@@ -162,6 +166,13 @@ def build_site_from_structure(
                 }
             )
 
+    ligands, cofactor_tags = cofactors_near_site(
+        pdb_text,
+        catalytic,
+        radius=cofactor_radius,
+        site_residues=catalytic + neighbors,
+    )
+
     if missing:
         logger.debug("Missing %d catalytic residues in structure mapping", missing)
-    return catalytic, neighbors
+    return catalytic, neighbors, ligands, cofactor_tags

@@ -19,6 +19,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from catalyst_atlas.data.labels import annotate_chemistry
 from catalyst_atlas.data.ontology import families
 from catalyst_atlas.paths import RAW, ensure_dirs
 
@@ -236,10 +237,28 @@ def generate_demo_atlas(
         )
 
     df = pd.DataFrame(rows[:n_enzymes])
+    fams_out = []
+    pats_out = []
+    for _, row in df.iterrows():
+        cat_aas = [
+            r["aa"]
+            for r in json.loads(row["site_residues_json"])
+            if r.get("role") == "catalytic"
+        ]
+        ann = annotate_chemistry(
+            ec_number=row.get("ec_number"),
+            chemistry_class=row.get("chemistry_class"),
+            catalytic_aas=cat_aas,
+            cofactor_tags=row.get("cofactor_tags"),
+        )
+        fams_out.append(ann["chemistry_family"])
+        pats_out.append(ann["mechanistic_pattern"])
+    df["chemistry_family"] = fams_out
+    df["mechanistic_pattern"] = pats_out
     logger.info(
-        "Generated demo atlas: %d enzymes, %d chemistry classes, %d patterns",
+        "Generated demo atlas: %d enzymes, %d chemistry families, %d patterns",
         len(df),
-        df["chemistry_class"].nunique(),
+        df["chemistry_family"].nunique(),
         df["catalytic_pattern"].nunique(),
     )
     return df
@@ -251,7 +270,12 @@ def save_raw_atlas(df: pd.DataFrame) -> Path:
     df.to_parquet(out, index=False)
     meta = {
         "n_enzymes": int(len(df)),
-        "chemistry_classes": sorted(df["chemistry_class"].unique().tolist()),
+        "chemistry_classes": sorted(df["chemistry_class"].unique().tolist())
+        if "chemistry_class" in df.columns
+        else [],
+        "chemistry_families": sorted(df["chemistry_family"].unique().tolist())
+        if "chemistry_family" in df.columns
+        else [],
         "source": df["source"].iloc[0] if len(df) else "empty",
         "note": (
             "High-confidence catalytic annotations. Demo generator targets "

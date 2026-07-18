@@ -14,11 +14,15 @@ from sklearn.model_selection import train_test_split
 
 
 def random_split(
-    meta: pd.DataFrame, test_size: float = 0.2, seed: int = 7
+    meta: pd.DataFrame,
+    test_size: float = 0.2,
+    seed: int = 7,
+    label_col: str = "chemistry_class",
 ) -> tuple[np.ndarray, np.ndarray]:
     idx = np.arange(len(meta))
+    strat = meta[label_col] if label_col in meta.columns else meta["chemistry_class"]
     train_idx, test_idx = train_test_split(
-        idx, test_size=test_size, random_state=seed, stratify=meta["chemistry_class"]
+        idx, test_size=test_size, random_state=seed, stratify=strat
     )
     return train_idx, test_idx
 
@@ -28,6 +32,7 @@ def group_split(
     group_col: str,
     test_size: float = 0.2,
     seed: int = 7,
+    label_col: str = "chemistry_class",
 ) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
     groups = meta[group_col].unique()
@@ -38,13 +43,22 @@ def group_split(
     test_idx = np.where(test_mask)[0]
     train_idx = np.where(~test_mask)[0]
     if len(test_idx) == 0 or len(train_idx) == 0:
-        return random_split(meta, test_size=test_size, seed=seed)
+        return random_split(meta, test_size=test_size, seed=seed, label_col=label_col)
     return train_idx, test_idx
 
 
-def make_splits(meta: pd.DataFrame, test_size: float = 0.2, seed: int = 7) -> dict[str, tuple]:
+def make_splits(
+    meta: pd.DataFrame,
+    test_size: float = 0.2,
+    seed: int = 7,
+    label_col: str = "chemistry_class",
+) -> dict[str, tuple]:
     return {
-        "random": random_split(meta, test_size=test_size, seed=seed),
-        "seq_cluster": group_split(meta, "seq_cluster", test_size=test_size, seed=seed),
-        "fold_cluster": group_split(meta, "fold_cluster", test_size=test_size, seed=seed),
+        "random": random_split(meta, test_size=test_size, seed=seed, label_col=label_col),
+        "seq_cluster": group_split(
+            meta, "seq_cluster", test_size=test_size, seed=seed, label_col=label_col
+        ),
+        "fold_cluster": group_split(
+            meta, "fold_cluster", test_size=test_size, seed=seed, label_col=label_col
+        ),
     }

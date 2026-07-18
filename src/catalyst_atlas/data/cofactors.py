@@ -130,12 +130,66 @@ def parse_hetatm_groups(pdb_text: str) -> list[dict[str, Any]]:
     return out
 
 
+_COORD_GEOM = {
+    2: "linear",
+    3: "trigonal",
+    4: "tetrahedral",
+    5: "square_pyramidal",
+    6: "octahedral",
+}
+
+
+def annotate_metal_coordination(
+    ligands: list[dict[str, Any]],
+    residues: list[dict[str, Any]],
+    radius: float = 3.5,
+) -> list[dict[str, Any]]:
+    """Attach metal–residue coordination shells (identity, motif, coarse geometry)."""
+    out = []
+    for lig in ligands:
+        lig = dict(lig)
+        if lig.get("kind") != "metal":
+            out.append(lig)
+            continue
+        mxyz = np.asarray(lig["xyz"], dtype=float)
+        shell = []
+        for r in residues:
+            d = float(np.linalg.norm(np.asarray(r["xyz"], dtype=float) - mxyz))
+            if d <= radius:
+                shell.append(
+                    {
+                        "aa": r.get("aa", "X"),
+                        "resnum": r.get("resnum"),
+                        "role": r.get("role", ""),
+                        "distance": d,
+                    }
+                )
+        shell.sort(key=lambda x: x["distance"])
+        n = len(shell)
+        dists = [c["distance"] for c in shell]
+        lig["coordination"] = {
+            "n_coord": n,
+            "geometry": _COORD_GEOM.get(n, f"cn={n}"),
+            "motif": "-".join(c["aa"] for c in shell[:6]) if shell else "",
+            "residues": shell,
+            "mean_distance": float(np.mean(dists)) if dists else None,
+            "min_distance": float(min(dists)) if dists else None,
+        }
+        out.append(lig)
+    return out
+
+
 def cofactors_near_site(
     pdb_text: str,
     catalytic: list[dict[str, Any]],
     radius: float = 8.0,
+    site_residues: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
-    """Return ligands within ``radius`` Å of the catalytic centroid + tag string."""
+    """Return ligands within ``radius`` Å of the catalytic centroid + tag string.
+
+    Metals also receive a coordination shell relative to ``site_residues``
+    (catalytic + first shell when provided).
+    """
     if not catalytic:
         return [], "none"
     center = np.mean(np.asarray([r["xyz"] for r in catalytic], dtype=float), axis=0)
@@ -146,5 +200,7 @@ def cofactors_near_site(
         if d <= radius:
             near.append({**lig, "dist_to_core": d})
             tags.add(lig["name"])
+    residues = site_residues if site_residues is not None else catalytic
+    near = annotate_metal_coordination(near, residues, radius=3.5)
     tag_str = ",".join(sorted(tags)) if tags else "none"
     return near, tag_str

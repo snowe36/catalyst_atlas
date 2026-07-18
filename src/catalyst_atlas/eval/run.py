@@ -23,6 +23,11 @@ from catalyst_atlas.eval.baselines import (
     same_cluster_neighbor_transfer,
     sequence_similarity_transfer,
 )
+from catalyst_atlas.eval.external_baselines import (
+    prepare_retrieval_baselines,
+    retrieval_chemistry_transfer,
+)
+from catalyst_atlas.eval.labels import chemistry_label_col
 from catalyst_atlas.eval.metrics import accuracy, macro_f1, recall_at_k_chemistry
 from catalyst_atlas.eval.splits import make_splits
 from catalyst_atlas.paths import FIGURES, PROCESSED, ensure_dirs
@@ -85,9 +90,13 @@ def evaluate_split(
     test_idx: np.ndarray,
     k: int = 5,
     seq_sim: np.ndarray | None = None,
+    label_col: str | None = None,
+    mmseqs_hits: pd.DataFrame | None = None,
+    foldseek_hits: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
-    y_train = meta.iloc[train_idx]["chemistry_class"].tolist()
-    y_test = meta.iloc[test_idx]["chemistry_class"].tolist()
+    label_col = label_col or chemistry_label_col(meta)
+    y_train = meta.iloc[train_idx][label_col].tolist()
+    y_test = meta.iloc[test_idx][label_col].tolist()
 
     X_full_train, X_full_test = _scale_train_test(X_full, train_idx, test_idx)
     X_comp_train, X_comp_test = _scale_train_test(X_comp, train_idx, test_idx)
@@ -96,17 +105,29 @@ def evaluate_split(
         "catalyst_microenvironment": knn_transfer(X_full_train, y_train, X_full_test, k=k),
         "composition_only": knn_transfer(X_comp_train, y_train, X_comp_test, k=k),
         "sequence_similarity_transfer": sequence_similarity_transfer(
-            meta, train_idx, test_idx, sim=seq_sim
+            meta, train_idx, test_idx, label_col=label_col, sim=seq_sim
         ),
         "sequence_cluster_transfer": same_cluster_neighbor_transfer(
-            meta, train_idx, test_idx, "seq_cluster"
+            meta, train_idx, test_idx, "seq_cluster", label_col=label_col
         ),
         "fold_cluster_transfer": same_cluster_neighbor_transfer(
-            meta, train_idx, test_idx, "fold_cluster"
+            meta, train_idx, test_idx, "fold_cluster", label_col=label_col
         ),
-        "sequence_cluster_prior": cluster_transfer(meta, train_idx, test_idx, "seq_cluster"),
-        "fold_cluster_prior": cluster_transfer(meta, train_idx, test_idx, "fold_cluster"),
+        "sequence_cluster_prior": cluster_transfer(
+            meta, train_idx, test_idx, "seq_cluster", label_col=label_col
+        ),
+        "fold_cluster_prior": cluster_transfer(
+            meta, train_idx, test_idx, "fold_cluster", label_col=label_col
+        ),
     }
+    if mmseqs_hits is not None and not mmseqs_hits.empty:
+        methods["mmseqs_transfer"] = retrieval_chemistry_transfer(
+            mmseqs_hits, meta, train_idx, test_idx, label_col=label_col
+        )
+    if foldseek_hits is not None and not foldseek_hits.empty:
+        methods["foldseek_transfer"] = retrieval_chemistry_transfer(
+            foldseek_hits, meta, train_idx, test_idx, label_col=label_col
+        )
 
     neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
     out: dict[str, Any] = {
@@ -142,19 +163,19 @@ def _plot_results(results: dict[str, Any]) -> None:
     # Focus plot on the distinctive comparison.
     keep = [
         "catalyst_microenvironment",
-        "composition_only",
+        "mmseqs_transfer",
+        "foldseek_transfer",
         "sequence_similarity_transfer",
-        "sequence_cluster_transfer",
         "fold_cluster_transfer",
     ]
     plot_df = df[df["method"].isin(keep)].copy()
     plot_df["method"] = plot_df["method"].map(
         {
-            "catalyst_microenvironment": "Catalyst microenvironment",
-            "composition_only": "Composition only",
-            "sequence_similarity_transfer": "Seq similarity (k-mer Jaccard)",
-            "sequence_cluster_transfer": "Seq cluster-lookup",
-            "fold_cluster_transfer": "Fold cluster-lookup (CATH)",
+            "catalyst_microenvironment": "Catalyst Atlas",
+            "mmseqs_transfer": "MMseqs2 transfer",
+            "foldseek_transfer": "Foldseek transfer",
+            "sequence_similarity_transfer": "Seq retrieval (k-mer NN)",
+            "fold_cluster_transfer": "Fold retrieval (CATH)",
         }
     )
 
@@ -171,24 +192,51 @@ def _plot_results(results: dict[str, Any]) -> None:
     plt.close(fig)
 
 
-def run_eval(k: int = 5, test_size: float = 0.2, seed: int = 7) -> dict[str, Any]:
+def run_eval(
+    k: int = 5,
+    test_size: float = 0.2,
+    seed: int = 7,
+    run_external: bool = True,
+    threads: int = 4,
+) -> dict[str, Any]:
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
+    label_col = chemistry_label_col(meta)
     seq_sim = None
     if "sequence" in meta.columns and meta["sequence"].fillna("").str.len().gt(0).any():
-        logger.info("Building k-mer sequence similarity matrix for BLAST-style baseline")
+        logger.info("Building k-mer sequence similarity matrix for sequence retrieval baseline")
         seq_sim = pairwise_kmer_similarity_matrix(meta["sequence"].fillna("").tolist())
 
-    splits = make_splits(meta, test_size=test_size, seed=seed)
+    mmseqs_hits = None
+    foldseek_hits = None
+    external_info: dict[str, Any] = {}
+    if run_external:
+        logger.info("Preparing MMseqs2 / Foldseek retrieval baselines (if installed)")
+        external_info = prepare_retrieval_baselines(meta, threads=threads)
+        mmseqs_hits = external_info.get("mmseqs_hits")
+        foldseek_hits = external_info.get("foldseek_hits")
+
+    splits = make_splits(meta, test_size=test_size, seed=seed, label_col=label_col)
     results: dict[str, Any] = {
         "k": k,
+        "label_col": label_col,
         "scaler": "StandardScaler fit on train split only",
+        "external_tools": external_info.get("tools", {}),
         "splits": {},
     }
     for name, (train_idx, test_idx) in splits.items():
         logger.info("Evaluating split=%s (train=%d test=%d)", name, len(train_idx), len(test_idx))
         results["splits"][name] = evaluate_split(
-            meta, X_full, X_comp, train_idx, test_idx, k=k, seq_sim=seq_sim
+            meta,
+            X_full,
+            X_comp,
+            train_idx,
+            test_idx,
+            k=k,
+            seq_sim=seq_sim,
+            label_col=label_col,
+            mmseqs_hits=mmseqs_hits,
+            foldseek_hits=foldseek_hits,
         )
 
     # Cryptic-analog diagnostic: test enzymes whose seq_cluster is unseen in train
@@ -210,6 +258,9 @@ def run_eval(k: int = 5, test_size: float = 0.2, seed: int = 7) -> dict[str, Any
             np.array(cryptic_mask),
             k=k,
             seq_sim=seq_sim,
+            label_col=label_col,
+            mmseqs_hits=mmseqs_hits,
+            foldseek_hits=foldseek_hits,
         )
         results["cryptic_seq_holdout"] = sub
 

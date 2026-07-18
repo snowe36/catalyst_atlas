@@ -21,3 +21,6 @@ data/raw/*
 .env
 .idea/
 .vscode/
+tools/mmseqs/
+tools/foldseek/
+tools/*.tar.gz

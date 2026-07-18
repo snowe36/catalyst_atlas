@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+from catalyst_atlas.data.cofactors import COFACTOR_VOCAB
 from catalyst_atlas.paths import PROCESSED, ensure_dirs
 
 logger = logging.getLogger(__name__)
@@ -32,19 +33,6 @@ CHARGED = set("DEKRH")
 POLAR = set("STNQYC")
 HYDROPHOBIC = set("AILMFWVP")
 AROMATIC = set("FYWH")
-COFACTOR_VOCAB = [
-    "none",
-    "NAD",
-    "NADP",
-    "Zn",
-    "Fe",
-    "Mg",
-    "Mn",
-    "PLP",
-    "ATP",
-    "heme",
-    "FAD",
-]
 
 
 def _aa_composition(aas: str) -> np.ndarray:
@@ -115,6 +103,46 @@ def _ligand_contact_stats(ligand_contacts_json: str) -> np.ndarray:
     return np.array([len(contacts), dists.mean(), dists.min()], dtype=float)
 
 
+def _metal_coordination_features(microenvironment_json: str) -> np.ndarray:
+    """Metal identity counts + coordination number / geometry proxies."""
+    # [n_metals, mean_n_coord, min_metal_dist, tetrahedral, octahedral, other_geom]
+    empty = np.zeros(6, dtype=float)
+    try:
+        micro = json.loads(microenvironment_json) if microenvironment_json else {}
+    except json.JSONDecodeError:
+        return empty
+    metals = [lig for lig in (micro.get("ligands") or []) if lig.get("kind") == "metal"]
+    if not metals:
+        return empty
+    n_coords = []
+    min_dists = []
+    tet = oct_ = other = 0.0
+    for m in metals:
+        coord = m.get("coordination") or {}
+        n = int(coord.get("n_coord") or 0)
+        n_coords.append(n)
+        if coord.get("min_distance") is not None:
+            min_dists.append(float(coord["min_distance"]))
+        geom = str(coord.get("geometry") or "")
+        if geom == "tetrahedral":
+            tet = 1.0
+        elif geom == "octahedral":
+            oct_ = 1.0
+        elif n > 0:
+            other = 1.0
+    return np.array(
+        [
+            float(len(metals)),
+            float(np.mean(n_coords)) if n_coords else 0.0,
+            float(min(min_dists)) if min_dists else 0.0,
+            tet,
+            oct_,
+            other,
+        ],
+        dtype=float,
+    )
+
+
 def featurize_row(row: pd.Series, composition_only: bool = False) -> np.ndarray:
     cat_comp = _aa_composition(row.get("catalytic_aas", "") or "")
     shell_comp = _aa_composition(row.get("first_shell_aas", "") or "")
@@ -126,6 +154,7 @@ def featurize_row(row: pd.Series, composition_only: bool = False) -> np.ndarray:
     geom = _geometry_histogram(row.get("pairwise_json", "[]") or "[]")
     cof = _cofactor_onehot(row.get("cofactor_names", "none") or "none")
     lig = _ligand_contact_stats(row.get("ligand_contacts_json", "[]") or "[]")
+    metal = _metal_coordination_features(row.get("microenvironment_json", "{}") or "{}")
     sizes = np.array(
         [
             float(row.get("n_catalytic", 0) or 0),
@@ -134,14 +163,16 @@ def featurize_row(row: pd.Series, composition_only: bool = False) -> np.ndarray:
         ],
         dtype=float,
     )
-    vec = np.concatenate([cat_comp, shell_comp, cat_proxy, shell_proxy, geom, cof, lig, sizes])
+    vec = np.concatenate(
+        [cat_comp, shell_comp, cat_proxy, shell_proxy, geom, cof, lig, metal, sizes]
+    )
     return np.nan_to_num(vec, nan=0.0, posinf=0.0, neginf=0.0)
 
 
 FEATURE_NAMES_HINT = (
     "catalytic_aa_comp + first_shell_aa_comp + catalytic_chem_proxy + "
     "first_shell_chem_proxy + pairwise_geometry_hist + cofactor_onehot + "
-    "ligand_contact_stats + size_counts"
+    "ligand_contact_stats + metal_coordination + size_counts"
 )
 
 
@@ -173,6 +204,8 @@ def build_feature_matrix(
             c
             for c in [
                 "enzyme_id",
+                "chemistry_family",
+                "mechanistic_pattern",
                 "chemistry_class",
                 "catalytic_pattern",
                 "cofactor_tags",
@@ -183,6 +216,9 @@ def build_feature_matrix(
                 "ec_number",
                 "sequence",
                 "is_cryptic_seed",
+                "enzyme_name",
+                "cath_topology",
+                "microenvironment_json",
             ]
             if c in micro_df.columns
         ]

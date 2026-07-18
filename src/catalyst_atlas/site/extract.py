@@ -122,6 +122,8 @@ def run_site_extraction(raw_path: Path | None = None) -> pd.DataFrame:
         "uniprot_id",
         "pdb_id",
         "family_id",
+        "chemistry_family",
+        "mechanistic_pattern",
         "chemistry_class",
         "catalytic_pattern",
         "cofactor_tags",
@@ -132,6 +134,8 @@ def run_site_extraction(raw_path: Path | None = None) -> pd.DataFrame:
         "fold_cluster",
         "source",
         "is_cryptic_seed",
+        "enzyme_name",
+        "cath_topology",
     ]
     keep = [c for c in label_cols if c in atlas.columns]
     out = micro_df.merge(atlas[keep], on="enzyme_id", how="left")

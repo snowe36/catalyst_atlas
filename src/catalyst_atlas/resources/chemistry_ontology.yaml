@@ -1,7 +1,31 @@
 # Chemically meaningful labels — not EC digit spam.
-# chemistry_class = broad bond / reaction logic
-# catalytic_pattern = how the site does chemistry
-# cofactor_tags = required chemical machinery
+#
+# v0.2 ontology (primary):
+#   chemistry_family     — broad reaction logic (eval / cards)
+#   mechanistic_pattern  — how the site does chemistry
+#   cofactor_tags        — cofactors / metals at the reaction center
+#
+# Legacy:
+#   chemistry_class      — EC-style mirror for older demos
+#   catalytic_pattern    — residue motif string
+
+chemistry_families:
+  - hydrolysis
+  - oxidation-reduction
+  - transfer
+  - carbon-carbon chemistry
+  - ligation
+  - isomerization
+  - elimination
+
+mechanistic_patterns:
+  - metal activation
+  - nucleophile attack
+  - acid/base catalysis
+  - covalent intermediate
+  - radical chemistry
+  - hydride transfer
+  - imine chemistry
 
 chemistry_classes:
   - oxidoreductase

@@ -92,12 +92,11 @@ def eval_main(argv: list[str] | None = None) -> int:
     for split, payload in results["splits"].items():
         methods = payload["methods"]
         cat = methods["catalyst_microenvironment"]["accuracy"]
-        seq_sim = methods.get("sequence_similarity_transfer", {}).get("accuracy", float("nan"))
-        seq = methods["sequence_cluster_transfer"]["accuracy"]
-        fold = methods["fold_cluster_transfer"]["accuracy"]
+        mm = methods.get("mmseqs_transfer", {}).get("accuracy", float("nan"))
+        fs = methods.get("foldseek_transfer", {}).get("accuracy", float("nan"))
         print(
             f"{split:14s}  catalyst={cat:.3f}  "
-            f"seq_sim={seq_sim:.3f}  seq_lookup={seq:.3f}  fold_cath={fold:.3f}"
+            f"mmseqs={mm:.3f}  foldseek={fs:.3f}"
         )
     return 0
 
@@ -151,4 +150,43 @@ def figures_main(argv: list[str] | None = None) -> int:
         return 1
     for path in paths:
         print(path)
+    return 0
+
+
+def enrich_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Enrich atlas with PDB cofactors/metals + chemistry ontology labels"
+    )
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from catalyst_atlas.data.enrich import enrich_atlas_cofactors_and_ontology
+
+    df = enrich_atlas_cofactors_and_ontology()
+    print(
+        f"enriched n={len(df)}  "
+        f"with_cofactors={(df['cofactor_tags'] != 'none').sum()}  "
+        f"families={df['chemistry_family'].nunique()}"
+    )
+    return 0
+
+
+def cases_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Write three real M-CSA chemistry case studies"
+    )
+    parser.add_argument("--k", type=int, default=5)
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from catalyst_atlas.case_studies import write_case_studies
+
+    try:
+        path = write_case_studies(k=args.k)
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(path)
     return 0

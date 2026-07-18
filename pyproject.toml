@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "catalyst-atlas"
-version = "0.1.0"
-description = "Infer what chemistry a protein can perform from its catalytic microenvironment"
+version = "0.2.0"
+description = "Chemistry-aware reaction-center representations — what chemistry can this protein perform?"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -34,6 +34,8 @@ cat-embed = "catalyst_atlas.cli:embed_main"
 cat-eval = "catalyst_atlas.cli:eval_main"
 cat-search = "catalyst_atlas.cli:search_main"
 cat-figures = "catalyst_atlas.cli:figures_main"
+cat-enrich = "catalyst_atlas.cli:enrich_main"
+cat-cases = "catalyst_atlas.cli:cases_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

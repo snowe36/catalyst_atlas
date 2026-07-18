@@ -22,6 +22,7 @@ from catalyst_atlas.data.cluster import (
     encode_cluster_ids,
     greedy_sequence_clusters,
 )
+from catalyst_atlas.data.labels import annotate_chemistry
 from catalyst_atlas.data.structures import aa3_to_1, build_site_from_structure, fetch_pdb_text
 from catalyst_atlas.paths import RAW, ensure_dirs
 
@@ -246,7 +247,9 @@ def build_mcsa_atlas(
                 break
             continue
 
-        catalytic, neighbors = build_site_from_structure(pdb_text, specs)
+        catalytic, neighbors, ligands, cofactor_tags = build_site_from_structure(
+            pdb_text, specs
+        )
         if len(catalytic) < 2:
             failures += 1
             continue
@@ -260,8 +263,12 @@ def build_mcsa_atlas(
             sequence = "".join(a["aa"] for a in parse_ca_atoms(pdb_text) if a["aa"] != "X")
         ec_list = entry.get("all_ecs") or []
         ec = (entry.get("reaction") or {}).get("ec") or (ec_list[0] if ec_list else "")
-        chem = chemistry_from_ec(ec)
         cat_aas = [r["aa"] for r in catalytic]
+        ann = annotate_chemistry(
+            ec_number=str(ec) if ec else None,
+            catalytic_aas=cat_aas,
+            cofactor_tags=cofactor_tags,
+        )
         cath = Counter(cath_ids).most_common(1)[0][0] if cath_ids else "unknown"
 
         rows.append(
@@ -270,16 +277,18 @@ def build_mcsa_atlas(
                 "uniprot_id": uniprot or f"UNK{mcsa_id}",
                 "pdb_id": str(pdb_id).lower(),
                 "family_id": f"mcsa_{mcsa_id}",
-                "chemistry_class": chem,
+                "chemistry_class": ann["chemistry_class"],
+                "chemistry_family": ann["chemistry_family"],
+                "mechanistic_pattern": ann["mechanistic_pattern"],
                 "catalytic_pattern": pattern_from_residues(cat_aas),
-                "cofactor_tags": "none",
+                "cofactor_tags": cofactor_tags,
                 "substrate_class": "mcsa_curated",
                 "ec_number": str(ec) if ec else "",
                 "sequence": sequence,
                 "seq_cluster": -1,  # filled below
                 "fold_cluster": -1,  # filled below
                 "site_residues_json": json.dumps(catalytic + neighbors),
-                "ligands_json": json.dumps([]),
+                "ligands_json": json.dumps(ligands),
                 "source": "mcsa",
                 "is_cryptic_seed": False,
                 "mcsa_id": mcsa_id,
@@ -305,22 +314,24 @@ def build_mcsa_atlas(
     )
     df["seq_cluster"] = seq_labels
 
-    # Mark cryptic-ish seeds: chemistry differs from majority of their seq cluster.
+    # Mark cryptic-ish seeds: chemistry family differs from majority of seq cluster.
+    label_col = "chemistry_family" if "chemistry_family" in df.columns else "chemistry_class"
     chem_by_cluster: dict[int, Counter] = defaultdict(Counter)
     for _, row in df.iterrows():
-        chem_by_cluster[int(row["seq_cluster"])][row["chemistry_class"]] += 1
+        chem_by_cluster[int(row["seq_cluster"])][row[label_col]] += 1
     cryptic = []
     for _, row in df.iterrows():
         maj = chem_by_cluster[int(row["seq_cluster"])].most_common(1)[0][0]
-        cryptic.append(row["chemistry_class"] != maj)
+        cryptic.append(row[label_col] != maj)
     df["is_cryptic_seed"] = cryptic
 
     logger.info(
         "M-CSA atlas: %d enzymes (%d PDB/map failures skipped); "
-        "%d chemistry classes; %d seq clusters; %d fold clusters",
+        "%d chemistry families; %d with cofactors; %d seq clusters; %d fold clusters",
         len(df),
         failures,
-        df["chemistry_class"].nunique(),
+        df[label_col].nunique(),
+        int((df["cofactor_tags"] != "none").sum()),
         df["seq_cluster"].nunique(),
         df["fold_cluster"].nunique(),
     )
