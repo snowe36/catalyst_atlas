@@ -15,6 +15,7 @@ _PATH_MODULES = (
     "catalyst_atlas.featurize.features",
     "catalyst_atlas.models.embed",
     "catalyst_atlas.eval.run",
+    "catalyst_atlas.eval.external_baselines",
     "catalyst_atlas.search",
     "catalyst_atlas.viz.structure_figures",
 )

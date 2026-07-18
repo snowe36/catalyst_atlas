@@ -49,7 +49,8 @@ def test_demo_pipeline_chemistry_beats_seq_proxy_on_seq_holdout(isolated_data_di
     download_atlas(demo=True, n_enzymes=240, seed=7)
     run_site_extraction()
     run_embed()
-    results = run_eval(k=5, test_size=0.25, seed=7)
+    # External MMseqs2/Foldseek baselines are opt-in for CI hermeticity / speed.
+    results = run_eval(k=5, test_size=0.25, seed=7, run_external=False)
 
     assert results["scaler"] == "StandardScaler fit on train split only"
     seq_split = results["splits"]["seq_cluster"]

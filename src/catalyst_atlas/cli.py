@@ -81,13 +81,25 @@ def eval_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--k", type=int, default=5)
     parser.add_argument("--test-size", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--no-external",
+        action="store_true",
+        help="Skip MMseqs2/Foldseek retrieval baselines",
+    )
+    parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
 
     from catalyst_atlas.eval.run import run_eval
 
-    results = run_eval(k=args.k, test_size=args.test_size, seed=args.seed)
+    results = run_eval(
+        k=args.k,
+        test_size=args.test_size,
+        seed=args.seed,
+        run_external=not args.no_external,
+        threads=args.threads,
+    )
     # Print a compact summary for the terminal / README scraping.
     for split, payload in results["splits"].items():
         methods = payload["methods"]

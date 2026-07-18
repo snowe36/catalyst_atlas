@@ -53,9 +53,22 @@ def write_fasta(meta: pd.DataFrame, path: Path) -> int:
     return n
 
 
-def _run(cmd: list[str], cwd: Path | None = None) -> None:
+def _run(cmd: list[str], cwd: Path | None = None, log_path: Path | None = None) -> None:
+    """Run an external tool without pipe-buffer deadlocks (mmseqs is very chatty)."""
     logger.info("Running: %s", " ".join(cmd[:6]) + ("…" if len(cmd) > 6 else ""))
-    subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=cwd)
+    if log_path is None:
+        # Discard verbose tool logs; keep process from blocking on full pipes.
+        subprocess.run(
+            cmd,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            cwd=cwd,
+        )
+        return
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("w") as logf:
+        subprocess.run(cmd, check=True, stdout=logf, stderr=subprocess.STDOUT, cwd=cwd)
 
 
 def ensure_mmseqs_hits(
