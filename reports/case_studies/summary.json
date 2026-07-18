@@ -1,0 +1,23 @@
+[
+  {
+    "title": "Same fold, different chemistry",
+    "enzyme_id": "MCSA00034",
+    "predicted": "oxidation-reduction",
+    "true": "oxidation-reduction",
+    "cofactors": "Fe"
+  },
+  {
+    "title": "Different fold, same chemistry",
+    "enzyme_id": "MCSA00176",
+    "predicted": "hydrolysis",
+    "true": "hydrolysis",
+    "cofactors": "Zn"
+  },
+  {
+    "title": "Cofactor-aware chemistry hypothesis",
+    "enzyme_id": "MCSA00661",
+    "predicted": "hydrolysis",
+    "true": "hydrolysis",
+    "cofactors": "Ca"
+  }
+]
