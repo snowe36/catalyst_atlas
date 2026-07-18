@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import platform
 import shutil
 import subprocess
 import tempfile
@@ -53,8 +54,22 @@ def write_fasta(meta: pd.DataFrame, path: Path) -> int:
     return n
 
 
+def _prefer_native_arch(cmd: list[str]) -> list[str]:
+    """Force arm64 on Apple Silicon.
+
+    Universal mmseqs/foldseek binaries can be launched under Rosetta (x86_64
+    translated) from some Python/subprocess contexts and then hang forever in
+    ``_GLOBAL__sub_I_mmseqs.cpp`` during dyld init. ``arch -arm64`` avoids that.
+    """
+    if platform.system() == "Darwin" and platform.machine() == "arm64":
+        if shutil.which("arch") and cmd and not (cmd[0] == "arch"):
+            return ["arch", "-arm64", *cmd]
+    return cmd
+
+
 def _run(cmd: list[str], cwd: Path | None = None, log_path: Path | None = None) -> None:
     """Run an external tool without pipe-buffer deadlocks (mmseqs is very chatty)."""
+    cmd = _prefer_native_arch(cmd)
     logger.info("Running: %s", " ".join(cmd[:6]) + ("…" if len(cmd) > 6 else ""))
     if log_path is None:
         # Discard verbose tool logs; keep process from blocking on full pipes.
