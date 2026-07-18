@@ -55,7 +55,7 @@ def test_cath_and_seq_clustering():
     labels = greedy_sequence_clusters(
         ["ACDEFGHIKLMNPQRSTVWY" * 3, "ACDEFGHIKLMNPQRSTVWY" * 3, "QQQQQQQQQQ" * 5],
         threshold=0.5,
-        metric="containment",
+        metric="jaccard",
     )
     assert labels[0] == labels[1]
     assert labels[0] != labels[2]

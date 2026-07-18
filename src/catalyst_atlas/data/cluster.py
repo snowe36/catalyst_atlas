@@ -35,19 +35,28 @@ def kmer_containment(a: str, b: str, k: int = 3) -> float:
 
 def greedy_sequence_clusters(
     sequences: list[str],
-    threshold: float = 0.35,
+    threshold: float = 0.15,
     k: int = 3,
-    metric: str = "containment",
+    metric: str = "jaccard",
+    max_rep_len: int = 1500,
 ) -> list[int]:
     """Greedy clustering by k-mer similarity (BLAST-like neighborhood proxy).
 
-    Longer sequences seed clusters first. A sequence joins the first cluster
-    whose representative meets ``threshold`` under ``metric``
-    (``containment`` or ``jaccard``).
+    Prefer mid-length sequences as seeds (very long polyproteins otherwise absorb
+    everything under containment). Default metric is Jaccard — containment is
+    unsafe when one sequence is much longer than the other.
     """
     sim_fn = kmer_containment if metric == "containment" else kmer_jaccard
     n = len(sequences)
-    order = sorted(range(n), key=lambda i: len(sequences[i] or ""), reverse=True)
+
+    def _seed_key(i: int) -> tuple:
+        L = len(sequences[i] or "")
+        # Prefer typical enzyme lengths; demote empty / mega sequences.
+        if L < 20 or L > max_rep_len:
+            return (2, -L)
+        return (0, -L)
+
+    order = sorted(range(n), key=_seed_key)
     reps: list[str] = []
     labels = [-1] * n
     for i in order:
@@ -102,7 +111,7 @@ def encode_cluster_ids(labels: list[str | int]) -> list[int]:
 
 
 def pairwise_kmer_similarity_matrix(
-    sequences: list[str], k: int = 3, metric: str = "containment"
+    sequences: list[str], k: int = 3, metric: str = "jaccard"
 ) -> np.ndarray:
     """Dense k-mer similarity matrix for small atlases (n ≲ 1500)."""
     sets = [_kmer_set(s, k=k) for s in sequences]

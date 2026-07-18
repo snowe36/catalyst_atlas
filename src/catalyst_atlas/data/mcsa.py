@@ -192,7 +192,7 @@ def _group_residues_by_entry(
 def build_mcsa_atlas(
     n_enzymes: int | None = None,
     seed: int = 7,
-    seq_cluster_threshold: float = 0.35,
+    seq_cluster_threshold: float = 0.15,
     max_pdb_failures: int | None = None,
 ) -> pd.DataFrame:
     """Download M-CSA + PDB microenvironments and return an atlas DataFrame."""
@@ -301,7 +301,7 @@ def build_mcsa_atlas(
     seq_labels = greedy_sequence_clusters(
         df["sequence"].fillna("").tolist(),
         threshold=seq_cluster_threshold,
-        metric="containment",
+        metric="jaccard",
     )
     df["seq_cluster"] = seq_labels
 
