@@ -153,10 +153,13 @@ def figures_main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
 
+    from catalyst_atlas.viz.readme_figures import generate_readme_figures
     from catalyst_atlas.viz.structure_figures import generate_structure_figures
 
+    paths: list = []
     try:
-        paths = generate_structure_figures(dpi=args.dpi)
+        paths.extend(generate_structure_figures(dpi=args.dpi))
+        paths.extend(generate_readme_figures(dpi=args.dpi))
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

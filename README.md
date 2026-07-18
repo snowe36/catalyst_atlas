@@ -1,6 +1,8 @@
 # catalyst_atlas
 
-**A leakage-aware benchmark for chemistry identification from catalytic microenvironments** — ask what reaction a protein site can run from its chemistry-aware reaction center, then stress-test whether that signal survives when sequence and fold neighbors are held out.
+**A leakage-aware benchmark for chemistry identification from catalytic microenvironments** — ask what chemistry a protein site supports from its reaction center, then stress-test whether that signal survives when sequence and fold neighbors are held out.
+
+> *Ask a protein what chemistry it can do — not what it looks like.*
 
 [![CI](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -13,28 +15,90 @@ Repo: [github.com/snowe36/catalyst_atlas](https://github.com/snowe36/catalyst_at
 
 ## The problem
 
-Sequence and structure retrieval make enzyme annotation look easy: find a homolog, transfer its chemistry. The harder question is:
+Evolutionary similarity is a strong proxy for function when homologs exist. The harder question is what remains when they do not:
 
-**Can we identify what chemistry a protein can perform from its catalytic microenvironment — and how much of that apparent skill is really evolutionary neighborhood leakage rather than chemistry-aware signal?**
+**Can we identify what catalytic transformation a protein site is equipped to perform from its microenvironment — and how much of that apparent skill is really neighborhood leakage rather than chemistry-aware signal?**
 
-This is an evaluation-hygiene / representation problem with explicit negative controls (sequence-cluster and fold-cluster holdouts). The claim is **not** “we beat Foldseek.” Foldseek is excellent when fold neighbors are available. The experiment asks what remains when they are not.
+This is an evaluation-hygiene / representation problem with explicit negative controls (sequence-cluster and fold-cluster holdouts). The claim is **not** “we beat Foldseek.” Foldseek is excellent when fold neighbors are available. Catalytic representations become valuable when chemistry is conserved independently of sequence and fold.
+
+---
+
+## The key experiment: remove evolutionary neighborhoods
+
+Hold out fold neighborhoods and ask whether chemistry transfer still works.
+
+| Method | fold_cluster accuracy |
+|--------|----------------------:|
+| MMseqs2 | 0.04 |
+| Foldseek | 0.13 |
+| **Catalyst Atlas** | **0.37** |
+
+Chemistry signal remains after evolutionary neighborhoods are removed. That gap **is** the finding.
+
+<p align="center">
+  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: Catalyst 0.37 vs Foldseek 0.13 vs MMseqs 0.04" width="720"/>
+</p>
+
+---
+
+## Case study: convergent chemistry across unrelated folds
+
+A fold-disconnected pair with shared chemistry recovered by reaction-center similarity — an analysis of what the representation encodes, not a blind discovery claim.
+
+| | Thermolysin `MCSA00176` | Neprilysin `MCSA00623` |
+|--|-------------------------|-------------------------|
+| Sequence neighborhood | remote (~5–7% k-mer Jaccard) | remote |
+| Fold / CATH | `1.10.390` | `3.40.390` |
+| Reaction chemistry | hydrolysis / metal activation | hydrolysis / metal activation |
+| Catalyst Atlas | ranks neprilysin among top catalytic neighbors | — |
+
+**Why:** shared reaction-center geometry · Zn cofactor environment · His/Asp/Glu catalytic arrangement — not fold TM-score.
+
+Full writeup: [`reports/hero_convergent_chemistry.md`](reports/hero_convergent_chemistry.md).
 
 ---
 
 ## What this repo builds
 
 1. **Download & curate** M-CSA catalytic sites with RCSB coordinates
-2. **Enrich** cofactors / metals near the site and assign a chemistry ontology (`chemistry_family`, `mechanistic_pattern`)
-3. **Extract** catalytic microenvironments (residues, geometry, cofactors, first-shell neighbors)
-4. **Embed & retrieve** with engineered chemistry-aware features (no deep model required)
-5. **Benchmark** chemistry transfer under random, seq-cluster, and fold-cluster splits against MMseqs2 / Foldseek / CATH baselines
-6. **Explain** with chemistry cards and three curated case studies
+2. **Extract** catalytic microenvironments (residues, geometry, cofactors, first shell)
+3. **Represent** chemistry with engineered reaction-center features
+4. **Retrieve** catalytic neighbors under leakage-aware splits
+5. **Explain** with evidence cards — prediction + mechanistic evidence, not a score alone
 
 <p align="center">
-  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Chemistry transfer under fold-disconnected evaluation: Catalyst Atlas 0.37 vs Foldseek 0.13 vs MMseqs2 0.04" width="720"/>
+  <img src="reports/figures/fig1_pipeline.png" alt="Pipeline: structure → reaction center extraction → chemical representation → chemistry retrieval → evidence card" width="900"/>
 </p>
 
-<p align="center"><em>Hero figure. When homologous folds are unavailable, catalytic microenvironment representations preserve chemistry information — that gap <strong>is</strong> the finding.</em></p>
+<p align="center"><em>Figure 1. From structure to chemistry evidence — microenvironment retrieval, not fold search.</em></p>
+
+### Example output
+
+```bash
+cat-search --enzyme-id MCSA00176
+```
+
+```text
+Catalyst Atlas prediction
+=========================
+
+Chemistry:
+  hydrolysis
+  (metal activation)
+
+Catalytic evidence:
+  ✓ catalytic residue pattern: His-Glu-Asp-Arg
+  ✓ mechanistic pattern: metal activation
+  ✓ Zn cofactor/metal detected at reaction center
+  ✓ chemical analogs span multiple fold neighborhoods
+
+Closest chemical analogs:
+  1. MCSA00623 — hydrolysis / metal activation (cof=Zn; different fold)
+  2. MCSA00159 — hydrolysis / metal activation (cof=Zn; different fold)
+  ...
+```
+
+The artifact is **prediction + why** — chemistry family, mechanistic pattern, and catalytic evidence — not `score = 0.82`.
 
 ---
 
@@ -42,15 +106,17 @@ This is an evaluation-hygiene / representation problem with explicit negative co
 
 | Check | Result |
 |-------|--------|
-| Curated catalytic sites (M-CSA v1) | **959** with PDB coordinates |
-| Sites with nearby cofactors / metals | **324 / 959** |
-| Fold-disconnected Catalyst accuracy | **0.37** |
-| Fold-disconnected MMseqs2 / Foldseek | **0.04** / **0.13** |
-| Random-split Foldseek accuracy (optimistic) | **0.50** (as expected — fold neighbors carry chemistry) |
-| MMseqs2 at nearest-train identity **<20%** | **0.00** (collapses) |
-| Different-fold / same-chemistry recovery (Catalyst) | **0.50** vs Foldseek **0.04** |
-| Does Catalyst beat Foldseek on random / seq holdouts? | **No** — and that is left visible on purpose |
-| Is the representation just recovering fold? | **No** — fold_cluster + convergent-chemistry audits |
+| Curated catalytic sites (M-CSA v1) | **959** |
+| Fold-disconnected Catalyst / MMseqs / Foldseek | **0.37** / 0.04 / 0.13 |
+| Chemistry Recall@5 (fold_cluster) | **0.67** |
+| Chemistry MRR (fold_cluster) | **0.46** |
+| MMseqs2 at nearest-train identity **<20%** | **0.00** |
+| Different-fold / same-chemistry | Catalyst **0.50** vs Foldseek **0.04** (**n=26**) |
+| Same-fold / different-chemistry | Foldseek **0.51** vs Catalyst 0.39 (**n=131**) — fold info is legitimately useful |
+
+> **Key observation:** when enzymes share chemistry but not fold, structure retrieval fails while reaction-center representations retain signal.
+
+A small but biologically informative convergent-chemistry subset (**n=26**) demonstrates the intended use case. The fold-disconnected benchmark (n=461 test) carries the quantitative claim.
 
 Full writeup: [`reports/mcsa_v02_n959_results.md`](reports/mcsa_v02_n959_results.md).
 
@@ -67,79 +133,17 @@ pip install -U pip && pip install -e ".[dev]"
 bash scripts/reproduce.sh && pytest -q
 ```
 
-Synthetic / CI pipeline:
-
 ```text
-cat-download --demo → cat-sites → cat-embed → cat-eval → cat-search → cat-figures
+cat-download → cat-enrich → cat-sites → cat-embed → cat-eval → cat-cases → cat-figures
 ```
 
-Real M-CSA path (network + PDB cache):
-
-```text
-cat-download --public → cat-enrich → cat-sites → cat-embed → cat-eval → cat-cases
-```
-
-Optional: install **MMseqs2** / **Foldseek** (or use vendored builds under `tools/`) for live sequence/structure retrieval baselines.
+Optional: **MMseqs2** / **Foldseek** on `PATH` (or vendored under `tools/`) for live retrieval baselines.
 
 ---
 
-## Catalytic microenvironment
+## Figure 2 — Chemistry transfer under evolutionary distance
 
-The representation is the **chemistry-aware reaction center**, not whole-protein fold similarity or pocket shape alone:
-
-| Component | Detail |
-|-----------|--------|
-| Source | [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) curated catalytic sites + [RCSB](https://www.rcsb.org/) PDB |
-| Catalytic residues | Annotated chemistry-participating amino acids |
-| Geometry | Pairwise distances among catalytic atoms |
-| Cofactors / metals | HETATM within ~8 Å of the catalytic core |
-| First shell | Neighboring residues around the site |
-| Ligand contacts | When present in the structure |
-| Labels | `chemistry_family` + `mechanistic_pattern` (enzymologist language, not EC-digit spam) |
-
-Ontology examples: hydrolysis, oxidation-reduction, transfer, carbon-carbon chemistry, ligation, isomerization, elimination; metal activation, nucleophile attack, acid/base, covalent intermediate, radical, hydride transfer, imine chemistry.
-
-<p align="center">
-  <img src="reports/figures/fig_microenv_gallery.png" alt="Gallery of catalytic microenvironments" width="900"/>
-</p>
-
-<p align="center"><em>Catalytic microenvironments — residues, cofactors, and local geometry that define the chemical machine.</em></p>
-
----
-
-## Leakage-aware chemistry transfer
-
-**Primary task:** transfer `chemistry_family` from catalytic neighbors under leakage-aware splits.
-
-**Baselines:** Catalyst microenvironment kNN · composition-only ablation · k-mer sequence NN · CATH fold cluster-lookup · **MMseqs2** / **Foldseek** when installed.
-
-**Splits (the point of the repo):**
-
-| Split | What it tests |
-|-------|----------------|
-| Random | Optimistic ceiling (evolutionary neighbors allowed) |
-| Seq cluster | Chemistry ID when sequence neighborhoods are held out |
-| Fold cluster | Chemistry ID when fold neighborhoods are held out — **primary claim** |
-
-M-CSA n=959 chemistry-family accuracy:
-
-| Split | Catalyst | MMseqs2 | Foldseek | Seq (k-mer) | Fold (CATH) |
-|-------|---------:|--------:|---------:|------------:|------------:|
-| Random | 0.42 | 0.29 | **0.50** | 0.26 | 0.41 |
-| Seq cluster | 0.42 | 0.23 | **0.49** | 0.21 | 0.44 |
-| Fold cluster | **0.37** | 0.04 | 0.13 | 0.20 | 0.00 |
-
-<p align="center">
-  <img src="reports/figures/fig_chemistry_leakage.png" alt="Chemistry accuracy across random, seq-cluster, and fold-cluster splits" width="720"/>
-</p>
-
-<p align="center"><em>Leakage-aware chemistry ID — Foldseek leads when fold neighbors exist; Catalyst retains signal on the fold-disconnected holdout where retrieval collapses.</em></p>
-
-**Takeaway:** sequence and structure tell you evolutionary relationships. Catalyst Atlas tries to recover chemical capability. Foldseek dominating on random / seq_cluster validates the framework; fold_cluster is where the complementary claim lives.
-
-### Chemistry transfer vs evolutionary distance
-
-Stratify the random-split test set by nearest-train MMseqs2 `%id`:
+At high identity, sequence is the right tool. At remote homology, sequence transfer becomes unreliable; the catalytic environment retains chemically relevant signal.
 
 | Nearest train identity | n | Catalyst | MMseqs2 | Foldseek |
 |------------------------|--:|---------:|--------:|---------:|
@@ -152,42 +156,65 @@ Stratify the random-split test set by nearest-train MMseqs2 `%id`:
   <img src="reports/figures/fig_chemistry_by_seq_identity.png" alt="Chemistry transfer accuracy stratified by nearest-train sequence identity" width="720"/>
 </p>
 
-<p align="center"><em>MMseqs2 dominates near homologs and collapses below 20% identity; Catalyst retains chemistry signal when sequence neighborhoods disappear.</em></p>
+<p align="center"><em>Figure 2. Not a strawman: MMseqs2 wins near homologs and collapses below 20% identity.</em></p>
 
-### Fold–chemistry relationship audits
+Leakage-aware splits + retrieval metrics:
 
-| Audit | Question | n | Catalyst | Foldseek | MMseqs2 |
+| Split | Catalyst acc. | MMseqs2 | Foldseek | Recall@5 | MRR |
+|-------|--------------:|--------:|---------:|---------:|----:|
+| Random | 0.42 | 0.29 | **0.50** | 0.72 | 0.54 |
+| Seq cluster | 0.42 | 0.23 | **0.49** | 0.72 | 0.51 |
+| Fold cluster | **0.37** | 0.04 | 0.13 | **0.67** | **0.46** |
+
+Recall@5 / MRR ask: does the true chemistry appear among retrieved catalytic neighbors? Accuracy alone understates a retrieval system.
+
+---
+
+## Figure 3 — Fold and chemistry are separable
+
+| Panel | Question | n | Catalyst | Foldseek | MMseqs2 |
 |-------|----------|--:|---------:|---------:|--------:|
-| Same fold, different chemistry | Avoid false functional transfer? | 131 | 0.39 | **0.51** | 0.26 |
-| Different fold, same chemistry | Recognize convergent chemistry? | 26 | **0.50** | 0.04 | 0.08 |
+| **A** Same fold, different chemistry | Avoid false functional transfer? | 131 | 0.39 | **0.51** | 0.26 |
+| **B** Different fold, same chemistry | Recognize convergent chemistry? | **26** | **0.50** | 0.04 | 0.08 |
 
 <p align="center">
   <img src="reports/figures/fig_fold_chemistry_audits.png" alt="Same-fold different-chemistry trap vs different-fold same-chemistry recovery" width="720"/>
 </p>
 
-<p align="center"><em>Foldseek still helps when a shared fold is available; Catalyst is the method that recovers chemistry across folds.</em></p>
-
-Full metrics: [`data/processed/eval_metrics.json`](data/processed/eval_metrics.json).
+<p align="center"><em>Figure 3. Panel A: fold information is legitimately useful — leave it visible. Panel B (n=26): chemistry can be conserved despite different evolutionary solutions.</em></p>
 
 ---
 
-## Case studies & interpretation
+## Figure 4 — Evidence cards
 
-Three narrative cards — generated with `cat-cases` → [`reports/case_studies/`](reports/case_studies/):
-
-| Case | Question |
-|------|----------|
-| Same fold, different chemistry | Can Catalyst avoid false functional transfer? |
-| Different fold, same chemistry | Can it recognize convergent chemistry? |
-| Cofactor-aware hypothesis | Does metal/cofactor context change the chemistry card? |
+Most protein AI repos end at a score. The deliverable here is a **chemistry card**: family, mechanistic pattern, catalytic evidence, and nearest chemical analogs.
 
 <p align="center">
-  <img src="reports/figures/fig_microenv_hero_cryptic.png" alt="Cryptic / convergent chemistry microenvironment example" width="720"/>
+  <img src="reports/figures/fig4_chemistry_cards.png" alt="Example chemistry cards for convergent chemistry and same-fold different-chemistry cases" width="900"/>
 </p>
 
-<p align="center"><em>Example microenvironment used in the cryptic-chemistry / case-study narrative.</em></p>
+<p align="center"><em>Figure 4. Prediction + mechanistic evidence — the thing a scientist would actually use.</em></p>
 
-Chemistry cards (`cat-search`) surface predicted family, pattern, cofactors, and evidence neighbors — inspectable retrieval, not a black-box EC classifier.
+Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_studies/).
+
+---
+
+## Catalytic microenvironment
+
+| Component | Detail |
+|-----------|--------|
+| Source | [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) + [RCSB PDB](https://www.rcsb.org/) |
+| Catalytic residues | Annotated chemistry-participating amino acids |
+| Geometry | Pairwise distances among catalytic atoms |
+| Cofactors / metals | HETATM within ~8 Å of the catalytic core |
+| First shell | Neighboring residues around the site |
+| Labels | `chemistry_family` + `mechanistic_pattern` |
+
+<p align="center">
+  <img src="reports/figures/fig_microenv_zn_activation.png" alt="Zn-activation catalytic microenvironment" width="640"/>
+</p>
+
+<p align="center"><em>Zn-activation reaction center — a local chemical machine, not a fold fingerprint.</em></p>
 
 ---
 
@@ -195,36 +222,37 @@ Chemistry cards (`cat-search`) surface predicted family, pattern, cofactors, and
 
 | Item | Detail |
 |------|--------|
-| Source | [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) catalytic site annotations |
-| Structures | [RCSB PDB](https://www.rcsb.org/) (cached under `data/raw/mcsa_cache/pdb`) |
+| Source | [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) |
+| Structures | [RCSB PDB](https://www.rcsb.org/) (`data/raw/mcsa_cache/pdb`) |
 | Enzymes / sites | **959** |
 | With site cofactors / metals | **324** |
-| Chemistry families | 7 (`chemistry_family`) |
-| Demo atlas | Synthetic harness for CI / offline (`cat-download --demo`) |
+| Convergent-chemistry audit subset | **26** (hard; informative, not large) |
+| Demo atlas | CI harness (`cat-download --demo`) |
 
 ---
 
 ## Limitations
 
-- M-CSA is curated and relatively small; results are not a proteome-scale claim
-- Labels are ontology families / patterns, not full mechanistic schemes or kinetic constants
-- Foldseek / MMseqs transfer quality depends on binary availability and hit-table thresholds
-- Composition-only ablation still carries some chemistry-residue signal — not a pure negative control
-- Deep models are intentionally deferred; this repo establishes the engineered baseline first
+- M-CSA is curated and relatively small; not a proteome-scale claim
+- Convergent-chemistry audit is **n=26** — biologically on-point, statistically modest
+- Labels are ontology families / patterns, not full kinetic schemes
+- Chemistry cards cite pattern / cofactor / fold-span evidence — not yet full mechanistic feature checklists
+- Deep models deferred until they beat this engineered baseline on hard holdouts
 
 ---
 
 ## Future directions
 
+- **Mechanistic explanations on every retrieval** — shared catalytic features (metal-binding Asp/Glu geometry, NAD environment, nucleophile position, acid/base arrangement): chemistry classifier → mechanistic reasoning system
 - Richer cofactor geometry (coordination shell, not just presence)
-- Larger remote-homology bins (more enzymes with true BLAST/MMseqs %id coverage)
-- Learned representations **only if** they beat this baseline on fold-disconnected holdouts
+- Broader remote-homology coverage for identity bins
+- Learned embeddings **only if** framed as: can they improve a mechanistic baseline on fold-disconnected / convergent holdouts?
 
-Done in v0.2: cofactor/metal enrichment · chemistry ontology · live MMseqs2/Foldseek baselines · fold-disconnected hero · sequence-identity stratification · fold–chemistry audits · three case studies · chemistry cards.
+Done in v0.2: cofactor enrichment · ontology · MMseqs/Foldseek · identity stratification · fold–chemistry audits · convergent case study · evidence cards · Recall@5 / MRR.
 
 ---
 
-## How to reproduce (detail)
+## How to reproduce
 
 ```bash
 git clone https://github.com/snowe36/catalyst_atlas.git
@@ -241,22 +269,18 @@ Real curated sites:
 cat-download --public --n-enzymes 1000
 cat-enrich
 cat-sites && cat-embed && cat-eval
-cat-cases
-cat-search --enzyme-id MCSA00001
+cat-cases && cat-figures
+cat-search --enzyme-id MCSA00176
 ```
-
-On Apple Silicon with a Rosetta (x86_64) Python, eval wraps MMseqs/Foldseek with `arch -arm64` so those binaries do not hang under translation.
 
 | Artifact | Path |
 |----------|------|
-| Hero (fold-disconnected) | `reports/figures/fig_fold_disconnected_chemistry.png` |
-| Leakage bar chart | `reports/figures/fig_chemistry_leakage.png` |
-| Identity stratification | `reports/figures/fig_chemistry_by_seq_identity.png` |
-| Fold–chemistry audits | `reports/figures/fig_fold_chemistry_audits.png` |
-| Microenvironment gallery | `reports/figures/fig_microenv_gallery.png` |
-| Case studies | `reports/case_studies/` |
+| Fig 1 pipeline | `reports/figures/fig1_pipeline.png` |
+| Fig 2 identity stratification | `reports/figures/fig_chemistry_by_seq_identity.png` |
+| Fig 3 fold–chemistry audits | `reports/figures/fig_fold_chemistry_audits.png` |
+| Fig 4 chemistry cards | `reports/figures/fig4_chemistry_cards.png` |
+| Convergent case study | `reports/hero_convergent_chemistry.md` |
 | Metrics | `data/processed/eval_metrics.json` |
-| Hit caches | `data/processed/mmseqs_hits.tsv`, `foldseek_hits.tsv` |
 | Results writeup | `reports/mcsa_v02_n959_results.md` |
 
 ---
@@ -267,7 +291,7 @@ On Apple Silicon with a Rosetta (x86_64) Python, eval wraps MMseqs/Foldseek with
 src/catalyst_atlas/   package (data, site, featurize, models, eval, explain, viz)
 scripts/              reproduce.sh
 data/raw|processed/   M-CSA / PDB cache + features, embeddings, metrics
-reports/figures/      leakage + microenvironment figures
+reports/figures/      Fig 1–4 + microenvironment panels
 reports/case_studies/ three scientific narratives
 tests/                unit + pipeline smoke tests
 .github/workflows/    CI (ruff + pytest)
@@ -277,7 +301,7 @@ tests/                unit + pipeline smoke tests
 
 ## Acknowledgments
 
-Catalytic site annotations from [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) (EMBL-EBI / Thornton group). Structures from the [RCSB PDB](https://www.rcsb.org/). Cite M-CSA and RCSB when redistributing regenerated tables or figures.
+Catalytic site annotations from [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) (EMBL-EBI / Thornton group). Structures from the [RCSB PDB](https://www.rcsb.org/).
 
 ---
 

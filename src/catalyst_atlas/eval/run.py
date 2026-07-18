@@ -34,7 +34,7 @@ from catalyst_atlas.eval.external_baselines import (
     retrieval_chemistry_transfer,
 )
 from catalyst_atlas.eval.labels import chemistry_label_col
-from catalyst_atlas.eval.metrics import accuracy, macro_f1, recall_at_k_chemistry
+from catalyst_atlas.eval.metrics import accuracy, macro_f1, mrr_chemistry, recall_at_k_chemistry
 from catalyst_atlas.eval.splits import make_splits
 from catalyst_atlas.paths import FIGURES, PROCESSED, ensure_dirs
 
@@ -170,6 +170,7 @@ def evaluate_split(
         "n_train": int(len(train_idx)),
         "n_test": int(len(test_idx)),
         "recall_at_k_chemistry": recall_at_k_chemistry(neigh_lists, y_test, k=k),
+        "mrr_chemistry": mrr_chemistry(neigh_lists, y_test),
         "methods": {},
     }
     for name, preds in methods.items():

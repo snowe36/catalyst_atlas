@@ -4,6 +4,8 @@ Chemistry-aware reaction-center representations on curated M-CSA sites.
 
 **Claim:** catalytic microenvironment representations retain chemistry signal when evolutionary retrieval loses access to homologous neighborhoods — not “we beat Foldseek.”
 
+**Hero story:** finding convergent chemistry across unrelated folds ([`hero_convergent_chemistry.md`](hero_convergent_chemistry.md)) — thermolysin ↔ neprilysin, remote sequence, distinct CATH topologies, shared Zn hydrolysis.
+
 ## What changed vs residue-only baseline
 
 | Upgrade | Detail |
@@ -30,11 +32,11 @@ When fold neighborhoods are held out, sequence and structure retrieval collapse;
 
 ## Full chemistry accuracy (`chemistry_family`)
 
-| Split | Catalyst | MMseqs2 | Foldseek | Seq (k-mer NN) | Fold (CATH) |
+| Split | Catalyst | MMseqs2 | Foldseek | Recall@5 | MRR |
 |---|---:|---:|---:|---:|---:|
-| random | 0.422 | 0.286 | **0.500** | 0.255 | 0.411 |
-| seq_cluster | 0.425 | 0.226 | **0.489** | 0.210 | 0.441 |
-| fold_cluster | **0.369** | 0.037 | 0.132 | 0.202 | 0.000 |
+| random | 0.422 | 0.286 | **0.500** | 0.724 | 0.535 |
+| seq_cluster | 0.425 | 0.226 | **0.489** | 0.720 | 0.512 |
+| fold_cluster | **0.369** | 0.037 | 0.132 | **0.672** | **0.458** |
 
 Foldseek dominating on random / seq_cluster is expected. Leaving that visible validates the evaluation framework.
 
@@ -58,11 +60,13 @@ Expected pattern: MMseqs2 wins near homologs and collapses when evolutionary sig
 | Audit | n | Catalyst | Foldseek | MMseqs2 | CATH fold |
 |---|--:|---:|---:|---:|---:|
 | Same fold, different chemistry (false-transfer trap) | 131 | 0.39 | **0.51** | 0.26 | 0.34 |
-| Different fold, same chemistry (convergent recovery) | 26 | **0.50** | 0.04 | 0.08 | 0.00 |
+| Different fold, same chemistry (convergent recovery) | **26** | **0.50** | 0.04 | 0.08 | 0.00 |
 
 ![fold chemistry audits](figures/fig_fold_chemistry_audits.png)
 
 Foldseek still helps when a shared fold is present. Catalyst is the method that recovers chemistry across folds.
+
+A small but biologically informative convergent-chemistry subset (**n=26**) demonstrates the intended use case. The quantitative backbone remains the fold-disconnected benchmark (larger test n); do not oversell the absolute size of the convergent audit.
 
 ## Case studies
 

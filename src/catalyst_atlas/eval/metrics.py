@@ -36,6 +36,19 @@ def recall_at_k_chemistry(
     return hits / max(len(y_true), 1)
 
 
+def mrr_chemistry(neighbor_labels: list[list[str]], y_true: list[str]) -> float:
+    """Mean reciprocal rank of the first neighbor with matching chemistry."""
+    ranks: list[float] = []
+    for labs, truth in zip(neighbor_labels, y_true, strict=True):
+        rr = 0.0
+        for i, lab in enumerate(labs, start=1):
+            if lab == truth:
+                rr = 1.0 / i
+                break
+        ranks.append(rr)
+    return float(np.mean(ranks)) if ranks else 0.0
+
+
 def stratified_accuracy(
     y_true: list[str],
     y_pred: list[str],
