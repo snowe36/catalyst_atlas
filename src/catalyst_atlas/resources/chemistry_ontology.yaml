@@ -1,0 +1,146 @@
+# Chemically meaningful labels — not EC digit spam.
+# chemistry_class = broad bond / reaction logic
+# catalytic_pattern = how the site does chemistry
+# cofactor_tags = required chemical machinery
+
+chemistry_classes:
+  - oxidoreductase
+  - transferase
+  - hydrolase
+  - lyase
+  - isomerase
+  - ligase
+
+catalytic_patterns:
+  - Ser-His-Asp
+  - Cys-His-Asn
+  - Zn-activation
+  - DxxxHxxxD-metal
+  - NAD-hydride
+  - PLP-imine
+  - ATP-Mg
+  - Thr-Asp-His
+  - Glu-Glu-acidbase
+  - heme-redox
+
+cofactor_tags:
+  - none
+  - NAD
+  - NADP
+  - Zn
+  - Fe
+  - Mg
+  - Mn
+  - PLP
+  - ATP
+  - heme
+  - FAD
+
+# Seed mechanistic families used to build the high-confidence demo atlas.
+# Each family shares a catalytic microenvironment template; members are
+# assigned different sequence/fold clusters so cryptic analogs exist.
+families:
+  - id: serine_hydrolase
+    chemistry_class: hydrolase
+    catalytic_pattern: Ser-His-Asp
+    cofactor_tags: [none]
+    ec_prefix: "3.4"
+    substrate_class: peptide_ester
+    catalytic_residues: [S, H, D]
+    motif: SxxK  # illustrative
+
+  - id: cysteine_hydrolase
+    chemistry_class: hydrolase
+    catalytic_pattern: Cys-His-Asn
+    cofactor_tags: [none]
+    ec_prefix: "3.4"
+    substrate_class: peptide
+    catalytic_residues: [C, H, N]
+
+  - id: zn_hydrolase
+    chemistry_class: hydrolase
+    catalytic_pattern: Zn-activation
+    cofactor_tags: [Zn]
+    ec_prefix: "3.4"
+    substrate_class: peptide
+    catalytic_residues: [H, H, E]
+    metal: Zn
+
+  - id: nad_oxidoreductase
+    chemistry_class: oxidoreductase
+    catalytic_pattern: NAD-hydride
+    cofactor_tags: [NAD]
+    ec_prefix: "1.1"
+    substrate_class: alcohol
+    catalytic_residues: [D, H, D]
+    metal: null
+
+  - id: dxxhxhxd_metal_redox
+    chemistry_class: oxidoreductase
+    catalytic_pattern: DxxxHxxxD-metal
+    cofactor_tags: [NAD, Fe]
+    ec_prefix: "1.1"
+    substrate_class: alcohol
+    catalytic_residues: [D, H, D]
+    metal: Fe
+    motif: DxxxHxxxD
+
+  - id: plp_transferase
+    chemistry_class: transferase
+    catalytic_pattern: PLP-imine
+    cofactor_tags: [PLP]
+    ec_prefix: "2.6"
+    substrate_class: amino_acid
+    catalytic_residues: [K, D, Y]
+
+  - id: kinase_atp
+    chemistry_class: transferase
+    catalytic_pattern: ATP-Mg
+    cofactor_tags: [ATP, Mg]
+    ec_prefix: "2.7"
+    substrate_class: small_molecule
+    catalytic_residues: [D, D, K]
+    metal: Mg
+
+  - id: aspartate_lyase
+    chemistry_class: lyase
+    catalytic_pattern: Thr-Asp-His
+    cofactor_tags: [none]
+    ec_prefix: "4.3"
+    substrate_class: amino_acid
+    catalytic_residues: [T, D, H]
+
+  - id: enolase_acidbase
+    chemistry_class: lyase
+    catalytic_pattern: Glu-Glu-acidbase
+    cofactor_tags: [Mg]
+    ec_prefix: "4.2"
+    substrate_class: sugar
+    catalytic_residues: [E, E, K]
+    metal: Mg
+
+  - id: heme_redox
+    chemistry_class: oxidoreductase
+    catalytic_pattern: heme-redox
+    cofactor_tags: [heme, Fe]
+    ec_prefix: "1.14"
+    substrate_class: aromatic
+    catalytic_residues: [C, H, F]
+    metal: Fe
+
+  - id: ligase_atp
+    chemistry_class: ligase
+    catalytic_pattern: ATP-Mg
+    cofactor_tags: [ATP, Mg]
+    ec_prefix: "6.3"
+    substrate_class: amino_acid
+    catalytic_residues: [D, E, K]
+    metal: Mg
+
+  - id: isomerase_acidbase
+    chemistry_class: isomerase
+    catalytic_pattern: Glu-Glu-acidbase
+    cofactor_tags: [none]
+    ec_prefix: "5.3"
+    substrate_class: sugar
+    catalytic_residues: [E, H, D]
