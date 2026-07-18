@@ -14,18 +14,54 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
 
+from catalyst_atlas.data.cluster import pairwise_kmer_similarity_matrix
 from catalyst_atlas.eval.baselines import (
     cluster_transfer,
     knn_transfer,
     same_cluster_neighbor_transfer,
+    sequence_similarity_transfer,
 )
 from catalyst_atlas.eval.metrics import accuracy, macro_f1, recall_at_k_chemistry
 from catalyst_atlas.eval.splits import make_splits
-from catalyst_atlas.models.embed import load_index
 from catalyst_atlas.paths import FIGURES, PROCESSED, ensure_dirs
 
 logger = logging.getLogger(__name__)
+
+
+def _load_unscaled_features() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+    """Load persisted unscaled feature matrices for leakage-aware eval."""
+    full_meta_path = PROCESSED / "features_full_meta.parquet"
+    full_path = PROCESSED / "features_full.npy"
+    comp_path = PROCESSED / "features_composition.npy"
+    comp_meta_path = PROCESSED / "features_composition_meta.parquet"
+    if not full_path.exists() or not full_meta_path.exists():
+        raise FileNotFoundError(
+            f"Missing unscaled features under {PROCESSED}; run cat-embed (or cat-sites + featurize) first"
+        )
+    meta = pd.read_parquet(full_meta_path).reset_index(drop=True)
+    X_full = np.load(full_path)
+    if not comp_path.exists():
+        raise FileNotFoundError(f"Missing {comp_path}; run cat-embed first")
+    X_comp = np.load(comp_path)
+    if comp_meta_path.exists():
+        comp_meta = pd.read_parquet(comp_meta_path).reset_index(drop=True)
+        if not meta["enzyme_id"].equals(comp_meta["enzyme_id"]):
+            comp_map = {eid: i for i, eid in enumerate(comp_meta["enzyme_id"])}
+            order = [comp_map[eid] for eid in meta["enzyme_id"]]
+            X_comp = X_comp[order]
+    return meta, X_full, X_comp
+
+
+def _scale_train_test(
+    X: np.ndarray, train_idx: np.ndarray, test_idx: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Fit StandardScaler on train only; transform train and test."""
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X[train_idx])
+    X_test = scaler.transform(X[test_idx])
+    return X_train, X_test
 
 
 def _neighbor_label_lists(
@@ -48,15 +84,20 @@ def evaluate_split(
     train_idx: np.ndarray,
     test_idx: np.ndarray,
     k: int = 5,
+    seq_sim: np.ndarray | None = None,
 ) -> dict[str, Any]:
     y_train = meta.iloc[train_idx]["chemistry_class"].tolist()
     y_test = meta.iloc[test_idx]["chemistry_class"].tolist()
 
+    X_full_train, X_full_test = _scale_train_test(X_full, train_idx, test_idx)
+    X_comp_train, X_comp_test = _scale_train_test(X_comp, train_idx, test_idx)
+
     methods = {
-        "catalyst_microenvironment": knn_transfer(
-            X_full[train_idx], y_train, X_full[test_idx], k=k
+        "catalyst_microenvironment": knn_transfer(X_full_train, y_train, X_full_test, k=k),
+        "composition_only": knn_transfer(X_comp_train, y_train, X_comp_test, k=k),
+        "sequence_similarity_transfer": sequence_similarity_transfer(
+            meta, train_idx, test_idx, sim=seq_sim
         ),
-        "composition_only": knn_transfer(X_comp[train_idx], y_train, X_comp[test_idx], k=k),
         "sequence_cluster_transfer": same_cluster_neighbor_transfer(
             meta, train_idx, test_idx, "seq_cluster"
         ),
@@ -67,7 +108,7 @@ def evaluate_split(
         "fold_cluster_prior": cluster_transfer(meta, train_idx, test_idx, "fold_cluster"),
     }
 
-    neigh_lists = _neighbor_label_lists(X_full[train_idx], y_train, X_full[test_idx], k=k)
+    neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
     out: dict[str, Any] = {
         "n_train": int(len(train_idx)),
         "n_test": int(len(test_idx)),
@@ -102,6 +143,7 @@ def _plot_results(results: dict[str, Any]) -> None:
     keep = [
         "catalyst_microenvironment",
         "composition_only",
+        "sequence_similarity_transfer",
         "sequence_cluster_transfer",
         "fold_cluster_transfer",
     ]
@@ -110,8 +152,9 @@ def _plot_results(results: dict[str, Any]) -> None:
         {
             "catalyst_microenvironment": "Catalyst microenvironment",
             "composition_only": "Composition only",
-            "sequence_cluster_transfer": "Sequence cluster (BLAST proxy)",
-            "fold_cluster_transfer": "Fold cluster (Foldseek proxy)",
+            "sequence_similarity_transfer": "Seq similarity (k-mer Jaccard)",
+            "sequence_cluster_transfer": "Seq cluster-lookup",
+            "fold_cluster_transfer": "Fold cluster-lookup (CATH)",
         }
     )
 
@@ -130,24 +173,22 @@ def _plot_results(results: dict[str, Any]) -> None:
 
 def run_eval(k: int = 5, test_size: float = 0.2, seed: int = 7) -> dict[str, Any]:
     ensure_dirs()
-    full = load_index(composition_only=False)
-    comp = load_index(composition_only=True)
-    meta = full.meta.reset_index(drop=True)
-    # Align composition matrix to the same enzyme order.
-    comp_meta = comp.meta.reset_index(drop=True)
-    if not meta["enzyme_id"].equals(comp_meta["enzyme_id"]):
-        comp_map = {eid: i for i, eid in enumerate(comp_meta["enzyme_id"])}
-        order = [comp_map[eid] for eid in meta["enzyme_id"]]
-        X_comp = comp.X[order]
-    else:
-        X_comp = comp.X
+    meta, X_full, X_comp = _load_unscaled_features()
+    seq_sim = None
+    if "sequence" in meta.columns and meta["sequence"].fillna("").str.len().gt(0).any():
+        logger.info("Building k-mer sequence similarity matrix for BLAST-style baseline")
+        seq_sim = pairwise_kmer_similarity_matrix(meta["sequence"].fillna("").tolist())
 
     splits = make_splits(meta, test_size=test_size, seed=seed)
-    results: dict[str, Any] = {"k": k, "splits": {}}
+    results: dict[str, Any] = {
+        "k": k,
+        "scaler": "StandardScaler fit on train split only",
+        "splits": {},
+    }
     for name, (train_idx, test_idx) in splits.items():
         logger.info("Evaluating split=%s (train=%d test=%d)", name, len(train_idx), len(test_idx))
         results["splits"][name] = evaluate_split(
-            meta, full.X, X_comp, train_idx, test_idx, k=k
+            meta, X_full, X_comp, train_idx, test_idx, k=k, seq_sim=seq_sim
         )
 
     # Cryptic-analog diagnostic: test enzymes whose seq_cluster is unseen in train
@@ -162,7 +203,13 @@ def run_eval(k: int = 5, test_size: float = 0.2, seed: int = 7) -> dict[str, Any
     ]
     if cryptic_mask:
         sub = evaluate_split(
-            meta, full.X, X_comp, train_idx, np.array(cryptic_mask), k=k
+            meta,
+            X_full,
+            X_comp,
+            train_idx,
+            np.array(cryptic_mask),
+            k=k,
+            seq_sim=seq_sim,
         )
         results["cryptic_seq_holdout"] = sub
 

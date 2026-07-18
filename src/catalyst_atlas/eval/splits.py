@@ -3,7 +3,7 @@
 Holdouts:
 - random: optimistic
 - seq_cluster: no shared sequence cluster between train/test
-- fold_cluster: no shared fold cluster between train/test (Foldseek-hard)
+- fold_cluster: no shared fold cluster between train/test
 """
 
 from __future__ import annotations

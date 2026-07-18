@@ -1,8 +1,7 @@
 """Download / materialize the high-confidence catalytic atlas.
 
-Public M-CSA-scale curation is the long-term source. For reproducible CI and
-offline work, ``--demo`` builds a label-clean atlas from curated mechanistic
-family templates (see ``resources/chemistry_ontology.yaml``).
+- ``demo=True``: synthetic atlas for CI / offline work
+- ``demo=False``: public M-CSA curated sites + RCSB structures
 """
 
 from __future__ import annotations
@@ -16,22 +15,40 @@ from catalyst_atlas.paths import ensure_dirs
 logger = logging.getLogger(__name__)
 
 
-def download_atlas(demo: bool = True, n_enzymes: int = 800, seed: int = 7) -> Path:
+def download_atlas(
+    demo: bool = True,
+    n_enzymes: int = 800,
+    seed: int = 7,
+) -> Path:
     """Materialize the catalytic atlas under ``data/raw/``.
 
     Parameters
     ----------
     demo:
-        If True (default for v1), generate the high-confidence demo atlas.
-        If False, attempt public curated sources (falls back to demo if unavailable).
+        If True, generate the synthetic high-confidence demo atlas.
+        If False, ingest curated M-CSA entries with real PDB coordinates.
+    n_enzymes:
+        Cap on number of enzymes (demo size, or first N M-CSA ids).
     """
     ensure_dirs()
-    if not demo:
-        logger.warning(
-            "Public M-CSA/UniProt bulk ingest is not wired for unattended CI yet; "
-            "falling back to the high-confidence demo atlas (quality-first)."
+    if demo:
+        df = generate_demo_atlas(n_enzymes=n_enzymes, seed=seed)
+    else:
+        from catalyst_atlas.data.mcsa import build_mcsa_atlas
+
+        logger.info(
+            "Ingesting public M-CSA catalytic sites (n_enzymes=%s) — "
+            "this downloads API JSON, UniProt sequences, and RCSB PDBs",
+            n_enzymes,
         )
-    df = generate_demo_atlas(n_enzymes=n_enzymes, seed=seed)
+        try:
+            df = build_mcsa_atlas(n_enzymes=n_enzymes, seed=seed)
+        except Exception:
+            logger.exception(
+                "M-CSA ingest failed; falling back to synthetic demo atlas"
+            )
+            df = generate_demo_atlas(n_enzymes=n_enzymes, seed=seed)
+
     path = save_raw_atlas(df)
-    logger.info("Wrote %s (%d enzymes)", path, len(df))
+    logger.info("Wrote %s (%d enzymes, source=%s)", path, len(df), df["source"].iloc[0])
     return path

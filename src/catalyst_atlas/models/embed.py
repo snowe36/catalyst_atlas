@@ -36,12 +36,17 @@ class CatalogIndex:
 
 
 def build_index(composition_only: bool = False, n_neighbors: int = 25) -> CatalogIndex:
+    """Build a retrieval index over the full catalog.
+
+    Catalog-wide scaling is fine for search (no held-out claim). Evaluation
+    loads unscaled ``features_*.npy`` and fits scalers on train only.
+    """
     ensure_dirs()
     meta, X, _, _ = build_feature_matrix(composition_only=composition_only, scale=True)
     nn = NearestNeighbors(n_neighbors=min(n_neighbors, len(meta)), metric="euclidean")
     nn.fit(X)
     mode = "composition" if composition_only else "full"
-    # Persist embedding matrix for eval / search.
+    # Persist catalog-scaled embeddings for search / chemistry cards.
     np.save(PROCESSED / f"embedding_{mode}.npy", X)
     meta.to_parquet(PROCESSED / f"embedding_{mode}_meta.parquet", index=False)
     logger.info("Built %s catalytic index over %d enzymes", mode, len(meta))

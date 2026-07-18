@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 
 from catalyst_atlas.data.download import download_atlas
-from catalyst_atlas.paths import FIGURES, PROCESSED
 from catalyst_atlas.site.extract import run_site_extraction
 from catalyst_atlas.viz.structure_figures import (
     generate_structure_figures,
@@ -52,15 +51,15 @@ def test_render_microenvironment_writes_png(tmp_path: Path):
     assert path.stat().st_size > 1000
 
 
-def test_generate_structure_figures_pipeline(tmp_path: Path, monkeypatch):
+def test_generate_structure_figures_pipeline(isolated_data_dirs: Path):
     download_atlas(demo=True, n_enzymes=120, seed=7)
     run_site_extraction()
-    # Point figure output at an isolated directory; inputs still use package paths.
-    out_dir = tmp_path / "figures"
-    # Seed a hero case so the cryptic figure targets a known enzyme.
-    micro = pd.read_parquet(PROCESSED / "microenvironments.parquet")
+
+    import catalyst_atlas.paths as paths
+
+    micro = pd.read_parquet(paths.PROCESSED / "microenvironments.parquet")
     hero_id = str(micro.iloc[0]["enzyme_id"])
-    (PROCESSED / "hero_case.json").write_text(
+    (paths.PROCESSED / "hero_case.json").write_text(
         json.dumps(
             {
                 "enzyme_id": hero_id,
@@ -71,12 +70,11 @@ def test_generate_structure_figures_pipeline(tmp_path: Path, monkeypatch):
             }
         )
     )
-    paths = generate_structure_figures(out_dir=out_dir, dpi=72)
-    assert paths
-    names = {p.name for p in paths}
+    out_dir = isolated_data_dirs / "reports" / "figures"
+    paths_out = generate_structure_figures(out_dir=out_dir, dpi=72)
+    assert paths_out
+    names = {p.name for p in paths_out}
     assert "fig_microenv_hero_cryptic.png" in names
     assert any(n.startswith("fig_microenv_") and n.endswith(".png") for n in names)
-    for p in paths:
+    for p in paths_out:
         assert p.exists() and p.stat().st_size > 1000
-    # Package FIGURES dir should remain usable for regenerate docs.
-    assert FIGURES.exists()

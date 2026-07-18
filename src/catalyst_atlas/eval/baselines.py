@@ -9,6 +9,11 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 
+from catalyst_atlas.data.cluster import (
+    nearest_neighbor_label_transfer,
+    pairwise_kmer_similarity_matrix,
+)
+
 
 def _vote_label(labels: list[str], weights: list[float] | None = None) -> str:
     if not labels:
@@ -46,11 +51,11 @@ def cluster_transfer(
     cluster_col: str,
     label_col: str = "chemistry_class",
 ) -> list[str]:
-    """Transfer chemistry from the most common label in the nearest train cluster.
+    """Transfer chemistry from the most common label in a shared train cluster.
 
-    Used as a BLAST / Foldseek *proxy* when external tools are not installed:
-    - seq_cluster ≈ sequence-neighborhood transfer
-    - fold_cluster ≈ fold-neighborhood transfer
+    v1 placeholder for real BLAST / Foldseek transfer (not yet wired):
+    - seq_cluster ≈ sequence-neighborhood cluster-lookup
+    - fold_cluster ≈ fold-neighborhood cluster-lookup
     """
     train = meta.iloc[train_idx]
     cluster_to_label: dict[Any, str] = {}
@@ -79,9 +84,9 @@ def same_cluster_neighbor_transfer(
 ) -> list[str]:
     """If a test enzyme shares a cluster with train, transfer that cluster's chemistry.
 
-    For unseen clusters (the hard leakage case), prediction is 'unknown' → wrong,
-    which makes the baseline honestly weak — matching BLAST/Foldseek failure on
-    cryptic analogs.
+    For unseen clusters (the hard leakage case), prediction is '__unseen__' → wrong.
+    On synthetic demos this is a cluster-lookup placeholder. On M-CSA, seq/fold
+    clusters come from real k-mer neighborhoods / CATH topologies.
     """
     train = meta.iloc[train_idx]
     cluster_to_label = {
@@ -92,3 +97,23 @@ def same_cluster_neighbor_transfer(
         cid = row[cluster_col]
         preds.append(cluster_to_label.get(cid, "__unseen__"))
     return preds
+
+
+def sequence_similarity_transfer(
+    meta: pd.DataFrame,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    label_col: str = "chemistry_class",
+    sim: np.ndarray | None = None,
+) -> list[str]:
+    """Transfer chemistry from the nearest train sequence by k-mer Jaccard.
+
+    A lightweight BLAST-style baseline that does not require mmseqs2/BLAST
+    binaries. Uses precomputed ``sim`` when provided.
+    """
+    if "sequence" not in meta.columns:
+        return ["__unseen__"] * len(test_idx)
+    if sim is None:
+        sim = pairwise_kmer_similarity_matrix(meta["sequence"].fillna("").tolist())
+    labels = meta[label_col].tolist()
+    return nearest_neighbor_label_transfer(sim, train_idx, test_idx, labels)

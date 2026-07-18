@@ -79,9 +79,21 @@ def _geometry_histogram(pairwise_json: str, n_bins: int = 8) -> np.ndarray:
     dists = np.array([p["distance"] for p in pairs], dtype=float)
     if dists.size == 0:
         return np.zeros(n_bins + 3, dtype=float)
-    hist, _ = np.histogram(dists, bins=n_bins, range=(2.0, 12.0), density=True)
-    stats = np.array([dists.mean(), dists.std() if dists.size > 1 else 0.0, dists.min()])
-    return np.concatenate([hist.astype(float), stats])
+    hist, _ = np.histogram(dists, bins=n_bins, range=(2.0, 12.0), density=False)
+    hist = hist.astype(float)
+    total = hist.sum()
+    if total > 0:
+        hist /= total
+    stats = np.array(
+        [
+            float(dists.mean()),
+            float(dists.std()) if dists.size > 1 else 0.0,
+            float(dists.min()),
+        ],
+        dtype=float,
+    )
+    out = np.concatenate([hist, stats])
+    return np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
 
 
 def _cofactor_onehot(cofactor_names: str) -> np.ndarray:
@@ -122,7 +134,8 @@ def featurize_row(row: pd.Series, composition_only: bool = False) -> np.ndarray:
         ],
         dtype=float,
     )
-    return np.concatenate([cat_comp, shell_comp, cat_proxy, shell_proxy, geom, cof, lig, sizes])
+    vec = np.concatenate([cat_comp, shell_comp, cat_proxy, shell_proxy, geom, cof, lig, sizes])
+    return np.nan_to_num(vec, nan=0.0, posinf=0.0, neginf=0.0)
 
 
 FEATURE_NAMES_HINT = (
@@ -135,8 +148,14 @@ FEATURE_NAMES_HINT = (
 def build_feature_matrix(
     micro_df: pd.DataFrame | None = None,
     composition_only: bool = False,
-    scale: bool = True,
+    scale: bool = False,
 ) -> tuple[pd.DataFrame, np.ndarray, list[str], StandardScaler | None]:
+    """Build microenvironment features.
+
+    Persisted ``features_*.npy`` matrices are always **unscaled** so evaluation
+    can fit ``StandardScaler`` on the train split only. Pass ``scale=True`` to
+    also return a full-catalog scaled copy (used by the retrieval index).
+    """
     ensure_dirs()
     if micro_df is None:
         path = PROCESSED / "microenvironments.parquet"
@@ -144,12 +163,10 @@ def build_feature_matrix(
             raise FileNotFoundError(f"Missing {path}; run cat-sites first")
         micro_df = pd.read_parquet(path)
 
-    X = np.vstack([featurize_row(row, composition_only=composition_only) for _, row in micro_df.iterrows()])
+    X_raw = np.vstack(
+        [featurize_row(row, composition_only=composition_only) for _, row in micro_df.iterrows()]
+    )
     ids = micro_df["enzyme_id"].tolist()
-    scaler = None
-    if scale:
-        scaler = StandardScaler()
-        X = scaler.fit_transform(X)
 
     meta = micro_df[
         [
@@ -172,12 +189,19 @@ def build_feature_matrix(
     ].copy()
 
     suffix = "composition" if composition_only else "full"
-    np.save(PROCESSED / f"features_{suffix}.npy", X)
+    np.save(PROCESSED / f"features_{suffix}.npy", X_raw)
     meta.to_parquet(PROCESSED / f"features_{suffix}_meta.parquet", index=False)
+
+    scaler = None
+    X = X_raw
+    if scale:
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X_raw)
+
     logger.info(
-        "Built %s feature matrix %s for %d enzymes (%s)",
+        "Built %s feature matrix %s for %d enzymes (%s; persisted unscaled)",
         suffix,
-        X.shape,
+        X_raw.shape,
         len(ids),
         FEATURE_NAMES_HINT if not composition_only else "composition only",
     )
@@ -185,6 +209,6 @@ def build_feature_matrix(
 
 
 def run_featurize() -> dict[str, Any]:
-    meta, X, ids, _ = build_feature_matrix(composition_only=False, scale=True)
-    build_feature_matrix(composition_only=True, scale=True)
+    meta, X, ids, _ = build_feature_matrix(composition_only=False, scale=False)
+    build_feature_matrix(composition_only=True, scale=False)
     return {"n_enzymes": len(ids), "n_features": int(X.shape[1]), "meta": meta}

@@ -5,11 +5,12 @@ mechanistic family templates so that:
 
 - members of a family share catalytic geometry / chemistry
 - sequence clusters are *not* aligned with chemistry (cryptic analogs)
-- some fold clusters mix chemistries (hard negatives for Foldseek-style transfer)
+- some fold clusters mix chemistries (hard negatives for fold cluster-lookup)
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -27,6 +28,13 @@ AA = list("ACDEFGHIKLMNPQRSTVWY")
 AA_INDEX = {a: i for i, a in enumerate(AA)}
 
 
+def _stable_int(text: str, *, salt: int = 0, mod: int | None = None) -> int:
+    """Process-stable hash (unlike Python's salted ``hash()``)."""
+    digest = hashlib.blake2b(f"{salt}:{text}".encode(), digest_size=8).digest()
+    value = int.from_bytes(digest, "little")
+    return value % mod if mod is not None else value
+
+
 def _random_sequence(rng: np.random.Generator, length: int = 280) -> str:
     return "".join(rng.choice(AA, size=length))
 
@@ -38,8 +46,8 @@ def _catalytic_coords(
     noise: float = 0.35,
 ) -> list[dict[str, Any]]:
     """Place catalytic residues in a family-specific geometry with small noise."""
-    # Deterministic family anchor so same-family sites stay similar.
-    seed = abs(hash(family_id)) % (2**31)
+    # Deterministic family anchor so same-family sites stay similar across processes.
+    seed = _stable_int(family_id, mod=2**31)
     anchor_rng = np.random.default_rng(seed)
     anchors = anchor_rng.normal(scale=2.5, size=(len(residues), 3))
     # Enforce chemically plausible pairwise spacing (~3–8 Å).
@@ -149,17 +157,22 @@ def generate_demo_atlas(
             ligands = _cofactor_site(fam, catalytic, rng)
 
             # Cryptic analogs: same chemistry, deliberately distant sequence cluster.
-            if rng.random() < cryptic_fraction:
+            is_cryptic = bool(rng.random() < cryptic_fraction)
+            if is_cryptic:
                 seq_cluster = int(rng.integers(0, n_seq_clusters))
             else:
                 # Mild chemistry–sequence coupling for some members (realistic leakage).
-                seq_cluster = (hash(fam["chemistry_class"]) + enzyme_idx) % n_seq_clusters
+                seq_cluster = (
+                    _stable_int(fam["chemistry_class"], salt=seed) + enzyme_idx
+                ) % n_seq_clusters
 
             # Fold traps: occasionally put different chemistries in the same fold.
             if rng.random() < 0.25:
                 fold_cluster = int(rng.integers(0, n_fold_clusters))
             else:
-                fold_cluster = (hash(fam["catalytic_pattern"]) + enzyme_idx // 3) % n_fold_clusters
+                fold_cluster = (
+                    _stable_int(fam["catalytic_pattern"], salt=seed) + enzyme_idx // 3
+                ) % n_fold_clusters
 
             seq = _random_sequence(rng, length=int(rng.integers(220, 360)))
             # Plant catalytic residues into the sequence at annotated positions.
@@ -187,7 +200,7 @@ def generate_demo_atlas(
                     "site_residues_json": json.dumps(site_residues),
                     "ligands_json": json.dumps(ligands),
                     "source": "demo_high_confidence",
-                    "is_cryptic_seed": bool(rng.random() < cryptic_fraction),
+                    "is_cryptic_seed": is_cryptic,
                 }
             )
             enzyme_idx += 1

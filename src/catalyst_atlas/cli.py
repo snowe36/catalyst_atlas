@@ -29,9 +29,14 @@ def download_main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--public",
         action="store_true",
-        help="Attempt public curated sources (falls back to demo if unavailable)",
+        help="Ingest curated M-CSA sites + RCSB structures (falls back to demo on failure)",
     )
-    parser.add_argument("--n-enzymes", type=int, default=800)
+    parser.add_argument(
+        "--n-enzymes",
+        type=int,
+        default=800,
+        help="Demo size, or max M-CSA entries when using --public",
+    )
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -85,11 +90,14 @@ def eval_main(argv: list[str] | None = None) -> int:
     results = run_eval(k=args.k, test_size=args.test_size, seed=args.seed)
     # Print a compact summary for the terminal / README scraping.
     for split, payload in results["splits"].items():
-        cat = payload["methods"]["catalyst_microenvironment"]["accuracy"]
-        seq = payload["methods"]["sequence_cluster_transfer"]["accuracy"]
-        fold = payload["methods"]["fold_cluster_transfer"]["accuracy"]
+        methods = payload["methods"]
+        cat = methods["catalyst_microenvironment"]["accuracy"]
+        seq_sim = methods.get("sequence_similarity_transfer", {}).get("accuracy", float("nan"))
+        seq = methods["sequence_cluster_transfer"]["accuracy"]
+        fold = methods["fold_cluster_transfer"]["accuracy"]
         print(
-            f"{split:14s}  catalyst={cat:.3f}  seq_proxy={seq:.3f}  fold_proxy={fold:.3f}"
+            f"{split:14s}  catalyst={cat:.3f}  "
+            f"seq_sim={seq_sim:.3f}  seq_lookup={seq:.3f}  fold_cath={fold:.3f}"
         )
     return 0
 

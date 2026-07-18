@@ -1,28 +1,30 @@
 # Cryptic chemistry case
 
-**Query enzyme:** `CAT00028`
-**Sequence identity context:** ~18–22% to nearest labeled neighbor (demo)
+> Synthetic demo atlas — validates the chemistry-card pipeline, not a real cryptic-enzyme claim.
+
+**Query enzyme:** `CAT00362`
+**Sequence context:** synthetic demo (cluster-lookup placeholders, not real BLAST %id)
 
 | Method | Inferred chemistry |
 |---|---|
-| BLAST / sequence-cluster proxy | `oxidoreductase` |
-| Foldseek / fold-cluster proxy | `lyase` |
-| **Catalyst Atlas** | `hydrolase` |
+| Seq cluster-lookup (BLAST placeholder) | `oxidoreductase` |
+| Fold cluster-lookup (Foldseek placeholder) | `hydrolase` |
+| **Catalyst Atlas** | `transferase` |
 
 ### Chemistry card
-- **Reaction chemistry:** hydrolase
-- **Catalytic pattern:** Cys-His-Asn
-- **Cofactor / metal:** none
+- **Reaction chemistry:** transferase
+- **Catalytic pattern:** PLP-imine
+- **Cofactor / metal:** PLP
 - **Confidence:** 1.00
 
 ### Evidence (top catalytic neighbors)
-- `CAT00021` — hydrolase / Cys-His-Asn (distance 2.241; seq_cluster=28)
-- `CAT00019` — hydrolase / Cys-His-Asn (distance 3.034; seq_cluster=26)
-- `CAT00017` — hydrolase / Cys-His-Asn (distance 3.840; seq_cluster=24)
-- `CAT00018` — hydrolase / Cys-His-Asn (distance 3.872; seq_cluster=25)
-- `CAT00025` — hydrolase / Cys-His-Asn (distance 4.348; seq_cluster=32)
+- `CAT00373` — transferase / PLP-imine (distance 2.370; seq_cluster=49)
+- `CAT00367` — transferase / PLP-imine (distance 2.799; seq_cluster=43)
+- `CAT00383` — transferase / PLP-imine (distance 2.840; seq_cluster=6)
+- `CAT00391` — transferase / PLP-imine (distance 3.045; seq_cluster=14)
+- `CAT00365` — transferase / PLP-imine (distance 3.259; seq_cluster=41)
 
-**Ground truth:** hydrolase / Cys-His-Asn
+**Ground truth:** transferase / PLP-imine
 **Catalyst Atlas correct:** yes
 
 > Representation is the **catalytic microenvironment** (chemistry residues, cofactors, catalytic geometry, ligand contacts) — not whole-protein fold similarity or pocket shape alone.
