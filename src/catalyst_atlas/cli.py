@@ -110,6 +110,12 @@ def eval_main(argv: list[str] | None = None) -> int:
         help="Skip MMseqs2/Foldseek retrieval baselines",
     )
     parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument(
+        "--label-col",
+        type=str,
+        default=None,
+        help="Label column (default: chemistry_family; try ec_class / ec3 after expand)",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
@@ -122,6 +128,7 @@ def eval_main(argv: list[str] | None = None) -> int:
         seed=args.seed,
         run_external=not args.no_external,
         threads=args.threads,
+        label_col=args.label_col,
     )
     # Print a compact summary for the terminal / README scraping.
     for split, payload in results["splits"].items():
@@ -139,6 +146,14 @@ def eval_main(argv: list[str] | None = None) -> int:
             f"esm={esm:.3f}  hybrid={hybrid:.3f}  fusion={fusion:.3f}  "
             f"learned={learned:.3f}  mmseqs={mm:.3f}  foldseek={fs:.3f}"
         )
+    ann = results.get("annotation_style_audits") or {}
+    if ann:
+        print("annotation_style_audits (random):")
+        for key, block in ann.items():
+            n = block.get("n", 0)
+            methods = block.get("methods") or {}
+            bits = "  ".join(f"{m}={v['accuracy']:.3f}" for m, v in methods.items())
+            print(f"  {key:40s} n={n:<4}  {bits}")
     return 0
 
 

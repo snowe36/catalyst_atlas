@@ -31,9 +31,10 @@ Hold out fold neighborhoods and ask whether chemistry transfer still works.
 |--------|----------------------:|
 | MMseqs2 | 0.04 |
 | Foldseek | 0.13 |
-| **Catalyst Atlas** | **0.37** |
+| **Catalyst Atlas** (engineered) | **0.37** |
+| **ESM-2** (frozen) | **0.38** |
 
-Chemistry signal remains after evolutionary neighborhoods are removed. That gap **is** the finding.
+Chemistry signal remains after evolutionary neighborhoods are removed. Frozen sequence foundation-model embeddings currently lead the fold-disconnected transfer number; engineered microenvironments remain competitive and fully interpretable.
 
 <p align="center">
   <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: Catalyst 0.37 vs Foldseek 0.13 vs MMseqs 0.04" width="720"/>
@@ -111,12 +112,12 @@ The artifact is **prediction + why** — chemistry family, mechanistic pattern, 
 | Chemistry Recall@5 (fold_cluster) | **0.67** |
 | Chemistry MRR (fold_cluster) | **0.46** |
 | MMseqs2 at nearest-train identity **<20%** | **0.00** |
-| Different-fold / same-chemistry | Catalyst **0.50** vs Foldseek **0.04** (**n=26**) |
+| Different-fold / same-chemistry | Catalyst **0.50** vs Foldseek **0.04** — **informative audit, n=26** |
 | Same-fold / different-chemistry | Foldseek **0.51** vs Catalyst 0.39 (**n=131**) — fold info is legitimately useful |
 
 > **Key observation:** when enzymes share chemistry but not fold, structure retrieval fails while reaction-center representations retain signal.
 
-A small but biologically informative convergent-chemistry subset (**n=26**) demonstrates the intended use case. The fold-disconnected benchmark (n=461 test) carries the quantitative claim.
+The fold-disconnected benchmark (**n=461** test) carries the quantitative claim. The convergent-chemistry subset (**n=26**) is a biologically informative hard audit — not the primary win metric. Do not oversell it.
 
 Full writeup: [`reports/mcsa_v02_n959_results.md`](reports/mcsa_v02_n959_results.md).
 
@@ -241,24 +242,35 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 
 ---
 
-## Future directions / v0.3
+## Versions / thesis
 
-**v0.3 thesis:** learn a representation that organizes proteins by *catalytic chemistry*, not evolutionary history — without turning this into “another ESM benchmark.”
+| Version | Claim |
+|---------|--------|
+| v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
+| v0.3 | Frozen ESM-2 improves architecture-level transfer (~0.38); GNN alone does not; annotation/side fusion fails under fold shift |
+| v0.4 | Prove chemistry (not annotation style) with negative controls; expand beyond M-CSA |
+
+### v0.3 — learned catalytic language (bake-off)
 
 | Step | Command | Role |
 |------|---------|------|
-| Reaction-center graphs | `cat-graphs` | Explicit catalytic-machine graphs (nodes/edges) |
-| Frozen ESM-2 control | `pip install -e ".[gpu]" && cat-esm` | Does a PLM already know chemistry? |
-| Learned RC encoder | `cat-train-encoder` / `bash scripts/runpod_train.sh` | Small GNN + contrastive hard negatives |
-| Hard eval | `cat-eval` | Scores ESM / learned **only if** embeddings exist |
+| Reaction-center graphs | `cat-graphs` | Explicit catalytic-machine graphs |
+| Frozen ESM-2 | `cat-esm` | Sequence foundation-model control |
+| ESM + GNN fusion | `cat-train-encoder --fusion-esm --no-early-stop --epochs 200` | Are sequence + local structure complementary? |
+| Hard eval | `cat-eval` | Scores optional embeddings when present |
 
-Primary metrics remain **`fold_cluster`**, different-fold/same-chemistry, and same-fold/different-chemistry — not random-split accuracy.
+Primary metric: **`fold_cluster`**. Convergent audit reports **n** explicitly. Plan: [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
 
-Out of scope: ESM fine-tuning, AlphaFold embeddings, whole-protein GNNs. Plan: [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
+### v0.4 — rigor, controls, and scale
 
-Also planned: richer mechanistic explanations on every retrieval (shared catalytic feature checklists).
+| Step | Command | Role |
+|------|---------|------|
+| Annotation-style controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy centers |
+| Expanded atlas | `cat-download --public --expanded --n-extra 200` | UniProt ACT_SITE + EC labels; AFDB as `structure_source=alphafold` |
 
-Done in v0.2: cofactor enrichment · ontology · MMseqs/Foldseek · identity stratification · fold–chemistry audits · convergent case study · evidence cards · Recall@5 / MRR.
+Plan: [`docs/plans/v0.4_rigor_and_scale.md`](docs/plans/v0.4_rigor_and_scale.md).
+
+Out of scope for now: ESM fine-tuning, more engineered fusion variants, optimizing random-split accuracy.
 
 ---
 
@@ -300,7 +312,7 @@ cat-search --enzyme-id MCSA00176
 ```text
 src/catalyst_atlas/   package (data, site, featurize, models, eval, explain, viz)
 scripts/              reproduce.sh, embed_esm.py, runpod_train.sh
-docs/plans/           v0.3 learn-catalytic-language plan
+docs/plans/           v0.3 bake-off + v0.4 rigor/scale plans
 data/raw|processed/   M-CSA / PDB cache + features, graphs, embeddings, metrics
 artifacts/            trained encoder checkpoints (gitignored)
 reports/figures/      Fig 1–4 + microenvironment panels

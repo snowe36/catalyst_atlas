@@ -579,7 +579,11 @@ def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
             ax.text(min(v + 0.02, 0.98), yi, f"{v:.2f}", va="center", fontsize=10)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-    fig.suptitle("Fold–chemistry relationship audits (random split)", fontsize=13, y=1.02)
+    fig.suptitle(
+        "Fold–chemistry audits (random split; convergent is an informative n-limited audit)",
+        fontsize=12,
+        y=1.02,
+    )
     fig.tight_layout()
     fig.savefig(FIGURES / "fig_fold_chemistry_audits.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
@@ -591,12 +595,15 @@ def run_eval(
     seed: int = 7,
     run_external: bool = True,
     threads: int = 4,
+    label_col: str | None = None,
 ) -> dict[str, Any]:
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
     meta = _enrich_meta_for_audits(meta)
     X_esm, X_learned, X_fusion, X_esm_gnn = _load_optional_learned_embeddings(meta)
-    label_col = chemistry_label_col(meta)
+    label_col = label_col or chemistry_label_col(meta)
+    if label_col not in meta.columns:
+        raise ValueError(f"label_col={label_col!r} not in meta columns")
     seq_sim = None
     if "sequence" in meta.columns and meta["sequence"].fillna("").str.len().gt(0).any():
         logger.info("Building k-mer sequence similarity matrix for sequence retrieval baseline")
