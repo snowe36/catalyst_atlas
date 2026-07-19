@@ -41,6 +41,31 @@ from catalyst_atlas.paths import FIGURES, PROCESSED, ensure_dirs
 logger = logging.getLogger(__name__)
 
 
+def _align_embedding(
+    meta: pd.DataFrame, emb_path, meta_path
+) -> np.ndarray | None:
+    """Load an embedding matrix aligned to ``meta`` enzyme_id order, or None."""
+    if not emb_path.exists():
+        return None
+    X = np.load(emb_path)
+    if meta_path.exists():
+        emb_meta = pd.read_parquet(meta_path).reset_index(drop=True)
+        if not meta["enzyme_id"].astype(str).equals(emb_meta["enzyme_id"].astype(str)):
+            emb_map = {str(eid): i for i, eid in enumerate(emb_meta["enzyme_id"])}
+            try:
+                order = [emb_map[str(eid)] for eid in meta["enzyme_id"]]
+            except KeyError:
+                logger.warning("Could not align %s to feature meta; skipping", emb_path.name)
+                return None
+            X = X[order]
+    if len(X) != len(meta):
+        logger.warning(
+            "Embedding %s length %d != meta %d; skipping", emb_path.name, len(X), len(meta)
+        )
+        return None
+    return X
+
+
 def _load_unscaled_features() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
     """Load persisted unscaled feature matrices for leakage-aware eval."""
     full_meta_path = PROCESSED / "features_full_meta.parquet"
@@ -63,6 +88,27 @@ def _load_unscaled_features() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
             order = [comp_map[eid] for eid in meta["enzyme_id"]]
             X_comp = X_comp[order]
     return meta, X_full, X_comp
+
+
+def _load_optional_learned_embeddings(
+    meta: pd.DataFrame,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """Frozen ESM + learned reaction-center embeddings if present on disk."""
+    X_esm = _align_embedding(
+        meta,
+        PROCESSED / "embedding_esm.npy",
+        PROCESSED / "embedding_esm_meta.parquet",
+    )
+    X_learned = _align_embedding(
+        meta,
+        PROCESSED / "embedding_learned.npy",
+        PROCESSED / "embedding_learned_meta.parquet",
+    )
+    if X_esm is not None:
+        logger.info("Loaded ESM control embeddings %s", X_esm.shape)
+    if X_learned is not None:
+        logger.info("Loaded learned catalytic embeddings %s", X_learned.shape)
+    return X_esm, X_learned
 
 
 def _scale_train_test(
@@ -99,6 +145,8 @@ def _method_predictions(
     label_col: str | None = None,
     mmseqs_hits: pd.DataFrame | None = None,
     foldseek_hits: pd.DataFrame | None = None,
+    X_esm: np.ndarray | None = None,
+    X_learned: np.ndarray | None = None,
 ) -> tuple[list[str], dict[str, list[str]], np.ndarray, np.ndarray]:
     """Return y_test, method→preds, and scaled full train/test matrices."""
     label_col = label_col or chemistry_label_col(meta)
@@ -135,6 +183,15 @@ def _method_predictions(
         methods["foldseek_transfer"] = retrieval_chemistry_transfer(
             foldseek_hits, meta, train_idx, test_idx, label_col=label_col
         )
+    # Optional GPU / learned tracks (present only when artifacts exist).
+    if X_esm is not None:
+        esm_tr, esm_te = _scale_train_test(X_esm, train_idx, test_idx)
+        methods["esm2_transfer"] = knn_transfer(esm_tr, y_train, esm_te, k=k)
+    if X_learned is not None:
+        # Already L2-normalized chemistry space — do not re-scale.
+        methods["learned_catalytic_encoder"] = knn_transfer(
+            X_learned[train_idx], y_train, X_learned[test_idx], k=k
+        )
     return y_test, methods, X_full_train, X_full_test
 
 
@@ -149,6 +206,8 @@ def evaluate_split(
     label_col: str | None = None,
     mmseqs_hits: pd.DataFrame | None = None,
     foldseek_hits: pd.DataFrame | None = None,
+    X_esm: np.ndarray | None = None,
+    X_learned: np.ndarray | None = None,
 ) -> dict[str, Any]:
     label_col = label_col or chemistry_label_col(meta)
     y_train = meta.iloc[train_idx][label_col].tolist()
@@ -163,6 +222,8 @@ def evaluate_split(
         label_col=label_col,
         mmseqs_hits=mmseqs_hits,
         foldseek_hits=foldseek_hits,
+        X_esm=X_esm,
+        X_learned=X_learned,
     )
 
     neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
@@ -200,6 +261,8 @@ def _plot_results(results: dict[str, Any]) -> None:
     # Focus plot on the distinctive comparison.
     keep = [
         "catalyst_microenvironment",
+        "learned_catalytic_encoder",
+        "esm2_transfer",
         "mmseqs_transfer",
         "foldseek_transfer",
         "sequence_similarity_transfer",
@@ -354,6 +417,8 @@ def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
     ]
     method_order = [
         ("catalyst_microenvironment", "Catalyst", "#0E7490"),
+        ("learned_catalytic_encoder", "Learned RC", "#B45309"),
+        ("esm2_transfer", "ESM-2", "#7C3AED"),
         ("foldseek_transfer", "Foldseek", "#6B7280"),
         ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
         ("fold_cluster_transfer", "CATH fold", "#D1D5DB"),
@@ -400,6 +465,7 @@ def run_eval(
 ) -> dict[str, Any]:
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
+    X_esm, X_learned = _load_optional_learned_embeddings(meta)
     label_col = chemistry_label_col(meta)
     seq_sim = None
     if "sequence" in meta.columns and meta["sequence"].fillna("").str.len().gt(0).any():
@@ -421,6 +487,10 @@ def run_eval(
         "label_col": label_col,
         "scaler": "StandardScaler fit on train split only",
         "external_tools": external_info.get("tools", {}),
+        "optional_embeddings": {
+            "esm2": X_esm is not None,
+            "learned_catalytic_encoder": X_learned is not None,
+        },
         "splits": {},
     }
     for name, (train_idx, test_idx) in splits.items():
@@ -436,6 +506,8 @@ def run_eval(
             label_col=label_col,
             mmseqs_hits=mmseqs_hits,
             foldseek_hits=foldseek_hits,
+            X_esm=X_esm,
+            X_learned=X_learned,
         )
 
     # Cryptic-analog diagnostic: test enzymes whose seq_cluster is unseen in train
@@ -460,6 +532,8 @@ def run_eval(
             label_col=label_col,
             mmseqs_hits=mmseqs_hits,
             foldseek_hits=foldseek_hits,
+            X_esm=X_esm,
+            X_learned=X_learned,
         )
         results["cryptic_seq_holdout"] = sub
 
@@ -476,6 +550,8 @@ def run_eval(
         label_col=label_col,
         mmseqs_hits=mmseqs_hits,
         foldseek_hits=foldseek_hits,
+        X_esm=X_esm,
+        X_learned=X_learned,
     )
     nearest_id, id_source = nearest_train_sequence_identity(
         meta,
@@ -488,6 +564,8 @@ def run_eval(
         name: preds_rand[name]
         for name in (
             "catalyst_microenvironment",
+            "learned_catalytic_encoder",
+            "esm2_transfer",
             "mmseqs_transfer",
             "foldseek_transfer",
             "fold_cluster_transfer",
