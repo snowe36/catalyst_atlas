@@ -275,7 +275,7 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=3e-3)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--embed-dim", type=int, default=64)
     parser.add_argument("--hidden-dim", type=int, default=64)
@@ -283,14 +283,20 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--val-folds",
         type=int,
-        default=4,
+        default=8,
         help="Number of fold_clusters held out from train for validation",
     )
     parser.add_argument(
         "--patience",
         type=int,
-        default=30,
+        default=40,
         help="Early-stop patience on validation chemistry accuracy",
+    )
+    parser.add_argument(
+        "--min-epochs",
+        type=int,
+        default=40,
+        help="Do not early-stop before this many epochs",
     )
     parser.add_argument(
         "--lambda-cls",
@@ -327,6 +333,7 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
             device=args.device,
             n_val_folds=args.val_folds,
             patience=args.patience,
+            min_epochs=args.min_epochs,
             lambda_cls=args.lambda_cls,
             fusion=args.fusion,
             temperature=args.temperature,

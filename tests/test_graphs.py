@@ -101,13 +101,16 @@ def test_pairs_miner_hard_negatives():
 
     batch = sample_contrastive_batch(rows, np.random.default_rng(1), batch_size=4)
     assert len(batch) == 4
+    # Both chemistries should appear (negatives required for SupCon).
+    chems = {rows[i]["chemistry_family"] for i in batch}
+    assert len(chems) >= 2
     # Hydrolysis must contribute from both folds A and B when both present.
     hydro_folds = {
         rows[i]["fold_cluster"]
         for i in batch
         if rows[i]["chemistry_family"] == "hydrolysis"
     }
-    assert hydro_folds == {"A", "B"} or len(hydro_folds) >= 1
+    assert hydro_folds == {"A", "B"}
 
 
 def test_max_first_shell_cap():

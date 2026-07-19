@@ -53,13 +53,16 @@ cat-graphs --max-first-shell "${MAX_SHELL}" -v
 
 EPOCHS="${EPOCHS:-200}"
 BATCH="${BATCH:-32}"
+LR="${LR:-3e-3}"
 COMMON=(
   --split fold_cluster
   --epochs "${EPOCHS}"
   --batch-size "${BATCH}"
+  --lr "${LR}"
   --seed 7
-  --patience "${PATIENCE:-30}"
-  --val-folds "${VAL_FOLDS:-4}"
+  --patience "${PATIENCE:-40}"
+  --val-folds "${VAL_FOLDS:-8}"
+  --min-epochs "${MIN_EPOCHS:-40}"
   --lambda-cls "${LAMBDA_CLS:-0.3}"
   -v
 )

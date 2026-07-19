@@ -78,10 +78,9 @@ def _composition_hard_negatives(
     """Nearest-composition enzymes with different chemistry."""
     chem = _chem(meta_rows[anchor])
     wrong = [j for j in range(len(meta_rows)) if j != anchor and _chem(meta_rows[j]) != chem]
-    if not wrong or composition is None:
+    if not wrong:
         return []
     a = composition[anchor]
-    # Sample a pool then rank by L2 composition distance (cheap for n≈1k).
     rng.shuffle(wrong)
     pool = wrong[: max(pool_size, n)]
     dists = np.linalg.norm(composition[pool] - a[None, :], axis=1)
@@ -96,11 +95,13 @@ def sample_contrastive_batch(
     composition: np.ndarray | None = None,
     n_comp_hard: int = 2,
     min_per_family: int = 2,
+    max_per_family: int = 4,
 ) -> list[int]:
     """Sample a class-balanced batch that forces convergent co-occurrence.
 
     For each sampled chemistry family that spans ≥2 fold clusters, the batch
     includes members from at least two distinct folds (required, not preferred).
+    Caps per-family count so the batch retains many negatives for SupCon.
     Also injects composition-similar wrong-chemistry hard negatives.
     """
     by_chem: dict[str, list[int]] = defaultdict(list)
@@ -112,46 +113,55 @@ def sample_contrastive_batch(
         by_chem[c].append(i)
         by_chem_fold[c][_fold(row)].append(i)
 
-    # Families with enough members to form positives.
     eligible = [c for c, idxs in by_chem.items() if len(idxs) >= min_per_family]
     if not eligible:
-        # Degenerate: just sample randomly.
         n = len(meta_rows)
         return rng.choice(n, size=min(batch_size, n), replace=False).tolist()
 
+    # Keep ≥4 chemistries in-batch when available so SupCon has real negatives.
+    n_fam_target = min(len(eligible), max(4, batch_size // max_per_family))
+    fam_cap = max(min_per_family, int(np.ceil(batch_size / n_fam_target)))
+    fam_cap = min(fam_cap, max_per_family)
+
     selected: list[int] = []
     seen: set[int] = set()
-    rng.shuffle(eligible)
+    per_chem: dict[str, int] = defaultdict(int)
 
-    def _add(idx: int) -> None:
-        if idx not in seen and len(selected) < batch_size:
-            selected.append(idx)
-            seen.add(idx)
+    def _add(idx: int, chem: str | None = None, cap: int | None = None) -> bool:
+        if idx in seen or len(selected) >= batch_size:
+            return False
+        c = chem if chem is not None else _chem(meta_rows[idx])
+        limit = fam_cap if cap is None else cap
+        if per_chem[c] >= limit:
+            return False
+        selected.append(idx)
+        seen.add(idx)
+        per_chem[c] += 1
+        return True
 
-    # Fill with chemistry families, forcing multi-fold when available.
-    for chem in eligible:
+    families = list(eligible)
+    rng.shuffle(families)
+    families = families[:n_fam_target]
+
+    for chem in families:
         if len(selected) >= batch_size:
             break
         fold_map = by_chem_fold[chem]
         folds = [f for f, idxs in fold_map.items() if idxs]
+        taken = 0
         if len(folds) >= 2:
             rng.shuffle(folds)
-            # Require ≥2 distinct folds.
             for f in folds[:2]:
                 pick = int(rng.choice(fold_map[f]))
-                _add(pick)
-            # Extra members from remaining folds / same folds.
-            rest = [i for i in by_chem[chem] if i not in seen]
-            rng.shuffle(rest)
-            for i in rest:
-                if len(selected) >= batch_size:
-                    break
-                _add(i)
-        else:
-            rest = list(by_chem[chem])
-            rng.shuffle(rest)
-            for i in rest[:min_per_family]:
-                _add(i)
+                if _add(pick, chem):
+                    taken += 1
+        rest = [i for i in by_chem[chem] if i not in seen]
+        rng.shuffle(rest)
+        for i in rest:
+            if taken >= fam_cap or len(selected) >= batch_size:
+                break
+            if _add(i, chem):
+                taken += 1
 
     # Composition-aware hard negatives (wrong chemistry, similar catalytic AA).
     if composition is not None and selected and n_comp_hard > 0:
@@ -163,18 +173,26 @@ def sample_contrastive_batch(
             for j in _composition_hard_negatives(
                 a, meta_rows, composition, rng, n=n_comp_hard
             ):
-                _add(j)
-                if len(selected) >= batch_size:
-                    break
+                # Soft cap +1 so hard negs can enter without collapsing diversity.
+                if _add(j, cap=fam_cap + 1):
+                    pass
 
-    # Top up with random indices if under-filled.
-    if len(selected) < batch_size:
-        remaining = [i for i in range(len(meta_rows)) if i not in seen]
-        rng.shuffle(remaining)
+    # Top up, gradually relaxing the per-family cap if needed.
+    remaining = [i for i in range(len(meta_rows)) if i not in seen]
+    rng.shuffle(remaining)
+    relax = fam_cap
+    while len(selected) < batch_size and remaining:
+        progress = False
         for i in remaining:
-            _add(i)
+            if _add(i, cap=relax):
+                progress = True
             if len(selected) >= batch_size:
                 break
+        if not progress:
+            relax += 1
+            if relax > batch_size:
+                break
+        remaining = [i for i in remaining if i not in seen]
 
     rng.shuffle(selected)
-    return selected
+    return selected[:batch_size]

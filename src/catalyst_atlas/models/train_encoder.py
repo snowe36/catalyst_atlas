@@ -91,20 +91,28 @@ def _batched_supcon_loss(
 def _fold_val_split(
     meta: pd.DataFrame,
     train_idx: np.ndarray,
-    n_val_folds: int = 4,
+    n_val_folds: int = 8,
     seed: int = 7,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Hold out a few fold_clusters from the training split for validation."""
+    """Hold out fold_clusters from the training split for fold-disconnected val."""
     rng = np.random.default_rng(seed)
     folds = meta.iloc[train_idx]["fold_cluster"].astype(str).unique().tolist()
     rng.shuffle(folds)
-    n_hold = max(1, min(int(n_val_folds), max(1, len(folds) // 5)))
-    val_folds = set(folds[:n_hold])
+    # Hold enough folds for a usable val set (~10–20% of train enzymes).
+    n_hold = max(1, min(int(n_val_folds), max(1, len(folds) // 4)))
+    # Grow hold-out until val has ≥40 enzymes or we run out of folds.
+    val_folds: set[str] = set()
+    for f in folds:
+        val_folds.add(f)
+        is_val = meta.iloc[train_idx]["fold_cluster"].astype(str).isin(val_folds).to_numpy()
+        if int(is_val.sum()) >= 40 and len(val_folds) >= n_hold:
+            break
+        if len(val_folds) >= max(n_hold, len(folds) // 3):
+            break
     is_val = meta.iloc[train_idx]["fold_cluster"].astype(str).isin(val_folds).to_numpy()
     fit_idx = train_idx[~is_val]
     val_idx = train_idx[is_val]
     if len(fit_idx) == 0 or len(val_idx) == 0:
-        # Fallback: random 15% of train indices.
         perm = rng.permutation(len(train_idx))
         n_val = max(1, int(0.15 * len(train_idx)))
         val_idx = train_idx[perm[:n_val]]
@@ -162,7 +170,7 @@ def train_reaction_center_encoder(
     split: str = "fold_cluster",
     epochs: int = 200,
     batch_size: int = 32,
-    lr: float = 1e-3,
+    lr: float = 3e-3,
     seed: int = 7,
     embed_dim: int = 64,
     hidden_dim: int = 64,
@@ -170,10 +178,11 @@ def train_reaction_center_encoder(
     device: str | None = None,
     temperature: float = 0.1,
     lambda_cls: float = 0.3,
-    patience: int = 30,
-    n_val_folds: int = 4,
+    patience: int = 40,
+    n_val_folds: int = 8,
     fusion: bool = False,
     steps_per_epoch: int | None = None,
+    min_epochs: int = 40,
 ) -> dict[str, Any]:
     """Train on one leakage-aware split's train set; encode full catalog."""
     torch = require_torch()
@@ -271,7 +280,8 @@ def train_reaction_center_encoder(
     opt = torch.optim.Adam(params, lr=lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
 
-    n_steps = steps_per_epoch or max(1, len(fit_idx) // max(1, batch_size))
+    # Enough contrastive updates per epoch to see most of the fit set several times.
+    n_steps = steps_per_epoch or max(40, (2 * len(fit_idx)) // max(1, batch_size))
     rng = np.random.default_rng(seed)
 
     logger.info(
@@ -396,8 +406,13 @@ def train_reaction_center_encoder(
                 best_epoch + 1,
                 scheduler.get_last_lr()[0],
             )
-        if stale >= patience:
-            logger.info("Early stop at epoch %d (patience=%d)", epoch + 1, patience)
+        if epoch + 1 >= min_epochs and stale >= patience:
+            logger.info(
+                "Early stop at epoch %d (patience=%d, min_epochs=%d)",
+                epoch + 1,
+                patience,
+                min_epochs,
+            )
             break
 
     if best_state is not None:
