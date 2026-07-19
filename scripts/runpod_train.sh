@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
 # Train the reaction-center encoder on RunPod (or any CUDA box).
 #
-# Suggested pod: RTX 4090 / A40 community, PyTorch + CUDA template.
-# Expected runtime: minutes–low hours on n≈959.
-#
-# Prerequisites on the pod:
-#   - this repo checked out
-#   - data/processed/features_full_meta.parquet (from cat-embed)
-#   - data/processed/microenvironments.parquet (from cat-sites)
-#
-#   bash scripts/runpod_train.sh
-#   EPOCHS=200 bash scripts/runpod_train.sh --split fold_cluster --fusion
+#   EPOCHS=250 bash scripts/runpod_train.sh --fusion-side
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 python -m pip install -U pip
-# gpu extra pins numpy<2 for torch compatibility
 python -m pip install -e ".[gpu]"
 
 python - <<'PY'
@@ -29,13 +19,14 @@ if [[ ! -f data/processed/features_full_meta.parquet ]]; then
   exit 1
 fi
 
-# Parse --fusion / --max-first-shell from passthrough; rebuild lean graphs by default.
 DO_FUSION=0
+DO_FUSION_SIDE=0
 MAX_SHELL="${MAX_FIRST_SHELL:-4}"
 PASS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --fusion) DO_FUSION=1; shift ;;
+    --fusion-side) DO_FUSION_SIDE=1; shift ;;
     --max-first-shell)
       MAX_SHELL="$2"
       shift 2
@@ -51,7 +42,7 @@ done
 echo "Building lean reaction-center graphs (max_first_shell=${MAX_SHELL})..."
 cat-graphs --max-first-shell "${MAX_SHELL}" -v
 
-EPOCHS="${EPOCHS:-200}"
+EPOCHS="${EPOCHS:-250}"
 BATCH="${BATCH:-32}"
 LR="${LR:-3e-3}"
 COMMON=(
@@ -60,9 +51,9 @@ COMMON=(
   --batch-size "${BATCH}"
   --lr "${LR}"
   --seed 7
-  --patience "${PATIENCE:-40}"
-  --val-folds "${VAL_FOLDS:-8}"
-  --min-epochs "${MIN_EPOCHS:-40}"
+  --patience "${PATIENCE:-50}"
+  --val-folds "${VAL_FOLDS:-12}"
+  --min-epochs "${MIN_EPOCHS:-100}"
   --lambda-cls "${LAMBDA_CLS:-0.3}"
   -v
 )
@@ -74,8 +65,15 @@ else
   cat-train-encoder "${COMMON[@]}"
 fi
 
-if [[ "${DO_FUSION}" -eq 1 ]]; then
-  echo "Training fusion encoder (GNN + engineered side vector)..."
+if [[ "${DO_FUSION_SIDE}" -eq 1 ]]; then
+  echo "Training side-fusion encoder (GNN + metal/cofactor side vector)..."
+  if [[ ${#PASS[@]} -gt 0 ]]; then
+    cat-train-encoder "${COMMON[@]}" --fusion-side "${PASS[@]}"
+  else
+    cat-train-encoder "${COMMON[@]}" --fusion-side
+  fi
+elif [[ "${DO_FUSION}" -eq 1 ]]; then
+  echo "Training fusion encoder (GNN + features_full)..."
   if [[ ${#PASS[@]} -gt 0 ]]; then
     cat-train-encoder "${COMMON[@]}" --fusion "${PASS[@]}"
   else
@@ -93,7 +91,4 @@ ls -lh \
   artifacts/train_fusion_summary.json \
   2>/dev/null || true
 echo
-echo "Next on this box (or sync artifacts back and run locally):"
-echo "  cat-eval --no-external   # or full cat-eval with MMseqs/Foldseek"
-echo "Optional control:"
-echo "  cat-esm && cat-eval"
+echo "Next: cat-eval --no-external"
