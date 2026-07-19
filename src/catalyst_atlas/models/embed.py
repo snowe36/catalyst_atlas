@@ -1,8 +1,12 @@
 """Engineered catalytic embedding + retrieval-augmented chemistry readout.
 
-v1 default: standardized microenvironment features as the embedding space,
-with kNN chemistry transfer. Deep / ESM models are deferred until they earn
-their place on hard holdouts.
+Default: standardized microenvironment features as the embedding space,
+with kNN chemistry transfer.
+
+v0.3 optional tracks (install ``.[gpu]``):
+- ``cat-graphs`` + ``cat-train-encoder`` → learned reaction-center encoder
+- ``cat-esm`` → frozen ESM-2 control
+Both plug into ``cat-eval`` only when their ``embedding_*.npy`` artifacts exist.
 """
 
 from __future__ import annotations

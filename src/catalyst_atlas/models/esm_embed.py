@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from catalyst_atlas.models.device import get_device, require_torch
+from catalyst_atlas.models.device import get_device, require_torch, tensor_to_numpy
 from catalyst_atlas.paths import PROCESSED, ensure_dirs
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def embed_sequences_esm(
             for i, seq in enumerate(chunk):
                 # skip BOS/EOS — tokens 1..L
                 L = min(len(seq or "A"), max_length)
-                emb = reps[i, 1 : L + 1].mean(dim=0).cpu().numpy()
+                emb = tensor_to_numpy(reps[i, 1 : L + 1].mean(dim=0))
                 embeddings.append(emb)
     else:
         assert tokenizer is not None
@@ -98,7 +98,7 @@ def embed_sequences_esm(
             # mean pool excluding padding
             summed = (hidden * mask).sum(dim=1)
             denom = mask.sum(dim=1).clamp(min=1)
-            emb = (summed / denom).cpu().numpy()
+            emb = tensor_to_numpy(summed / denom)
             for row in emb:
                 embeddings.append(row)
 

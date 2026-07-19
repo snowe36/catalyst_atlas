@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 
 from catalyst_atlas.featurize.graphs import EDGE_DIM, NODE_DIM
-from catalyst_atlas.models.device import require_torch
+from catalyst_atlas.models.device import require_torch, tensor_to_numpy
 
 
 def build_mpnn(
@@ -118,6 +118,5 @@ class ReactionCenterEncoder:
         with torch.no_grad():
             for g in graphs:
                 emb = self.encode_graph(g, device=device)
-                # Avoid Tensor.numpy() — some torch wheels ship without numpy bridge.
-                out.append(np.asarray(emb.detach().cpu().tolist(), dtype=np.float32))
+                out.append(tensor_to_numpy(emb))
         return np.stack(out, axis=0)
