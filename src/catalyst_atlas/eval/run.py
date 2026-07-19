@@ -25,6 +25,7 @@ from catalyst_atlas.eval.baselines import (
 )
 from catalyst_atlas.eval.diagnostics import (
     IDENTITY_BINS,
+    annotation_style_audits,
     fold_chemistry_audits,
     nearest_train_sequence_identity,
     sequence_identity_stratified_transfer,
@@ -338,6 +339,8 @@ def _plot_results(results: dict[str, Any]) -> None:
         _plot_identity_stratified(results["sequence_identity_stratified"])
     if results.get("fold_chemistry_audits"):
         _plot_fold_chemistry_audits(results["fold_chemistry_audits"])
+    if results.get("annotation_style_audits"):
+        _plot_annotation_style_audits(results["annotation_style_audits"])
 
 
 def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
@@ -443,6 +446,76 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
     plt.close(fig)
 
 
+def _enrich_meta_for_audits(meta: pd.DataFrame) -> pd.DataFrame:
+    """Attach catalytic_aas / cofactor_names from microenvironments when missing."""
+    out = meta.copy()
+    micro_path = PROCESSED / "microenvironments.parquet"
+    if not micro_path.exists():
+        return out
+    micro = pd.read_parquet(micro_path)
+    cols = [c for c in ("catalytic_aas", "cofactor_names", "first_shell_aas") if c in micro.columns]
+    if not cols or "enzyme_id" not in micro.columns:
+        return out
+    m = micro[["enzyme_id", *cols]].drop_duplicates("enzyme_id")
+    out["enzyme_id"] = out["enzyme_id"].astype(str)
+    m["enzyme_id"] = m["enzyme_id"].astype(str)
+    merged = out.merge(m, on="enzyme_id", how="left", suffixes=("", "_micro"))
+    for c in cols:
+        if c not in out.columns and c in merged.columns:
+            out[c] = merged[c]
+        elif f"{c}_micro" in merged.columns:
+            out[c] = out[c].fillna(merged[f"{c}_micro"]) if c in out.columns else merged[c]
+    return out
+
+
+def _plot_annotation_style_audits(audits: dict[str, Any]) -> None:
+    """Bar summary of annotation-style negative controls."""
+    ensure_dirs()
+    rows = []
+    for key, block in audits.items():
+        n = int(block.get("n") or 0)
+        methods = block.get("methods") or {}
+        for mkey, scores in methods.items():
+            rows.append(
+                {
+                    "control": key,
+                    "method": mkey,
+                    "accuracy": float(scores["accuracy"]),
+                    "n": n,
+                }
+            )
+    if not rows:
+        return
+    df = pd.DataFrame(rows)
+    labels = {
+        "same_residues_different_chemistry": "Same residues,\ndiff chemistry",
+        "same_cofactor_different_chemistry": "Same cofactor,\ndiff chemistry",
+        "shuffled_first_shell": "Shuffled\nfirst shell",
+        "decoy_reaction_centers": "Decoy\nreaction centers",
+    }
+    df["control_label"] = df["control"].map(labels).fillna(df["control"])
+    sns.set_theme(style="whitegrid", context="talk")
+    fig, ax = plt.subplots(figsize=(10.5, 4.8))
+    sns.barplot(data=df, x="control_label", y="accuracy", hue="method", ax=ax)
+    ax.set_ylim(0, 1.05)
+    ax.set_xlabel("")
+    ax.set_ylabel("Chemistry accuracy")
+    ax.set_title("Annotation-style negative controls (random-split test)")
+    n_note = "  ·  ".join(
+        f"{labels.get(k, k).replace(chr(10), ' ')} n={int((audits.get(k) or {}).get('n') or 0)}"
+        for k in labels
+        if k in audits
+    )
+    fig.text(0.02, 0.02, n_note, fontsize=8, color="#374151")
+    chance = (audits.get("decoy_reaction_centers") or {}).get("chance_majority")
+    if chance is not None:
+        ax.axhline(float(chance), color="#9CA3AF", ls="--", lw=1, label=f"chance={chance:.2f}")
+    ax.legend(title="", loc="upper right", fontsize=8)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.savefig(FIGURES / "fig_annotation_style_controls.png", dpi=180)
+    plt.close(fig)
+
+
 def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
     """Two-panel: same-fold traps vs different-fold chemistry recovery."""
     panels = [
@@ -510,6 +583,7 @@ def run_eval(
 ) -> dict[str, Any]:
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
+    meta = _enrich_meta_for_audits(meta)
     X_esm, X_learned, X_fusion, X_esm_gnn = _load_optional_learned_embeddings(meta)
     label_col = chemistry_label_col(meta)
     seq_sim = None
@@ -642,10 +716,58 @@ def run_eval(
         focus_preds,
         label_col=label_col,
     )
+    y_train_rand = meta.iloc[rand_train][label_col].astype(str).tolist()
+    results["annotation_style_audits"] = annotation_style_audits(
+        meta,
+        rand_train,
+        rand_test,
+        focus_preds,
+        X_full=X_full,
+        y_train=y_train_rand,
+        y_test=y_rand,
+        label_col=label_col,
+        k=k,
+        seed=seed,
+    )
+    # Also report annotation controls under fold holdout (harder regime).
+    fold_train, fold_test = splits["fold_cluster"]
+    y_fold_te, preds_fold, _, _ = _method_predictions(
+        meta,
+        X_full,
+        X_comp,
+        fold_train,
+        fold_test,
+        k=k,
+        seq_sim=seq_sim,
+        label_col=label_col,
+        mmseqs_hits=mmseqs_hits,
+        foldseek_hits=foldseek_hits,
+        X_esm=X_esm,
+        X_learned=X_learned,
+        X_fusion=X_fusion,
+        X_esm_gnn=X_esm_gnn,
+    )
+    fold_focus = {n: preds_fold[n] for n in focus_preds if n in preds_fold}
+    results["annotation_style_audits_fold_cluster"] = annotation_style_audits(
+        meta,
+        fold_train,
+        fold_test,
+        fold_focus,
+        X_full=X_full,
+        y_train=meta.iloc[fold_train][label_col].astype(str).tolist(),
+        y_test=y_fold_te,
+        label_col=label_col,
+        k=k,
+        seed=seed,
+    )
     logger.info(
         "Identity-stratified bins (%s): %s",
         id_source,
         identity_block.get("bin_counts"),
+    )
+    logger.info(
+        "Annotation-style controls (random): %s",
+        {k: v.get("n") for k, v in results["annotation_style_audits"].items()},
     )
 
     out_path = PROCESSED / "eval_metrics.json"
