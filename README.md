@@ -31,13 +31,14 @@ Hold out fold neighborhoods and ask whether chemistry transfer still works.
 |--------|----------------------:|
 | MMseqs2 | 0.04 |
 | Foldseek | 0.13 |
-| **Catalyst Atlas** (engineered) | **0.37** |
-| **ESM-2** (frozen) | **0.38** |
+| Catalyst Atlas (engineered) | 0.37 |
+| ESM-2 (frozen) | 0.38 |
+| **ESM+GNN** (reaction-center fusion) | **0.45** |
 
-Chemistry signal remains after evolutionary neighborhoods are removed. Frozen sequence foundation-model embeddings currently lead the fold-disconnected transfer number; engineered microenvironments remain competitive and fully interpretable.
+Chemistry signal remains after evolutionary neighborhoods are removed. Frozen ESM fused into a reaction-center GNN currently leads fold-disconnected transfer; engineered microenvironments remain competitive and fully interpretable.
 
 <p align="center">
-  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: Catalyst 0.37 vs Foldseek 0.13 vs MMseqs 0.04" width="720"/>
+  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: ESM+GNN 0.45 vs ESM 0.38 vs Catalyst 0.37" width="720"/>
 </p>
 
 ---
@@ -247,7 +248,7 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 | Version | Claim |
 |---------|--------|
 | v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
-| v0.3 | Frozen ESM-2 improves architecture-level transfer (~0.38); GNN alone does not; annotation/side fusion fails under fold shift |
+| v0.3 | ESM+GNN leads fold-disconnected transfer (~0.45); GNN alone does not; annotation/side fusion fails under fold shift |
 | v0.4 | Prove chemistry (not annotation style) with negative controls; expand beyond M-CSA |
 
 ### v0.3 — learned catalytic language (bake-off)
