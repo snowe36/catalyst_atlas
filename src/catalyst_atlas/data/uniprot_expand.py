@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from typing import Any
 
@@ -91,12 +92,13 @@ def fetch_uniprot_catalytic_candidates(
         resp.raise_for_status()
         payload = resp.json()
         results.extend(payload.get("results") or [])
-        # UniProt link header: <url>; rel="next"
+        # UniProt Link header: <url>; rel="next" — URL may contain commas
+        # (fields=a,b,c), so do not split the header on ",".
         link = resp.headers.get("Link") or ""
         next_url = None
-        for part in link.split(","):
-            if 'rel="next"' in part:
-                next_url = part[part.find("<") + 1 : part.find(">")]
+        for m in re.finditer(r'<([^>]+)>\s*;\s*rel="([^"]+)"', link):
+            if m.group(2) == "next":
+                next_url = m.group(1)
                 break
         if not next_url:
             break
