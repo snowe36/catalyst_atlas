@@ -221,30 +221,33 @@ def build_uniprot_atlas_rows(
     rng.shuffle(candidates)
     pdb_cache = RAW / "pdb"
     pdb_cache.mkdir(parents=True, exist_ok=True)
+    # Reserve ~25% of extras for AlphaFold-only so PDB rows do not crowd them out.
+    af_quota = (n_enzymes // 4) if allow_alphafold else 0
+    exp_quota = n_enzymes - af_quota
     rows: list[dict[str, Any]] = []
+    n_exp = 0
+    n_af = 0
     failures = 0
 
-    for entry in candidates:
-        if len(rows) >= n_enzymes:
-            break
+    def _try_row(entry: dict[str, Any], *, force_alphafold: bool) -> dict[str, Any] | None:
+        nonlocal failures
         uid = entry.get("primaryAccession") or entry.get("uniProtkbId") or ""
         if not uid:
             failures += 1
-            continue
+            return None
         seq = ((entry.get("sequence") or {}).get("value")) or ""
         if len(seq) < 20:
             failures += 1
-            continue
+            return None
         act = _parse_act_site_residues(entry)
         if len(act) < 1:
             failures += 1
-            continue
+            return None
         seq_positions = [a["seq_pos"] for a in act][:8]
-        # Single ACT_SITE: seed ±1 sequence positions so the shell has anchors.
         if len(seq_positions) == 1:
             p = seq_positions[0]
             seq_positions = [max(1, p - 1), p, p + 1]
-        pdb_ids = _pdb_ids_from_entry(entry)
+        pdb_ids = [] if force_alphafold else _pdb_ids_from_entry(entry)
         structure_source = "experimental"
         pdb_text = None
         pdb_id = None
@@ -254,7 +257,6 @@ def build_uniprot_atlas_rows(
                 pdb_id = pid
                 break
         if pdb_text is None and allow_alphafold:
-            # AlphaFold fallback — stratified track.
             af_cache = _cache_dir() / "afdb" / f"AF-{uid}-F1-model_v4.pdb"
             af_cache.parent.mkdir(parents=True, exist_ok=True)
             if af_cache.exists():
@@ -272,67 +274,96 @@ def build_uniprot_atlas_rows(
                 structure_source = "alphafold"
         if not pdb_text or not pdb_id:
             failures += 1
-            continue
-
+            return None
+        if force_alphafold and structure_source != "alphafold":
+            failures += 1
+            return None
         specs = _map_seqpos_to_pdb_specs(pdb_text, seq_positions)
         if len(specs) < 1:
             failures += 1
-            continue
+            return None
         try:
             catalytic, neighbors, ligands, cofactor_tags = build_site_from_structure(
                 pdb_text, specs
             )
         except Exception:
             failures += 1
-            continue
+            return None
         if len(catalytic) < 1:
             failures += 1
-            continue
-
-        ec_list = []
-        for comment in entry.get("comments") or []:
-            pass
-        # EC from uniProtKBCrossReferences or proteinDescription
+            return None
+        ec = ""
         for xref in entry.get("uniProtKBCrossReferences") or []:
             if xref.get("database") == "EC":
-                ec_list.append(str(xref.get("id") or ""))
-        ec = ec_list[0] if ec_list else ""
-        # Also try recommendedName ecNumbers
+                ec = str(xref.get("id") or "") or ec
         pd_ = entry.get("proteinDescription") or {}
         for ecn in (pd_.get("recommendedName") or {}).get("ecNumbers") or []:
             if ecn.get("value"):
                 ec = ec or str(ecn["value"])
-
         cat_aas = [r["aa"] for r in catalytic]
         ann = annotate_chemistry(ec_number=ec or None, catalytic_aas=cat_aas, cofactor_tags=cofactor_tags)
         ecl = ec_labels(ec)
-        rows.append(
-            {
-                "enzyme_id": f"UP{uid}",
-                "uniprot_id": uid,
-                "pdb_id": pdb_id,
-                "family_id": f"uniprot_{uid}",
-                "chemistry_class": ann["chemistry_class"],
-                "chemistry_family": ann["chemistry_family"],
-                "mechanistic_pattern": ann["mechanistic_pattern"],
-                "catalytic_pattern": "".join(cat_aas),
-                "cofactor_tags": cofactor_tags,
-                "substrate_class": "uniprot_act_site",
-                "ec_number": ec,
-                "ec_class": ecl["ec_class"],
-                "ec3": ecl["ec3"],
-                "sequence": seq,
-                "seq_cluster": -1,
-                "fold_cluster": -1,
-                "site_residues_json": json.dumps(catalytic + neighbors),
-                "ligands_json": json.dumps(ligands),
-                "source": "uniprot",
-                "structure_source": structure_source,
-                "is_cryptic_seed": False,
-                "cath_topology": "unknown",
-            }
-        )
-        time.sleep(0.02)
+        return {
+            "enzyme_id": f"UP{uid}",
+            "uniprot_id": uid,
+            "pdb_id": pdb_id,
+            "family_id": f"uniprot_{uid}",
+            "chemistry_class": ann["chemistry_class"],
+            "chemistry_family": ann["chemistry_family"],
+            "mechanistic_pattern": ann["mechanistic_pattern"],
+            "catalytic_pattern": "".join(cat_aas),
+            "cofactor_tags": cofactor_tags,
+            "substrate_class": "uniprot_act_site",
+            "ec_number": ec,
+            "ec_class": ecl["ec_class"],
+            "ec3": ecl["ec3"],
+            "sequence": seq,
+            "seq_cluster": -1,
+            "fold_cluster": -1,
+            "site_residues_json": json.dumps(catalytic + neighbors),
+            "ligands_json": json.dumps(ligands),
+            "source": "uniprot",
+            "structure_source": structure_source,
+            "is_cryptic_seed": False,
+            "cath_topology": "unknown",
+        }
+
+    seen_uids: set[str] = set()
+
+    def _accept(row: dict[str, Any] | None) -> bool:
+        if not row:
+            return False
+        uid = str(row["uniprot_id"])
+        if uid in seen_uids:
+            return False
+        seen_uids.add(uid)
+        rows.append(row)
+        return True
+
+    # Pass 1: fill experimental quota (prefer PDB-backed entries).
+    for entry in candidates:
+        if n_exp >= exp_quota:
+            break
+        if _pdb_ids_from_entry(entry):
+            row = _try_row(entry, force_alphafold=False)
+            if row and row["structure_source"] == "experimental" and _accept(row):
+                n_exp += 1
+                time.sleep(0.02)
+    # Pass 2: fill AlphaFold quota.
+    for entry in candidates:
+        if n_af >= af_quota:
+            break
+        row = _try_row(entry, force_alphafold=True)
+        if row and _accept(row):
+            n_af += 1
+            time.sleep(0.02)
+    # Pass 3: top up remaining slots with either source.
+    for entry in candidates:
+        if len(rows) >= n_enzymes:
+            break
+        row = _try_row(entry, force_alphafold=False)
+        if _accept(row):
+            time.sleep(0.02)
 
     if not rows:
         logger.warning("UniProt expand produced zero rows (network / mapping failures)")
