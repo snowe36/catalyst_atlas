@@ -249,6 +249,7 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 | v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
 | v0.3 | ESM+GNN leads fold-disconnected transfer (~0.45); GNN alone does not; annotation/side fusion fails under fold shift |
 | v0.4 | Prove chemistry (not annotation style) with negative controls; expand beyond M-CSA |
+| v0.5 | Retrain ESM+GNN on expanded atlas (n=1157): fold≈0.49 vs engineered≈0.38 |
 
 ### v0.3 — learned catalytic language (bake-off)
 
@@ -268,7 +269,7 @@ Primary metric: **`fold_cluster`**. Convergent audit reports **n** explicitly. P
 | Annotation-style controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy centers |
 | Expanded atlas | `cat-download --public --expanded --n-extra 200` | UniProt ACT_SITE + EC labels; AFDB as `structure_source=alphafold` |
 
-Expanded-track snapshot: **n=1157** (M-CSA 959 + UniProt 198; AlphaFold 50). Engineered fold holdout stays ~0.38. Summary: [`reports/v04_reeval_summary.json`](reports/v04_reeval_summary.json). Plan: [`docs/plans/v0.4_rigor_and_scale.md`](docs/plans/v0.4_rigor_and_scale.md).
+Expanded track (**n=1157**: M-CSA 959 + UniProt 198; AlphaFold 50): engineered fold≈0.38, ESM-2≈0.46, **ESM+GNN≈0.49**. Summary: [`reports/v04_reeval_summary.json`](reports/v04_reeval_summary.json). Plans: [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
 
 Out of scope for now: ESM fine-tuning, more engineered fusion variants, optimizing random-split accuracy.
 
