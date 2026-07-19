@@ -118,5 +118,6 @@ class ReactionCenterEncoder:
         with torch.no_grad():
             for g in graphs:
                 emb = self.encode_graph(g, device=device)
-                out.append(emb.detach().cpu().numpy())
+                # Avoid Tensor.numpy() — some torch wheels ship without numpy bridge.
+                out.append(np.asarray(emb.detach().cpu().tolist(), dtype=np.float32))
         return np.stack(out, axis=0)
