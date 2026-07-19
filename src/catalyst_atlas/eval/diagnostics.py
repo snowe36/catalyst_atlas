@@ -58,6 +58,15 @@ def nearest_train_sequence_identity(
             pos = id_to_test_pos[q]
             if pid > ident[pos]:
                 ident[pos] = pid
+        # Queries with no MMseqs hit (e.g. UniProt extras) — fill from k-mer proxy.
+        if seq_sim is not None and np.any(ident <= 0.0):
+            for pos, ti in enumerate(test_idx):
+                if ident[pos] > 0.0:
+                    continue
+                sims = seq_sim[int(ti), train_idx]
+                if len(sims):
+                    ident[pos] = float(np.max(sims) * 100.0)
+            source = "mmseqs_pident+kmer_proxy"
         return ident, source
 
     if seq_sim is not None:

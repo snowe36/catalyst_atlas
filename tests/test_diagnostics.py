@@ -47,6 +47,30 @@ def test_nearest_train_identity_from_mmseqs():
     assert ident[0] == 88.0
 
 
+def test_nearest_train_identity_fills_missing_with_kmer():
+    meta = pd.DataFrame(
+        {
+            "enzyme_id": ["A", "B", "C", "D"],
+            "sequence": ["ACDEFGHIKL" * 4, "ACDEFGHIKL" * 4, "M" * 40, "ACDEFGHIKL" * 4],
+        }
+    )
+    # Only C has an MMseqs hit; D must fall back to k-mer similarity to A/B.
+    hits = pd.DataFrame(
+        {"query": ["C"], "target": ["A"], "pident": [90.0], "score": [10.0]}
+    )
+    from catalyst_atlas.eval.baselines import pairwise_kmer_similarity_matrix
+
+    seq_sim = pairwise_kmer_similarity_matrix(meta["sequence"].tolist())
+    train_idx = np.array([0, 1])
+    test_idx = np.array([2, 3])
+    ident, src = nearest_train_sequence_identity(
+        meta, train_idx, test_idx, mmseqs_hits=hits, seq_sim=seq_sim
+    )
+    assert "kmer" in src
+    assert ident[0] == 90.0
+    assert ident[1] > 50.0  # D is near-identical to A/B by k-mer
+
+
 def test_sequence_identity_stratified_transfer():
     y_true = ["hydrolysis", "transfer", "transfer", "hydrolysis"]
     preds = {

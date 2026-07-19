@@ -125,13 +125,13 @@ def ensure_mmseqs_hits(
     """All-vs-all MMseqs2 easy-search; cache hits under data/processed/."""
     ensure_dirs()
     out = PROCESSED / "mmseqs_hits.tsv"
+    if out.exists() and out.stat().st_size > 0 and not force:
+        logger.info("Using cached MMseqs2 hits: %s", out)
+        return out
     exe = _which("mmseqs")
     if not exe:
         logger.warning("mmseqs not found — sequence retrieval baseline unavailable")
         return None
-    if out.exists() and out.stat().st_size > 0 and not force:
-        logger.info("Using cached MMseqs2 hits: %s", out)
-        return out
 
     with tempfile.TemporaryDirectory(prefix="cat_mmseqs_") as tmp:
         tmp_path = Path(tmp)
@@ -186,13 +186,13 @@ def ensure_foldseek_hits(
     """All-vs-all Foldseek easy-search over cached PDBs."""
     ensure_dirs()
     out = PROCESSED / "foldseek_hits.tsv"
+    if out.exists() and out.stat().st_size > 0 and not force:
+        logger.info("Using cached Foldseek hits: %s", out)
+        return out
     exe = _which("foldseek")
     if not exe:
         logger.warning("foldseek not found — structure retrieval baseline unavailable")
         return None
-    if out.exists() and out.stat().st_size > 0 and not force:
-        logger.info("Using cached Foldseek hits: %s", out)
-        return out
 
     pdb_dir = RAW / "mcsa_cache" / "pdb"
     if not pdb_dir.exists():

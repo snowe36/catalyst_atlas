@@ -170,24 +170,24 @@ At high identity, sequence is the right tool. At remote homology, sequence trans
 
 | Nearest train identity | n | Catalyst | MMseqs2 | Foldseek |
 |------------------------|--:|---------:|--------:|---------:|
-| >80% | 2 | 0.50 | **1.00** | 0.00 |
-| 40–80% | 16 | 0.62 | 0.69 | **0.75** |
-| 20–40% | 60 | 0.50 | **0.70** | 0.68 |
-| <20% | 114 | 0.35 | **0.00** | 0.38 |
+| >80% | 3 | 0.67 | 0.33 | 0.67 |
+| 40–80% | 14 | 0.50 | **0.86** | 0.71 |
+| 20–40% | 61 | 0.56 | 0.64 | **0.67** |
+| <20% | 154 | **0.45** | 0.00 | 0.27 |
 
 <p align="center">
   <img src="reports/figures/fig_chemistry_by_seq_identity.png" alt="Chemistry transfer accuracy stratified by nearest-train sequence identity" width="720"/>
 </p>
 
-<p align="center"><em>Figure 2. Not a strawman: MMseqs2 wins near homologs and collapses below 20% identity.</em></p>
+<p align="center"><em>Figure 2. Expanded atlas (n=1157, random split). MMseqs2 is strong in the mid-identity band and collapses below 20%; engineered microenvironments keep signal when homologs are gone. High-identity bins are small-n.</em></p>
 
-Leakage-aware splits + retrieval metrics:
+Leakage-aware splits (expanded atlas):
 
-| Split | Catalyst acc. | MMseqs2 | Foldseek | Recall@5 | MRR |
-|-------|--------------:|--------:|---------:|---------:|----:|
-| Random | 0.42 | 0.29 | **0.50** | 0.72 | 0.54 |
-| Seq cluster | 0.42 | 0.23 | **0.49** | 0.72 | 0.51 |
-| Fold cluster | **0.37** | 0.04 | 0.13 | **0.67** | **0.46** |
+| Split | Catalyst | ESM-2 | ESM+GNN | MMseqs2 | Foldseek |
+|-------|---------:|------:|--------:|--------:|---------:|
+| Random | 0.48 | 0.60 | **0.79** | 0.22 | 0.41 |
+| Seq cluster | 0.45 | 0.59 | **0.77** | 0.22 | 0.40 |
+| Fold cluster | 0.38 | 0.46 | **0.49** | 0.04 | 0.13 |
 
 Recall@5 / MRR ask: does the true chemistry appear among retrieved catalytic neighbors? Accuracy alone understates a retrieval system.
 

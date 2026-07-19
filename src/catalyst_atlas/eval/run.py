@@ -414,12 +414,13 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
     methods_payload = identity_results.get("methods") or {}
     keep = [
         ("catalyst_microenvironment", "Catalyst Atlas", "#0E7490"),
-        ("foldseek_transfer", "Foldseek", "#6B7280"),
         ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
+        ("foldseek_transfer", "Foldseek", "#6B7280"),
     ]
     bin_order = [name for name, _, _ in IDENTITY_BINS]
+    counts = identity_results.get("bin_counts") or {}
     rows = []
-    for key, label, color in keep:
+    for key, label, _color in keep:
         if key not in methods_payload:
             continue
         for b in bin_order:
@@ -428,19 +429,21 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
                     {
                         "bin": b,
                         "method": label,
-                        "accuracy": methods_payload[key][b],
-                        "color": color,
+                        "accuracy": float(methods_payload[key][b]),
+                        "n": int(counts.get(b, 0)),
                     }
                 )
     if not rows:
         return
     plot_df = pd.DataFrame(rows)
+    # Tick labels include n so the footer cannot drift from the bars.
+    tick_labels = [f"{b}\n(n={counts.get(b, 0)})" for b in bin_order]
     sns.set_theme(style="whitegrid", context="talk")
-    fig, ax = plt.subplots(figsize=(9.5, 5.0))
+    fig, ax = plt.subplots(figsize=(9.8, 5.2))
     palette = {
         "Catalyst Atlas": "#0E7490",
-        "Foldseek": "#6B7280",
         "MMseqs2": "#9CA3AF",
+        "Foldseek": "#6B7280",
     }
     sns.barplot(
         data=plot_df,
@@ -448,21 +451,23 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
         y="accuracy",
         hue="method",
         order=bin_order,
+        hue_order=[lab for _, lab, _ in keep if lab in set(plot_df["method"])],
         palette=palette,
         ax=ax,
     )
-    ax.set_ylim(0, 1.05)
+    ax.set_ylim(0, 1.12)
+    ax.set_xticklabels(tick_labels)
     ax.set_xlabel("Nearest train sequence identity")
     ax.set_ylabel("Chemistry-family accuracy")
     ax.set_title("Chemistry transfer vs evolutionary distance")
     ax.legend(title="", loc="upper right", fontsize=9)
-    counts = identity_results.get("bin_counts") or {}
-    count_note = "  ·  ".join(f"{b} n={counts.get(b, 0)}" for b in bin_order)
-    fig.text(0.02, 0.02, count_note, fontsize=8, color="#374151")
+    # Value labels on every bar — flat series should still read as numbers.
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.2f", fontsize=8, padding=2)
     src = identity_results.get("identity_source") or ""
     if src:
-        fig.text(0.98, 0.02, f"identity: {src}", fontsize=8, color="#6B7280", ha="right")
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+        fig.text(0.98, 0.01, f"identity: {src}", fontsize=8, color="#6B7280", ha="right")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig.savefig(FIGURES / "fig_chemistry_by_seq_identity.png", dpi=180)
     plt.close(fig)
 
