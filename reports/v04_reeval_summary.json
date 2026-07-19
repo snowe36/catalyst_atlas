@@ -1,0 +1,103 @@
+{
+  "n_enzymes": 959,
+  "sources": {
+    "mcsa": 959
+  },
+  "structure_sources": {
+    "experimental": 959
+  },
+  "ec_class_counts": {
+    "3": 303,
+    "1": 202,
+    "2": 192,
+    "4": 134,
+    "5": 79,
+    "6": 39,
+    "7": 10
+  },
+  "fold_cluster": {
+    "catalyst_microenvironment": 0.368763557483731,
+    "learned_catalytic_encoder": 0.2472885032537961,
+    "catalyst_hybrid": 0.3383947939262473
+  },
+  "convergent_n": 26,
+  "convergent": {
+    "catalyst_microenvironment": 0.5,
+    "catalyst_hybrid": 0.46153846153846156,
+    "learned_catalytic_encoder": 0.19230769230769232,
+    "fold_cluster_transfer": 0.0,
+    "sequence_similarity_transfer": 0.23076923076923078
+  },
+  "annotation_style_audits_random": {
+    "same_residues_different_chemistry": {
+      "n": 128,
+      "methods": {
+        "catalyst_microenvironment": 0.359375,
+        "catalyst_hybrid": 0.296875,
+        "learned_catalytic_encoder": 0.203125,
+        "fold_cluster_transfer": 0.328125,
+        "sequence_similarity_transfer": 0.1875
+      }
+    },
+    "same_cofactor_different_chemistry": {
+      "n": 60,
+      "methods": {
+        "catalyst_microenvironment": 0.5,
+        "catalyst_hybrid": 0.43333333333333335,
+        "learned_catalytic_encoder": 0.21666666666666667,
+        "fold_cluster_transfer": 0.3333333333333333,
+        "sequence_similarity_transfer": 0.2833333333333333
+      }
+    },
+    "shuffled_first_shell": {
+      "n": 192,
+      "methods": {
+        "catalyst_microenvironment_shuffled_shell": 0.3697916666666667
+      }
+    },
+    "decoy_reaction_centers": {
+      "n": 192,
+      "methods": {
+        "catalyst_microenvironment_decoy": 0.3541666666666667
+      }
+    }
+  },
+  "annotation_style_audits_fold_cluster": {
+    "same_residues_different_chemistry": {
+      "n": 348,
+      "methods": {
+        "catalyst_microenvironment": 0.3132183908045977,
+        "catalyst_hybrid": 0.27873563218390807,
+        "learned_catalytic_encoder": 0.22126436781609196,
+        "fold_cluster_transfer": 0.0,
+        "sequence_similarity_transfer": 0.1867816091954023
+      }
+    },
+    "same_cofactor_different_chemistry": {
+      "n": 136,
+      "methods": {
+        "catalyst_microenvironment": 0.39705882352941174,
+        "catalyst_hybrid": 0.35294117647058826,
+        "learned_catalytic_encoder": 0.27205882352941174,
+        "fold_cluster_transfer": 0.0,
+        "sequence_similarity_transfer": 0.16176470588235295
+      }
+    },
+    "shuffled_first_shell": {
+      "n": 461,
+      "methods": {
+        "catalyst_microenvironment_shuffled_shell": 0.3232104121475054
+      }
+    },
+    "decoy_reaction_centers": {
+      "n": 461,
+      "methods": {
+        "catalyst_microenvironment_decoy": 0.34273318872017355
+      }
+    }
+  },
+  "figures": [
+    "/Users/ericsnow/code/catalyst_atlas/reports/figures/fig_annotation_style_controls.png",
+    "/Users/ericsnow/code/catalyst_atlas/reports/figures/fig_chemistry_leakage.png"
+  ]
+}
