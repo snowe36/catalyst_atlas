@@ -272,6 +272,8 @@ def _plot_results(results: dict[str, Any]) -> None:
     plot_df["method"] = plot_df["method"].map(
         {
             "catalyst_microenvironment": "Catalyst Atlas",
+            "learned_catalytic_encoder": "Learned RC encoder",
+            "esm2_transfer": "ESM-2 (frozen)",
             "mmseqs_transfer": "MMseqs2 transfer",
             "foldseek_transfer": "Foldseek transfer",
             "sequence_similarity_transfer": "Seq retrieval (k-mer NN)",
