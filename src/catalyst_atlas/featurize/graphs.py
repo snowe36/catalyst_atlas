@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from catalyst_atlas.data.cofactors import COFACTOR_VOCAB
-from catalyst_atlas.featurize.features import AA20, CHARGED, POLAR, HYDROPHOBIC, AROMATIC
+from catalyst_atlas.featurize.features import AA20, AROMATIC, CHARGED, HYDROPHOBIC, POLAR
 from catalyst_atlas.paths import PROCESSED, ensure_dirs
 
 logger = logging.getLogger(__name__)
@@ -183,7 +183,7 @@ def build_reaction_center_graph(microenvironment_json: str | dict[str, Any]) -> 
             _add_edge(i, j, "distance", d)
 
     # Catalytic ↔ first-shell contacts within ligand-contact radius
-    for si, r in enumerate(first_shell):
+    for si, _r in enumerate(first_shell):
         j = shell_offset + si
         for i in range(n_cat):
             d = float(np.linalg.norm(xyzs[i] - xyzs[j]))

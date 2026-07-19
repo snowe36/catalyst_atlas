@@ -22,7 +22,7 @@ DEFAULT_ESM_MODEL = "esm2_t12_35M_UR50D"
 
 def _load_esm(model_name: str = DEFAULT_ESM_MODEL):
     """Load frozen ESM-2 via fair-esm if available, else transformers."""
-    torch = require_torch()
+    require_torch()
     try:
         import esm  # type: ignore
 

@@ -327,7 +327,7 @@ def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
     ax.set_xlim(0, max(0.55, max(values) * 1.35))
     ax.set_xlabel("Chemistry-family accuracy")
     ax.set_title("Chemistry transfer under fold-disconnected evaluation")
-    for yi, v in zip(y, values):
+    for yi, v in zip(y, values, strict=True):
         ax.text(v + 0.012, yi, f"{v:.2f}", va="center", ha="left", fontsize=12, color="#1B2A2F")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
