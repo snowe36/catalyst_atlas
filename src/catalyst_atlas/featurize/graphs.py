@@ -108,6 +108,8 @@ def graph_side_vector(microenvironment_json: str | dict[str, Any]) -> np.ndarray
     """Compact metal/cofactor engineered side features for fusion readout."""
     from catalyst_atlas.featurize.features import (
         _cofactor_onehot as _feat_cofactor_onehot,
+    )
+    from catalyst_atlas.featurize.features import (
         _metal_coordination_features,
     )
 

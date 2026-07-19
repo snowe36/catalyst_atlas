@@ -2,17 +2,27 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np
 import pandas as pd
+from matplotlib.patches import FancyBboxPatch
 from sklearn.neighbors import NearestNeighbors
 
 from catalyst_atlas.paths import FIGURES, PROCESSED, ensure_dirs
 
 logger = logging.getLogger(__name__)
+
+TEAL = "#0E7490"
+INK = "#1B2A2F"
+MUTED = "#4B5563"
 
 
 def _load_emb(stem: str, meta: pd.DataFrame) -> np.ndarray | None:
@@ -79,7 +89,6 @@ def find_retrieval_contrast(
             continue
         e_same_fold = int(ne.get("fold_cluster", -2)) == q_fold
         g_diff_fold = int(ng.get("fold_cluster", -2)) != q_fold
-        # Score: want ESM same-fold + GNN cross-fold same chemistry.
         score = (2.0 if e_same_fold else 0.0) + (3.0 if g_diff_fold else 0.0)
         if j_e == j_g:
             score -= 1.0
@@ -99,24 +108,69 @@ def find_retrieval_contrast(
 
 
 def _fallback_pair(meta: pd.DataFrame) -> dict[str, Any] | None:
-    """Thermolysin / neprilysin if present."""
     ids = meta["enzyme_id"].astype(str)
     q_ids = ["MCSA00176", "MCSA00623"]
     present = [i for i, eid in enumerate(ids) if eid in q_ids]
     if len(present) < 2:
         return None
-    # query first, neighbor second
-    qi = present[0]
-    ni = present[1]
     return {
-        "query_idx": qi,
-        "esm_idx": ni,
-        "gnn_idx": ni,
+        "query_idx": present[0],
+        "esm_idx": present[1],
+        "gnn_idx": present[1],
         "esm_dist": float("nan"),
         "gnn_dist": float("nan"),
         "score": 0.0,
         "fallback": True,
     }
+
+
+def _card(
+    ax,
+    x,
+    y,
+    w,
+    h,
+    title,
+    rows: list[tuple[str, str]],
+    *,
+    fc: str,
+    ec: str = INK,
+) -> None:
+    """Labeled key/value card — same visual language as chemistry score cards."""
+    patch = FancyBboxPatch(
+        (x, y),
+        w,
+        h,
+        boxstyle="round,pad=0.012,rounding_size=0.04",
+        linewidth=1.5,
+        edgecolor=ec,
+        facecolor=fc,
+    )
+    ax.add_patch(patch)
+    ax.text(
+        x + 0.2,
+        y + h - 0.32,
+        title,
+        ha="left",
+        va="top",
+        fontsize=10.5,
+        fontweight="bold",
+        color=INK,
+    )
+    ax.plot([x + 0.18, x + w - 0.18], [y + h - 0.55, y + h - 0.55], color="#D1D5DB", lw=0.8)
+    for k, (label, value) in enumerate(rows[:4]):
+        yy = y + h - 0.95 - 0.42 * k
+        ax.text(x + 0.22, yy, label, ha="left", va="top", fontsize=7.8, color=MUTED)
+        ax.text(
+            x + 0.22,
+            yy - 0.22,
+            value,
+            ha="left",
+            va="top",
+            fontsize=9.2,
+            color=INK,
+            fontweight="bold",
+        )
 
 
 def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Path:
@@ -131,9 +185,7 @@ def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Pa
     if X_esm is None or X_gnn is None:
         raise FileNotFoundError("Need embedding_esm.npy and embedding_esm_gnn.npy")
 
-    pick = find_retrieval_contrast(meta, X_esm, X_gnn)
-    if pick is None:
-        pick = _fallback_pair(meta)
+    pick = find_retrieval_contrast(meta, X_esm, X_gnn) or _fallback_pair(meta)
     if pick is None:
         raise RuntimeError("Could not find a retrieval contrast case")
 
@@ -141,92 +193,92 @@ def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Pa
     ne = meta.iloc[pick["esm_idx"]]
     ng = meta.iloc[pick["gnn_idx"]]
 
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import FancyBboxPatch
-
-    fig, ax = plt.subplots(figsize=(10.5, 5.2))
+    fig, ax = plt.subplots(figsize=(11.2, 6.2))
     ax.set_xlim(0, 10)
-    ax.set_ylim(0, 5)
+    ax.set_ylim(0, 7)
     ax.axis("off")
 
-    def box(x, y, w, h, title, lines, fc="#F4F7FA"):
-        patch = FancyBboxPatch(
-            (x, y),
-            w,
-            h,
-            boxstyle="round,pad=0.02,rounding_size=0.15",
-            linewidth=1.2,
-            edgecolor="#334155",
-            facecolor=fc,
-        )
-        ax.add_patch(patch)
-        ax.text(x + w / 2, y + h - 0.35, title, ha="center", va="top", fontsize=11, fontweight="bold")
-        for k, line in enumerate(lines):
-            ax.text(x + 0.2, y + h - 0.85 - 0.45 * k, line, ha="left", va="top", fontsize=9.5)
-
-    box(
-        3.5,
-        1.7,
+    # Query on top, centered — no overlap with neighbor cards below.
+    _card(
+        ax,
         3.0,
-        2.4,
+        4.2,
+        4.0,
+        2.35,
         f"Query  {q['enzyme_id']}",
-        [_chem(q), _fold(q), f"seq_cluster={q.get('seq_cluster', '?')}"],
+        [
+            ("Chemistry", _chem(q)),
+            ("Fold / CATH", _fold(q)),
+            ("Seq cluster", str(q.get("seq_cluster", "?"))),
+        ],
         fc="#EEF6FF",
+        ec=TEAL,
     )
-    box(
+
+    dist_e = f"{pick['esm_dist']:.3f}" if pick["esm_dist"] == pick["esm_dist"] else "n/a"
+    dist_g = f"{pick['gnn_dist']:.3f}" if pick["gnn_dist"] == pick["gnn_dist"] else "n/a"
+
+    _card(
+        ax,
+        0.35,
         0.4,
-        0.4,
-        3.2,
-        2.6,
+        4.4,
+        3.15,
         f"ESM-2 NN  {ne['enzyme_id']}",
         [
-            _chem(ne),
-            _fold(ne),
-            f"dist={pick['esm_dist']:.3f}" if pick["esm_dist"] == pick["esm_dist"] else "dist=n/a",
-            "often same neighborhood",
+            ("Chemistry", _chem(ne)),
+            ("Fold / CATH", _fold(ne)),
+            ("Distance", dist_e),
+            ("Note", "often same neighborhood"),
         ],
         fc="#F8FAFC",
+        ec="#64748B",
     )
-    box(
-        6.4,
+    _card(
+        ax,
+        5.25,
         0.4,
-        3.2,
-        2.6,
+        4.4,
+        3.15,
         f"ESM+GNN NN  {ng['enzyme_id']}",
         [
-            _chem(ng),
-            _fold(ng),
-            f"dist={pick['gnn_dist']:.3f}" if pick["gnn_dist"] == pick["gnn_dist"] else "dist=n/a",
-            "same chemistry, different fold",
+            ("Chemistry", _chem(ng)),
+            ("Fold / CATH", _fold(ng)),
+            ("Distance", dist_g),
+            ("Note", "same chemistry, different fold"),
         ],
         fc="#ECFDF5",
+        ec=TEAL,
+    )
+
+    # Arrows: query → each neighbor (clear vertical drop, no crossing boxes).
+    ax.annotate(
+        "",
+        xy=(2.55, 3.45),
+        xytext=(4.2, 4.35),
+        arrowprops=dict(arrowstyle="->", color="#64748B", lw=1.6, connectionstyle="arc3,rad=0.08"),
     )
     ax.annotate(
         "",
-        xy=(3.6, 2.2),
-        xytext=(3.5, 2.8),
-        arrowprops=dict(arrowstyle="->", color="#64748B", lw=1.4),
+        xy=(7.45, 3.45),
+        xytext=(5.8, 4.35),
+        arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.6, connectionstyle="arc3,rad=-0.08"),
     )
-    ax.annotate(
-        "",
-        xy=(6.4, 2.2),
-        xytext=(6.5, 2.8),
-        arrowprops=dict(arrowstyle="->", color="#64748B", lw=1.4),
-    )
+
     ax.set_title(
         "Fold-holdout retrieval: sequence neighbors vs chemistry-aware neighbors",
         fontsize=12,
-        pad=8,
+        color=INK,
+        pad=10,
     )
     out = Path(path) if path else FIGURES / "fig_retrieval_neighbors.png"
-    fig.tight_layout()
-    fig.savefig(out, dpi=dpi, bbox_inches="tight")
+    fig.savefig(out, dpi=dpi, bbox_inches="tight", facecolor="white", pad_inches=0.2)
     plt.close(fig)
     logger.info("Wrote %s (query=%s)", out, q["enzyme_id"])
-    # Sidecar for README / case studies.
+
     side = FIGURES / "fig_retrieval_neighbors.json"
     side.write_text(
-        __import__("json").dumps(
+        json.dumps(
             {
                 "query": str(q["enzyme_id"]),
                 "esm_nn": str(ne["enzyme_id"]),
