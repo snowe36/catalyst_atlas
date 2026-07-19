@@ -7,7 +7,7 @@
 [![CI](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Benchmark](https://img.shields.io/badge/benchmark-M--CSA%20v1%20n%3D959-0E7490)
+![Benchmark](https://img.shields.io/badge/benchmark-expanded%20n%3D1157-0E7490)
 
 Repo: [github.com/snowe36/catalyst_atlas](https://github.com/snowe36/catalyst_atlas)
 
@@ -25,27 +25,49 @@ This is an evaluation-hygiene / representation problem with explicit negative co
 
 ## The key experiment: remove evolutionary neighborhoods
 
-Hold out fold neighborhoods and ask whether chemistry transfer still works.
+**Can a model identify catalytic chemistry when sequence/fold neighbors are removed?**
+
+Primary metric: `fold_cluster` chemistry accuracy on the expanded atlas (**n=1157**; M-CSA 959 + UniProt 198).
 
 | Method | fold_cluster accuracy |
 |--------|----------------------:|
 | MMseqs2 | 0.04 |
 | Foldseek | 0.13 |
-| Catalyst Atlas (engineered) | 0.37 |
-| ESM-2 (frozen) | 0.38 |
-| **ESM+GNN** (reaction-center fusion) | **0.45** |
+| Engineered catalytic microenvironment | 0.38 |
+| ESM-2 (frozen sequence) | 0.46 |
+| **ESM+GNN** (sequence + reaction-center structure) | **0.49** |
 
-Chemistry signal remains after evolutionary neighborhoods are removed. Frozen ESM fused into a reaction-center GNN currently leads fold-disconnected transfer; engineered microenvironments remain competitive and fully interpretable.
+A learned representation that combines evolutionary-scale sequence information with local catalytic geometry captures chemistry-transfer signal beyond either alone. The gain over ESM-2 is modest (+0.03) — the GNN is adding local chemical context, not replacing the foundation model.
+
+How the pieces read together:
+
+| Representation | fold_cluster | Reading |
+|----------------|-------------:|---------|
+| GNN alone (reaction-center graphs) | ~0.32 | Learning chemistry from local graphs alone is hard at n≈1000 |
+| ESM-2 | 0.46 | Sequence models already encode substantial biochemical information |
+| ESM+GNN | **0.49** | The catalytic microenvironment adds signal sequence alone does not fully capture |
+
+Neighborhood baselines (MMseqs / Foldseek) collapse under fold holdout; engineered microenvironments stay competitive and interpretable. Prior MCSA-only track (n=959): ESM+GNN 0.45 — see [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
+
+On a small convergent-chemistry audit (**n=29**), ESM+GNN retrieves cross-fold chemical analogs with high accuracy (0.83), suggesting improved sensitivity to chemistry conserved across divergent evolutionary solutions. That subset is hypothesis-generating, not the primary benchmark.
+
+Annotation-style controls (same-residue / same-cofactor / shuffled shell / decoy centers) are in `cat-eval` — figure [`reports/figures/fig_annotation_style_controls.png`](reports/figures/fig_annotation_style_controls.png).
 
 <p align="center">
-  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: ESM+GNN 0.45 vs ESM 0.38 vs Catalyst 0.37" width="720"/>
+  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: ESM+GNN 0.49 vs ESM 0.46 vs engineered 0.38" width="720"/>
 </p>
+
+<p align="center">
+  <img src="reports/figures/fig_retrieval_neighbors.png" alt="Query enzyme with ESM-2 nearest neighbor vs ESM+GNN nearest neighbor" width="720"/>
+</p>
+
+<p align="center"><em>ESM-2 often retrieves a sequence/fold neighbor; ESM+GNN more often surfaces same chemistry across folds.</em></p>
 
 ---
 
 ## Case study: convergent chemistry across unrelated folds
 
-A fold-disconnected pair with shared chemistry recovered by reaction-center similarity — an analysis of what the representation encodes, not a blind discovery claim.
+A fold-disconnected pair with shared chemistry recovered by reaction-center similarity — what the representation encodes, not a blind discovery claim.
 
 | | Thermolysin `MCSA00176` | Neprilysin `MCSA00623` |
 |--|-------------------------|-------------------------|
@@ -247,31 +269,22 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 | Version | Claim |
 |---------|--------|
 | v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
-| v0.3 | ESM+GNN leads fold-disconnected transfer (~0.45); GNN alone does not; annotation/side fusion fails under fold shift |
-| v0.4 | Prove chemistry (not annotation style) with negative controls; expand beyond M-CSA |
-| v0.5 | Retrain ESM+GNN on expanded atlas (n=1157): fold≈0.49 vs engineered≈0.38 |
-
-### v0.3 — learned catalytic language (bake-off)
+| v0.3 | Learned representations require leakage-aware evaluation |
+| v0.4 | Expanded atlas + controls separate chemistry from annotation shortcuts |
+| v0.5 | ESM+GNN combines sequence-scale and reaction-center representations to improve fold-disconnected chemistry transfer |
 
 | Step | Command | Role |
 |------|---------|------|
 | Reaction-center graphs | `cat-graphs` | Explicit catalytic-machine graphs |
 | Frozen ESM-2 | `cat-esm` | Sequence foundation-model control |
-| ESM + GNN fusion | `cat-train-encoder --fusion-esm --no-early-stop --epochs 200` | Are sequence + local structure complementary? |
-| Hard eval | `cat-eval` | Scores optional embeddings when present |
+| ESM + GNN fusion | `cat-train-encoder --fusion-esm` | Sequence + local structure |
+| Annotation controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy |
+| Expanded atlas | `cat-download --public --expanded` | UniProt ACT_SITE + EC; AFDB as `structure_source=alphafold` |
+| Multi-seed / graph ablation | `scripts/v05_seed_bakeoff.py` | Variance + random-graph control |
 
-Primary metric: **`fold_cluster`**. Convergent audit reports **n** explicitly. Plan: [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
+Lead metric: **`fold_cluster`**. Summary: [`reports/v04_reeval_summary.json`](reports/v04_reeval_summary.json). Plans: [`v0.3`](docs/plans/v0.3_learn_catalytic_language.md), [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
 
-### v0.4 — rigor, controls, and scale
-
-| Step | Command | Role |
-|------|---------|------|
-| Annotation-style controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy centers |
-| Expanded atlas | `cat-download --public --expanded --n-extra 200` | UniProt ACT_SITE + EC labels; AFDB as `structure_source=alphafold` |
-
-Expanded track (**n=1157**: M-CSA 959 + UniProt 198; AlphaFold 50): engineered fold≈0.38, ESM-2≈0.46, **ESM+GNN≈0.49**. Summary: [`reports/v04_reeval_summary.json`](reports/v04_reeval_summary.json). Plans: [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
-
-Out of scope for now: ESM fine-tuning, more engineered fusion variants, optimizing random-split accuracy.
+Out of scope for now: ESM fine-tuning, hard-negative mining, multi-task heads, optimizing random-split accuracy.
 
 ---
 
@@ -302,9 +315,11 @@ cat-search --enzyme-id MCSA00176
 | Fig 2 identity stratification | `reports/figures/fig_chemistry_by_seq_identity.png` |
 | Fig 3 fold–chemistry audits | `reports/figures/fig_fold_chemistry_audits.png` |
 | Fig 4 chemistry cards | `reports/figures/fig4_chemistry_cards.png` |
+| Retrieval neighbors | `reports/figures/fig_retrieval_neighbors.png` |
+| Annotation controls | `reports/figures/fig_annotation_style_controls.png` |
 | Convergent case study | `reports/hero_convergent_chemistry.md` |
 | Metrics | `data/processed/eval_metrics.json` |
-| Results writeup | `reports/mcsa_v02_n959_results.md` |
+| Seed / ablation summaries | `reports/v05_seed_summary.json`, `reports/v05_ablation_summary.json` |
 
 ---
 
