@@ -26,7 +26,12 @@ from catalyst_atlas.paths import RAW, ensure_dirs
 logger = logging.getLogger(__name__)
 
 UNIPROT_SEARCH = "https://rest.uniprot.org/uniprotkb/search"
-AFDB_PDB_URL = "https://alphafold.ebi.ac.uk/files/AF-{uid}-F1-model_v4.pdb"
+AFDB_API = "https://alphafold.ebi.ac.uk/api/prediction/{uid}"
+AFDB_PDB_CANDIDATES = (
+    "https://alphafold.ebi.ac.uk/files/AF-{uid}-F1-model_v6.pdb",
+    "https://alphafold.ebi.ac.uk/files/AF-{uid}-F1-model_v4.pdb",
+    "https://alphafold.ebi.ac.uk/files/AF-{uid}-F1-model_v3.pdb",
+)
 
 
 def _session() -> requests.Session:
@@ -203,6 +208,43 @@ def _map_seqpos_to_pdb_specs(
     return specs
 
 
+def _fetch_alphafold_pdb(uid: str, sess: requests.Session) -> str | None:
+    """Download an AFDB PDB model (prefer API pdbUrl; fall back to versioned files)."""
+    af_dir = _cache_dir() / "afdb"
+    af_dir.mkdir(parents=True, exist_ok=True)
+    cached = list(af_dir.glob(f"AF-{uid}-F1-model_v*.pdb"))
+    if cached:
+        return cached[0].read_text()
+    urls: list[str] = []
+    try:
+        meta = sess.get(AFDB_API.format(uid=uid), timeout=60)
+        if meta.status_code == 200:
+            payload = meta.json()
+            if isinstance(payload, list) and payload:
+                pdb_url = payload[0].get("pdbUrl")
+                if pdb_url:
+                    urls.append(str(pdb_url))
+    except (requests.RequestException, ValueError, KeyError, IndexError):
+        pass
+    urls.extend(u.format(uid=uid) for u in AFDB_PDB_CANDIDATES)
+    seen: set[str] = set()
+    for url in urls:
+        if url in seen:
+            continue
+        seen.add(url)
+        try:
+            resp = sess.get(url, timeout=60)
+            if resp.status_code == 200 and len(resp.text) > 100:
+                # Cache under the filename from the URL when possible.
+                name = url.rsplit("/", 1)[-1] or f"AF-{uid}-F1-model.pdb"
+                path = af_dir / name
+                path.write_text(resp.text)
+                return resp.text
+        except requests.RequestException:
+            continue
+    return None
+
+
 def build_uniprot_atlas_rows(
     n_enzymes: int = 200,
     seed: int = 7,
@@ -257,18 +299,7 @@ def build_uniprot_atlas_rows(
                 pdb_id = pid
                 break
         if pdb_text is None and allow_alphafold:
-            af_cache = _cache_dir() / "afdb" / f"AF-{uid}-F1-model_v4.pdb"
-            af_cache.parent.mkdir(parents=True, exist_ok=True)
-            if af_cache.exists():
-                pdb_text = af_cache.read_text()
-            else:
-                try:
-                    resp = sess.get(AFDB_PDB_URL.format(uid=uid), timeout=60)
-                    if resp.status_code == 200 and len(resp.text) > 100:
-                        af_cache.write_text(resp.text)
-                        pdb_text = resp.text
-                except requests.RequestException:
-                    pdb_text = None
+            pdb_text = _fetch_alphafold_pdb(uid, sess)
             if pdb_text:
                 pdb_id = f"af-{uid.lower()}"
                 structure_source = "alphafold"
