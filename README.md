@@ -241,12 +241,22 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 
 ---
 
-## Future directions
+## Future directions / v0.3
 
-- **Mechanistic explanations on every retrieval** — shared catalytic features (metal-binding Asp/Glu geometry, NAD environment, nucleophile position, acid/base arrangement): chemistry classifier → mechanistic reasoning system
-- Richer cofactor geometry (coordination shell, not just presence)
-- Broader remote-homology coverage for identity bins
-- Learned embeddings **only if** framed as: can they improve a mechanistic baseline on fold-disconnected / convergent holdouts?
+**v0.3 thesis:** learn a representation that organizes proteins by *catalytic chemistry*, not evolutionary history — without turning this into “another ESM benchmark.”
+
+| Step | Command | Role |
+|------|---------|------|
+| Reaction-center graphs | `cat-graphs` | Explicit catalytic-machine graphs (nodes/edges) |
+| Frozen ESM-2 control | `pip install -e ".[gpu]" && cat-esm` | Does a PLM already know chemistry? |
+| Learned RC encoder | `cat-train-encoder` / `bash scripts/runpod_train.sh` | Small GNN + contrastive hard negatives |
+| Hard eval | `cat-eval` | Scores ESM / learned **only if** embeddings exist |
+
+Primary metrics remain **`fold_cluster`**, different-fold/same-chemistry, and same-fold/different-chemistry — not random-split accuracy.
+
+Out of scope: ESM fine-tuning, AlphaFold embeddings, whole-protein GNNs. Plan: [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
+
+Also planned: richer mechanistic explanations on every retrieval (shared catalytic feature checklists).
 
 Done in v0.2: cofactor enrichment · ontology · MMseqs/Foldseek · identity stratification · fold–chemistry audits · convergent case study · evidence cards · Recall@5 / MRR.
 
@@ -289,12 +299,14 @@ cat-search --enzyme-id MCSA00176
 
 ```text
 src/catalyst_atlas/   package (data, site, featurize, models, eval, explain, viz)
-scripts/              reproduce.sh
-data/raw|processed/   M-CSA / PDB cache + features, embeddings, metrics
+scripts/              reproduce.sh, embed_esm.py, runpod_train.sh
+docs/plans/           v0.3 learn-catalytic-language plan
+data/raw|processed/   M-CSA / PDB cache + features, graphs, embeddings, metrics
+artifacts/            trained encoder checkpoints (gitignored)
 reports/figures/      Fig 1–4 + microenvironment panels
 reports/case_studies/ three scientific narratives
 tests/                unit + pipeline smoke tests
-.github/workflows/    CI (ruff + pytest)
+.github/workflows/    CI (ruff + pytest; GPU optional)
 ```
 
 ---
