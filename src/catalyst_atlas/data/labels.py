@@ -1,4 +1,4 @@
-"""Chemistry ontology labels — enzymologist-facing, not EC-digit spam."""
+"""Chemistry family and mechanistic-pattern labels."""
 
 from __future__ import annotations
 

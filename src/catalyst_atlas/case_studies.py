@@ -1,4 +1,4 @@
-"""Three real M-CSA case studies for the scientific story (not metric spam)."""
+"""Case studies from the M-CSA atlas."""
 
 from __future__ import annotations
 
@@ -63,10 +63,7 @@ def find_same_fold_different_chemistry(index, k: int = 5) -> dict[str, Any] | No
                 "card": card,
                 "seq_baseline": _baseline_from_cluster(index, i, "seq_cluster"),
                 "fold_baseline": fold_base,
-                "takeaway": (
-                    "Fold neighborhood mixes chemistries; catalytic microenvironment "
-                    "recovers the reaction-center chemistry."
-                ),
+                "takeaway": "Fold neighborhood mixes chemistries; reaction-center features recover the right one.",
                 "score": score,
             }
             if best is None or cand["score"] > best["score"]:
@@ -75,7 +72,7 @@ def find_same_fold_different_chemistry(index, k: int = 5) -> dict[str, Any] | No
 
 
 def find_different_fold_same_chemistry(index, k: int = 5) -> dict[str, Any] | None:
-    """Case 2: neighbors share chemistry but not fold — convergent chemistry signal."""
+    """Case 2: neighbors share chemistry but not fold."""
     meta = index.meta
     best = None
     for i in range(len(meta)):
@@ -105,8 +102,7 @@ def find_different_fold_same_chemistry(index, k: int = 5) -> dict[str, Any] | No
             "seq_baseline": _baseline_from_cluster(index, i, "seq_cluster"),
             "fold_baseline": _baseline_from_cluster(index, i, "fold_cluster"),
             "takeaway": (
-                "Catalytic neighbors share chemistry family despite different fold "
-                "neighborhoods — microenvironment captures convergent reaction logic."
+                "Neighbors share chemistry despite different fold neighborhoods."
             ),
             "score": score,
         }
@@ -139,8 +135,7 @@ def find_cofactor_supported_hypothesis(index, k: int = 5) -> dict[str, Any] | No
             "seq_baseline": _baseline_from_cluster(index, i, "seq_cluster"),
             "fold_baseline": _baseline_from_cluster(index, i, "fold_cluster"),
             "takeaway": (
-                "Cofactor/metal context in the microenvironment supports a chemistry "
-                "hypothesis an enzymologist would recognize — not an EC digit alone."
+                "Cofactor/metal context supports a recognizable chemistry hypothesis."
             ),
             "score": score,
         }
@@ -173,9 +168,7 @@ def write_case_studies(k: int = 5) -> Path:
     out_dir = REPORTS / "case_studies"
     out_dir.mkdir(parents=True, exist_ok=True)
     parts = [
-        "# Catalyst Atlas — three chemistry case studies",
-        "",
-        "Real M-CSA reaction centers. Not a leaderboard — three questions enzyme chemists care about.",
+        "# Case studies",
         "",
     ]
     summary = []

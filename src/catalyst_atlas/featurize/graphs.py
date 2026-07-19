@@ -1,8 +1,4 @@
-"""Explicit reaction-center graphs — catalytic machines, not fold fingerprints.
-
-Nodes: catalytic residues, first-shell residues, metals, cofactors.
-Edges: pairwise catalytic distances, metal coordination, ligand contacts.
-"""
+"""Reaction-center graphs (catalytic residues, first shell, metals, cofactors)."""
 
 from __future__ import annotations
 

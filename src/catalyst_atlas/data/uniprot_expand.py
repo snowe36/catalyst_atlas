@@ -64,22 +64,23 @@ def attach_ec_labels(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def fetch_uniprot_catalytic_candidates(
-    n_enzymes: int = 500,
-    sess: requests.Session | None = None,
+def _paginate_uniprot_search(
+    query: str,
+    n_enzymes: int,
+    sess: requests.Session,
+    cache_name: str,
 ) -> list[dict[str, Any]]:
-    """Paginate UniProt for ACT_SITE + PDB proteins (cached)."""
-    sess = sess or _session()
-    cache = _cache_dir() / f"uniprot_act_site_pdb_n{n_enzymes}.json"
+    """Paginate UniProt search; cache by ``cache_name``."""
+    cache = _cache_dir() / cache_name
     if cache.exists():
         data = json.loads(cache.read_text())
-        logger.info("Loaded cached UniProt catalytic candidates (%d)", len(data))
+        logger.info("Loaded cached UniProt candidates %s (%d)", cache_name, len(data))
         return data[:n_enzymes]
 
     results: list[dict[str, Any]] = []
     next_url: str | None = None
     params = {
-        "query": "(ft_act_site:*) AND (database:pdb)",
+        "query": query,
         "format": "json",
         "size": 50,
         "fields": "accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name",
@@ -104,25 +105,61 @@ def fetch_uniprot_catalytic_candidates(
             break
         time.sleep(0.1)
     cache.write_text(json.dumps(results[:n_enzymes]))
-    logger.info("Fetched %d UniProt ACT_SITE+PDB candidates", min(len(results), n_enzymes))
+    logger.info("Fetched %d UniProt candidates (%s)", min(len(results), n_enzymes), cache_name)
+    return results[:n_enzymes]
+
+
+def fetch_uniprot_catalytic_candidates(
+    n_enzymes: int = 500,
+    sess: requests.Session | None = None,
+    include_afdb_track: bool = False,
+) -> list[dict[str, Any]]:
+    """Paginate UniProt for ACT_SITE proteins (PDB-first; optional AFDB-only)."""
+    sess = sess or _session()
+    pdb_n = n_enzymes if not include_afdb_track else max(n_enzymes - n_enzymes // 4, 1)
+    af_n = n_enzymes - pdb_n if include_afdb_track else 0
+    results = _paginate_uniprot_search(
+        "(ft_act_site:*) AND (database:pdb)",
+        pdb_n,
+        sess,
+        f"uniprot_act_site_pdb_n{pdb_n}.json",
+    )
+    if af_n > 0:
+        af = _paginate_uniprot_search(
+            "(ft_act_site:*) AND (reviewed:true) NOT (database:pdb)",
+            af_n,
+            sess,
+            f"uniprot_act_site_afdb_n{af_n}.json",
+        )
+        seen = {r.get("primaryAccession") for r in results}
+        for row in af:
+            uid = row.get("primaryAccession")
+            if uid and uid not in seen:
+                results.append(row)
+                seen.add(uid)
     return results[:n_enzymes]
 
 
 def _parse_act_site_residues(entry: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract residue numbers / AA from UniProt ACT_SITE features."""
+    """Extract residue numbers from UniProt active-site features.
+
+    REST JSON uses human-readable types (``Active site``); some dumps use
+    ``ACT_SITE``. Prefer catalytic active sites; ignore binding/site tags.
+    """
+    allowed = {"ACT_SITE", "ACTIVE SITE", "ACTIVESITE"}
     specs = []
     for feat in entry.get("features") or []:
-        if str(feat.get("type") or "").upper() not in {"ACT_SITE", "BINDING", "SITE"}:
-            # Prefer ACT_SITE only for catalytic.
-            if str(feat.get("type") or "").upper() != "ACT_SITE":
-                continue
+        ftype = str(feat.get("type") or "").upper().replace("_", " ").strip()
+        ftype_compact = ftype.replace(" ", "")
+        if ftype not in allowed and ftype_compact not in {"ACTSITE"}:
+            continue
         loc = feat.get("location") or {}
         start = (loc.get("start") or {}).get("value")
         end = (loc.get("end") or {}).get("value")
         if start is None:
             continue
-        # UniProt positions are 1-indexed sequence positions — PDB mapping is approximate
-        # without SIFTS; we store sequence positions and resolve via PDB auth when possible.
+        # UniProt positions are 1-indexed sequence positions — PDB mapping is
+        # approximate without SIFTS; resolve via PDB auth resnums when possible.
         for pos in range(int(start), int(end or start) + 1):
             specs.append({"seq_pos": pos, "description": feat.get("description") or ""})
     return specs
@@ -176,7 +213,11 @@ def build_uniprot_atlas_rows(
 
     rng = np.random.default_rng(seed)
     sess = _session()
-    candidates = fetch_uniprot_catalytic_candidates(n_enzymes=max(n_enzymes * 3, 100), sess=sess)
+    candidates = fetch_uniprot_catalytic_candidates(
+        n_enzymes=max(n_enzymes * 3, 100),
+        sess=sess,
+        include_afdb_track=allow_alphafold,
+    )
     rng.shuffle(candidates)
     pdb_cache = RAW / "pdb"
     pdb_cache.mkdir(parents=True, exist_ok=True)
@@ -195,10 +236,14 @@ def build_uniprot_atlas_rows(
             failures += 1
             continue
         act = _parse_act_site_residues(entry)
-        if len(act) < 2:
+        if len(act) < 1:
             failures += 1
             continue
         seq_positions = [a["seq_pos"] for a in act][:8]
+        # Single ACT_SITE: seed ±1 sequence positions so the shell has anchors.
+        if len(seq_positions) == 1:
+            p = seq_positions[0]
+            seq_positions = [max(1, p - 1), p, p + 1]
         pdb_ids = _pdb_ids_from_entry(entry)
         structure_source = "experimental"
         pdb_text = None
@@ -230,7 +275,7 @@ def build_uniprot_atlas_rows(
             continue
 
         specs = _map_seqpos_to_pdb_specs(pdb_text, seq_positions)
-        if len(specs) < 2:
+        if len(specs) < 1:
             failures += 1
             continue
         try:
@@ -240,7 +285,7 @@ def build_uniprot_atlas_rows(
         except Exception:
             failures += 1
             continue
-        if len(catalytic) < 2:
+        if len(catalytic) < 1:
             failures += 1
             continue
 

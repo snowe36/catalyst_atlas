@@ -1,6 +1,6 @@
 # Cryptic chemistry case
 
-> Synthetic demo atlas — validates the chemistry-card pipeline, not a real cryptic-enzyme claim.
+> Synthetic demo atlas.
 
 **Query enzyme:** `CAT00362`
 **Sequence context:** synthetic demo (cluster-lookup placeholders, not real BLAST %id)

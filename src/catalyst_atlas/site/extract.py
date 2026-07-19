@@ -1,11 +1,4 @@
-"""Extract catalytic microenvironments — not whole folds or empty pocket shapes.
-
-A microenvironment is the chemistry neighborhood:
-- annotated catalytic residues
-- first-shell residues near the catalytic core
-- cofactors / metals
-- local geometry among chemistry-participating atoms
-"""
+"""Extract catalytic microenvironments from annotated sites."""
 
 from __future__ import annotations
 
@@ -54,7 +47,7 @@ def extract_microenvironment(row: pd.Series) -> dict[str, Any]:
         if d <= FIRST_SHELL_RADIUS:
             first_shell.append({**r, "dist_to_core": d})
 
-    # Pairwise catalytic geometry (the chemical machine, not fold TM-score).
+    # Pairwise distances among catalytic atoms.
     pairwise = []
     for i in range(len(catalytic)):
         for j in range(i + 1, len(catalytic)):

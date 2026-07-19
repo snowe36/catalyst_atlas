@@ -608,7 +608,3 @@ def train_reaction_center_encoder(
     (ARTIFACTS / summary_name).write_text(json.dumps(summary, indent=2))
     logger.info("Wrote %s and %s", emb_path, ckpt_path)
     return summary
-
-
-def run_train_encoder(**kwargs: Any) -> dict[str, Any]:
-    return train_reaction_center_encoder(**kwargs)

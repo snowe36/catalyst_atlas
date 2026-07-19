@@ -1,4 +1,4 @@
-"""Render retrieval-augmented chemistry cards."""
+"""Format chemistry cards for CLI and case studies."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def _true(card: dict[str, Any]) -> str | None:
 
 
 def build_catalytic_evidence(card: dict[str, Any]) -> list[str]:
-    """Human-readable mechanistic evidence lines for the product card."""
+    """Mechanistic evidence lines for a chemistry card."""
     evidence: list[str] = []
     mech = str(card.get("predicted_mechanistic_pattern") or card.get("true_mechanistic_pattern") or "")
     pattern = str(card.get("predicted_catalytic_pattern") or card.get("true_catalytic_pattern") or "")
@@ -32,8 +32,7 @@ def build_catalytic_evidence(card: dict[str, Any]) -> list[str]:
     if mech and mech != "unknown":
         evidence.append(f"mechanistic pattern: {mech}")
     for tag in query_cofs:
-        evidence.append(f"{tag} cofactor/metal detected at reaction center")
-    # Coordination motifs from query site (if attached to card)
+        evidence.append(f"{tag} cofactor/metal at reaction center")
     for coord in card.get("metal_coordination") or []:
         motif = coord.get("motif") or ""
         geom = coord.get("geometry") or ""
@@ -44,39 +43,33 @@ def build_catalytic_evidence(card: dict[str, Any]) -> list[str]:
             evidence.append(f"{metal} geometry: {geom}")
     if card.get("confidence", 0) >= 0.6:
         evidence.append("neighbor consensus supports chemistry family")
-    # Convergent / distant analogs
     folds = {n.get("fold_cluster") for n in card.get("neighbors") or []}
     if len(folds) > 1:
-        evidence.append("chemical analogs span multiple fold neighborhoods")
+        evidence.append("analogs span multiple fold neighborhoods")
     if not evidence:
         evidence.append("shared catalytic microenvironment with nearest neighbors")
     return evidence[:6]
 
 
-def format_product_card(card: dict[str, Any], show_truth: bool = False) -> str:
-    """Portfolio / CLI product card — mechanistically grounded, not a score dump."""
+def format_chemistry_card(card: dict[str, Any], show_truth: bool = True) -> str:
     pred = _pred(card)
     mech = card.get("predicted_mechanistic_pattern") or "unknown"
     conf = float(card.get("confidence") or 0.0)
     evidence = build_catalytic_evidence(card)
 
     lines = [
-        "Catalyst Atlas prediction",
-        "=========================",
+        "Catalyst Atlas",
+        "==============",
         "",
-        "Chemistry:",
-        f"  {pred}",
-        f"  ({mech})",
+        f"Chemistry: {pred} ({mech})",
+        f"Confidence: {conf:.2f}",
         "",
-        "Confidence:",
-        f"  {conf:.2f}",
-        "",
-        "Catalytic evidence:",
+        "Evidence:",
     ]
     for e in evidence:
-        lines.append(f"  ✓ {e}")
+        lines.append(f"  - {e}")
 
-    lines += ["", "Closest chemical analogs:"]
+    lines += ["", "Nearest analogs:"]
     for i, n in enumerate(card.get("neighbors") or [], 1):
         chem = n.get("chemistry_family") or n.get("chemistry_class") or "?"
         cof = n.get("cofactor_tags") or "none"
@@ -90,13 +83,6 @@ def format_product_card(card: dict[str, Any], show_truth: bool = False) -> str:
             f"(cof={cof}; {note}; d={n['distance']:.2f})"
         )
 
-    lines += [
-        "",
-        "Why:",
-        "  Shared catalytic microenvironment",
-        "  (reaction-center residues + cofactor/metal geometry — not fold TM-score)",
-    ]
-
     if show_truth and _true(card) is not None:
         lines += [
             "",
@@ -104,11 +90,6 @@ def format_product_card(card: dict[str, Any], show_truth: bool = False) -> str:
             f"[eval] correct: {'yes' if _pred(card) == _true(card) else 'no'}",
         ]
     return "\n".join(lines)
-
-
-def format_chemistry_card(card: dict[str, Any], show_truth: bool = True) -> str:
-    """Default CLI card = product card; keep a compact legacy block below if useful."""
-    return format_product_card(card, show_truth=show_truth)
 
 
 def format_cryptic_hero(
@@ -135,7 +116,7 @@ def format_cryptic_hero(
         f"| **Catalyst Atlas** | `{pred}` |",
         "",
         "```",
-        format_product_card(card, show_truth=False),
+        format_chemistry_card(card, show_truth=False),
         "```",
     ]
     if true:
@@ -144,31 +125,23 @@ def format_cryptic_hero(
             f"**Ground truth:** {true} / {card.get('true_mechanistic_pattern', '—')}",
             f"**Catalyst Atlas correct:** {'yes' if correct else 'no'}",
         ]
-    lines += [
-        "",
-        "> Representation is the **catalytic microenvironment** "
-        "(reaction-center residues, cofactors/metals, geometry, first shell) — "
-        "not whole-protein fold similarity or pocket shape alone.",
-    ]
     return "\n".join(lines)
 
 
 def format_case_study(case: dict[str, Any]) -> str:
-    """Render one of the three scientific case studies."""
-    card = case["card"]
-    lines = [
-        f"# Case study: {case['title']}",
-        "",
-        f"**Question:** {case['question']}",
-        "",
-        format_cryptic_hero(
-            card,
-            seq_baseline_chem=case.get("seq_baseline", "—"),
-            fold_baseline_chem=case.get("fold_baseline", "—"),
-            seq_identity_note=case.get("context", ""),
-            title=case["title"],
-        ),
-    ]
+    """Render one case study with a single title."""
+    body = format_cryptic_hero(
+        case["card"],
+        seq_baseline_chem=case.get("seq_baseline", "—"),
+        fold_baseline_chem=case.get("fold_baseline", "—"),
+        seq_identity_note=case.get("context", ""),
+        title=case["title"],
+    )
+    title_line, rest = body.split("\n", 1)
+    out = f"{title_line}\n"
+    if case.get("question"):
+        out += f"\n**Question:** {case['question']}\n"
+    out += rest
     if case.get("takeaway"):
-        lines += ["", f"**Takeaway:** {case['takeaway']}"]
-    return "\n".join(lines)
+        out += f"\n\n**Takeaway:** {case['takeaway']}"
+    return out

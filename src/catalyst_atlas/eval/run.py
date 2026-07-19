@@ -547,7 +547,7 @@ def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
         ("esm_gnn_fusion", "ESM+GNN", "#065F46"),
         ("learned_fusion_encoder", "Fusion", "#B45309"),
         ("learned_catalytic_encoder", "Learned RC", "#D97706"),
-        ("esm2_transfer", "ESM-2", "#7C3AED"),
+        ("esm2_transfer", "ESM-2", "#475569"),
         ("foldseek_transfer", "Foldseek", "#6B7280"),
         ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
         ("fold_cluster_transfer", "CATH fold", "#D1D5DB"),

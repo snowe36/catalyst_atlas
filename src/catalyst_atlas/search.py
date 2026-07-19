@@ -1,4 +1,4 @@
-"""CLI-facing search: chemistry identification with neighbor evidence."""
+"""Chemistry search with nearest catalytic neighbors."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import Any
 
 from catalyst_atlas.explain.cards import format_chemistry_card, format_cryptic_hero
 from catalyst_atlas.models.embed import load_index, transfer_chemistry
-from catalyst_atlas.paths import FIGURES, PROCESSED, REPORTS, ensure_dirs
+from catalyst_atlas.paths import PROCESSED, REPORTS, ensure_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,6 @@ def write_hero_case(k: int = 5) -> tuple[Path, dict[str, Any]]:
     out = REPORTS / "hero_cryptic_chemistry.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md)
-    (FIGURES / "hero_cryptic_chemistry.md").write_text(md)
     (PROCESSED / "hero_case.json").write_text(
         __import__("json").dumps(
             {
@@ -128,7 +127,7 @@ def write_hero_case(k: int = 5) -> tuple[Path, dict[str, Any]]:
     return out, hero
 
 
-def search_main_logic(enzyme_id: str | None, demo_hero: bool, k: int) -> str:
+def run_search(enzyme_id: str | None, demo_hero: bool, k: int) -> str:
     if demo_hero:
         path, hero = write_hero_case(k=k)
         return path.read_text() + "\n\n" + format_chemistry_card(hero["card"])

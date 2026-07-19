@@ -1,8 +1,7 @@
-# Case study: Different fold, same chemistry
+# Different fold, same chemistry
 
 **Question:** Can Catalyst detect convergent chemistry across folds?
 
-# Different fold, same chemistry
 
 **Query enzyme:** `MCSA00176` — thermolysin
 **Context:** Query fold_cluster=95; neighbors span folds [5, 14, 91, 148]
@@ -30,6 +29,4 @@
 **Ground truth:** hydrolysis / metal activation
 **Catalyst Atlas correct:** yes
 
-> Representation is the **catalytic microenvironment** (reaction-center residues, cofactors/metals, geometry, first shell) — not whole-protein fold similarity or pocket shape alone.
-
-**Takeaway:** Catalytic neighbors share chemistry family despite different fold neighborhoods — microenvironment captures convergent reaction logic.
+**Takeaway:** Neighbors share chemistry despite different fold neighborhoods.

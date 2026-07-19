@@ -172,10 +172,10 @@ def search_main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
 
-    from catalyst_atlas.search import search_main_logic
+    from catalyst_atlas.search import run_search
 
     try:
-        text = search_main_logic(args.enzyme_id, args.demo_hero, args.k)
+        text = run_search(args.enzyme_id, args.demo_hero, args.k)
     except (KeyError, ValueError, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -379,10 +379,10 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
 
-    from catalyst_atlas.models.train_encoder import run_train_encoder
+    from catalyst_atlas.models.train_encoder import train_reaction_center_encoder
 
     try:
-        summary = run_train_encoder(
+        summary = train_reaction_center_encoder(
             split=args.split,
             epochs=args.epochs,
             batch_size=args.batch_size,

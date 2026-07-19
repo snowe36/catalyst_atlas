@@ -78,7 +78,7 @@ def _neighborhood(
     catalytic: list[dict[str, Any]],
     n_extra: int = 8,
 ) -> list[dict[str, Any]]:
-    """Add first-shell neighbors around the catalytic core (not whole pocket shape)."""
+    """Add first-shell neighbors around the catalytic core."""
     core = np.array([r["xyz"] for r in catalytic], dtype=float)
     center = core.mean(axis=0)
     neighbors = []

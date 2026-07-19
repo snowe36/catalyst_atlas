@@ -1,17 +1,4 @@
-"""Engineered representation of the catalytic microenvironment.
-
-Explicitly NOT:
-- whole-protein structure descriptors
-- fold similarity
-- pocket-shape-only features
-
-IS:
-- catalytic residue chemistry
-- first-shell electrostatic / polarity composition
-- catalytic pairwise geometry
-- cofactor / metal flags
-- ligand-contact summary
-"""
+"""Engineered features for catalytic microenvironments."""
 
 from __future__ import annotations
 

@@ -1,0 +1,4 @@
+18:41:08 INFO catalyst_atlas.featurize.features: Built full feature matrix (1155, 97) for 1155 enzymes (catalytic_aa_comp + first_shell_aa_comp + catalytic_chem_proxy + first_shell_chem_proxy + pairwise_geometry_hist + cofactor_onehot + ligand_contact_stats + metal_coordination + size_counts; persisted unscaled)
+18:41:08 INFO catalyst_atlas.models.embed: Built full catalytic index over 1155 enzymes
+18:41:08 INFO catalyst_atlas.featurize.features: Built composition feature matrix (1155, 40) for 1155 enzymes (composition only; persisted unscaled)
+18:41:08 INFO catalyst_atlas.models.embed: Built composition catalytic index over 1155 enzymes

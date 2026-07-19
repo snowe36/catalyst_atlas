@@ -1,22 +1,14 @@
-# Catalyst Atlas v0.2 — M-CSA n=959
+# Catalyst Atlas — M-CSA n=959
 
-Chemistry-aware reaction-center representations on curated M-CSA sites.
-
-**Claim:** catalytic microenvironment representations retain chemistry signal when evolutionary retrieval loses access to homologous neighborhoods — not “we beat Foldseek.”
-
-**Hero story:** finding convergent chemistry across unrelated folds ([`hero_convergent_chemistry.md`](hero_convergent_chemistry.md)) — thermolysin ↔ neprilysin, remote sequence, distinct CATH topologies, shared Zn hydrolysis.
-
-## What changed vs residue-only baseline
+Reaction-center representations on curated M-CSA sites. Convergent example: thermolysin ↔ neprilysin ([`hero_convergent_chemistry.md`](hero_convergent_chemistry.md)).
 
 | Upgrade | Detail |
 |---|---|
 | Cofactors / metals | PDB HETATM within 8 Å of catalytic core (324 / 959 sites tagged) |
-| Ontology labels | `chemistry_family` + `mechanistic_pattern` (not EC-digit spam) |
+| Ontology labels | `chemistry_family` + `mechanistic_pattern` |
 | External baselines | Live MMseqs2 + Foldseek chemistry-transfer (when binaries present) |
-| Diagnostics | Sequence-identity stratification + fold–chemistry relationship audits |
+| Diagnostics | Sequence-identity stratification + fold–chemistry audits |
 | Feature dim | 84 → 97 (cofactor vocabulary + coordination / ligand stats) |
-
-Top site tags: Mg, Zn, Mn, Ca, PLP, Fe, heme, ATP+Mg, FMN, …
 
 ## Primary result: fold-disconnected chemistry transfer
 
@@ -28,8 +20,6 @@ Top site tags: Mg, Zn, Mn, Ca, PLP, Fe, heme, ATP+Mg, FMN, …
 | MMseqs2 | 0.037 |
 | **Catalyst microenvironment** | **0.369** |
 
-When fold neighborhoods are held out, sequence and structure retrieval collapse; the microenvironment retains chemistry signal.
-
 ## Full chemistry accuracy (`chemistry_family`)
 
 | Split | Catalyst | MMseqs2 | Foldseek | Recall@5 | MRR |
@@ -37,8 +27,6 @@ When fold neighborhoods are held out, sequence and structure retrieval collapse;
 | random | 0.422 | 0.286 | **0.500** | 0.724 | 0.535 |
 | seq_cluster | 0.425 | 0.226 | **0.489** | 0.720 | 0.512 |
 | fold_cluster | **0.369** | 0.037 | 0.132 | **0.672** | **0.458** |
-
-Foldseek dominating on random / seq_cluster is expected. Leaving that visible validates the evaluation framework.
 
 ## Chemistry transfer vs evolutionary distance
 
@@ -53,8 +41,6 @@ Nearest-train MMseqs2 `%id` on the random split:
 
 ![identity stratification](figures/fig_chemistry_by_seq_identity.png)
 
-Expected pattern: MMseqs2 wins near homologs and collapses when evolutionary signal disappears; Catalyst remains informative in the remote bin.
-
 ## Fold–chemistry relationship audits
 
 | Audit | n | Catalyst | Foldseek | MMseqs2 | CATH fold |
@@ -64,9 +50,7 @@ Expected pattern: MMseqs2 wins near homologs and collapses when evolutionary sig
 
 ![fold chemistry audits](figures/fig_fold_chemistry_audits.png)
 
-Foldseek still helps when a shared fold is present. Catalyst is the method that recovers chemistry across folds.
-
-A small but biologically informative convergent-chemistry subset (**n=26**) demonstrates the intended use case. The quantitative backbone remains the fold-disconnected benchmark (larger test n); do not oversell the absolute size of the convergent audit.
+Convergent audit is **n=26** — informative, not the primary claim. Lead metric is fold-disconnected transfer.
 
 ## Case studies
 
@@ -91,4 +75,3 @@ Requires `mmseqs` / `foldseek` on `PATH` (or under `tools/{mmseqs,foldseek}/bin`
 
 - Richer cofactor geometry (coordination shell, not just presence)
 - Broader remote-homology coverage for identity bins
-- Keep deep models deferred until they beat this engineered baseline on hard holdouts

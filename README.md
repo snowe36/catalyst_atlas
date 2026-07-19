@@ -81,20 +81,19 @@ cat-search --enzyme-id MCSA00176
 ```
 
 ```text
-Catalyst Atlas prediction
-=========================
+Catalyst Atlas
+==============
 
-Chemistry:
-  hydrolysis
-  (metal activation)
+Chemistry: hydrolysis (metal activation)
+Confidence: 0.82
 
-Catalytic evidence:
-  ✓ catalytic residue pattern: His-Glu-Asp-Arg
-  ✓ mechanistic pattern: metal activation
-  ✓ Zn cofactor/metal detected at reaction center
-  ✓ chemical analogs span multiple fold neighborhoods
+Evidence:
+  - catalytic residue pattern: His-Glu-Asp-Arg
+  - mechanistic pattern: metal activation
+  - Zn cofactor/metal at reaction center
+  - analogs span multiple fold neighborhoods
 
-Closest chemical analogs:
+Nearest analogs:
   1. MCSA00623 — hydrolysis / metal activation (cof=Zn; different fold)
   2. MCSA00159 — hydrolysis / metal activation (cof=Zn; different fold)
   ...

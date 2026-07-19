@@ -21,7 +21,6 @@ from catalyst_atlas.paths import FIGURES, PROCESSED, REPORTS, ensure_dirs
 
 logger = logging.getLogger(__name__)
 
-# Clean enzymology palette — teal / slate / amber (not purple-AI default).
 PALETTE = {
     "bg": "#F4F7F6",
     "panel": "#E8EEEC",
@@ -332,7 +331,7 @@ def render_gallery(
         pattern = str(row.get("catalytic_pattern", ""))
         _style_axes(ax, eid, f"{chem} · {pattern}")
     fig.suptitle(
-        "Catalytic microenvironments — chemistry core, not whole-fold shape",
+        "Catalytic microenvironments",
         color=PALETTE["ink"],
         fontsize=13,
         fontweight="bold",
@@ -371,9 +370,8 @@ def _hero_enzyme_id(df: pd.DataFrame) -> str | None:
         if eid and eid in set(df["enzyme_id"]):
             return str(eid)
     # Fall back to the markdown report if present.
-    for md_path in (REPORTS / "hero_cryptic_chemistry.md", FIGURES / "hero_cryptic_chemistry.md"):
-        if not md_path.exists():
-            continue
+    md_path = REPORTS / "hero_cryptic_chemistry.md"
+    if md_path.exists():
         for line in md_path.read_text().splitlines():
             if "Query enzyme:" in line and "`" in line:
                 return line.split("`")[1]

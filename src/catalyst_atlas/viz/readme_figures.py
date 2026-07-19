@@ -1,4 +1,4 @@
-"""README figure set: pipeline, chemistry cards (Figs 1 & 4)."""
+"""Pipeline and chemistry-card figures for the README."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ def render_pipeline_figure(path: Path | None = None, *, dpi: int = 180) -> Path:
     out = Path(path) if path else FIGURES / "fig1_pipeline.png"
     steps = [
         ("Structure", "M-CSA site + PDB"),
-        ("Reaction center\nextraction", "residues · geometry\ncofactors · first shell"),
-        ("Chemical\nrepresentation", "engineered features\n(no deep model)"),
-        ("Chemistry\nretrieval", "catalytic neighbors\n≠ fold TM-score"),
-        ("Evidence card", "family · pattern\nwhy the transfer"),
+        ("Reaction center", "residues · geometry\ncofactors · first shell"),
+        ("Representation", "engineered features"),
+        ("Retrieval", "catalytic neighbors"),
+        ("Chemistry card", "family · pattern\nevidence"),
     ]
     fig, ax = plt.subplots(figsize=(11.2, 2.8))
     ax.set_xlim(0, 1)
@@ -78,7 +78,7 @@ def render_pipeline_figure(path: Path | None = None, *, dpi: int = 180) -> Path:
                 arrowprops=dict(arrowstyle="->", color="#6B7280", lw=1.6),
             )
     ax.set_title(
-        "Figure 1. From structure to chemistry evidence",
+        "Structure → reaction center → chemistry",
         fontsize=12,
         color="#1B2A2F",
         pad=8,
@@ -114,12 +114,11 @@ def render_chemistry_cards_figure(path: Path | None = None, *, dpi: int = 180) -
             "query": "MCSA00034 · catechol 2,3-dioxygenase",
             "context": "Shared fold neighborhood mixes chemistries",
             "prediction": "oxidation-reduction / metal activation",
-            "analog": "Fe-redox catalytic neighbors (not fold prior)",
+            "analog": "Fe-redox catalytic neighbors",
             "why": [
                 "Fe cofactor at reaction center",
                 "His-Asp catalytic pattern",
-                "rejects fold-prior elimination",
-                "microenvironment > fold lookup",
+                "neighbors disagree with fold prior",
             ],
         },
     ]
@@ -145,11 +144,11 @@ def render_chemistry_cards_figure(path: Path | None = None, *, dpi: int = 180) -
         ax.text(0.08, 0.58, "Catalyst Atlas", fontsize=9, color="#6B7280")
         ax.text(0.08, 0.50, card["prediction"], fontsize=11, fontweight="bold", color="#0E7490")
         ax.text(0.08, 0.40, f"Top analog: {card['analog']}", fontsize=8.5, color="#374151")
-        ax.text(0.08, 0.30, "Why:", fontsize=9, fontweight="bold", color="#1B2A2F")
+        ax.text(0.08, 0.30, "Evidence:", fontsize=9, fontweight="bold", color="#1B2A2F")
         for i, line in enumerate(card["why"]):
-            ax.text(0.10, 0.23 - i * 0.07, f"✓  {line}", fontsize=8.5, color="#1B2A2F")
+            ax.text(0.10, 0.23 - i * 0.07, f"-  {line}", fontsize=8.5, color="#1B2A2F")
 
-    fig.suptitle("Figure 4. Example chemistry cards", fontsize=12, color="#1B2A2F", y=0.98)
+    fig.suptitle("Example chemistry cards", fontsize=12, color="#1B2A2F", y=0.98)
     fig.tight_layout()
     fig.savefig(out, dpi=dpi, bbox_inches="tight", facecolor="white")
     plt.close(fig)

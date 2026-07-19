@@ -1,8 +1,7 @@
-# Case study: Cofactor-aware chemistry hypothesis
+# Cofactor-aware chemistry hypothesis
 
 **Question:** Can Catalyst provide a plausible chemistry hypothesis from the reaction center?
 
-# Cofactor-aware chemistry hypothesis
 
 **Query enzyme:** `MCSA00661` — arylsulfatase
 **Context:** Site cofactors/metals: Ca
@@ -30,6 +29,4 @@
 **Ground truth:** hydrolysis / metal activation
 **Catalyst Atlas correct:** yes
 
-> Representation is the **catalytic microenvironment** (reaction-center residues, cofactors/metals, geometry, first shell) — not whole-protein fold similarity or pocket shape alone.
-
-**Takeaway:** Cofactor/metal context in the microenvironment supports a chemistry hypothesis an enzymologist would recognize — not an EC digit alone.
+**Takeaway:** Cofactor/metal context supports a recognizable chemistry hypothesis.

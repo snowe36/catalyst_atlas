@@ -1,12 +1,9 @@
-# Catalyst Atlas — three chemistry case studies
+# Case studies
 
-Real M-CSA reaction centers. Not a leaderboard — three questions enzyme chemists care about.
-
-# Case study: Same fold, different chemistry
+# Same fold, different chemistry
 
 **Question:** Can Catalyst distinguish chemistry within a structural family?
 
-# Same fold, different chemistry
 
 **Query enzyme:** `MCSA00034` — catechol 2,3-dioxygenase
 **Context:** Shared fold cluster 19 (CATH topology neighborhood)
@@ -34,17 +31,14 @@ Real M-CSA reaction centers. Not a leaderboard — three questions enzyme chemis
 **Ground truth:** oxidation-reduction / metal activation
 **Catalyst Atlas correct:** yes
 
-> Representation is the **catalytic microenvironment** (reaction-center residues, cofactors/metals, geometry, first shell) — not whole-protein fold similarity or pocket shape alone.
-
-**Takeaway:** Fold neighborhood mixes chemistries; catalytic microenvironment recovers the reaction-center chemistry.
+**Takeaway:** Fold neighborhood mixes chemistries; reaction-center features recover the right one.
 
 ---
 
-# Case study: Different fold, same chemistry
+# Different fold, same chemistry
 
 **Question:** Can Catalyst detect convergent chemistry across folds?
 
-# Different fold, same chemistry
 
 **Query enzyme:** `MCSA00176` — thermolysin
 **Context:** Query fold_cluster=95; neighbors span folds [5, 14, 91, 148]
@@ -72,17 +66,14 @@ Real M-CSA reaction centers. Not a leaderboard — three questions enzyme chemis
 **Ground truth:** hydrolysis / metal activation
 **Catalyst Atlas correct:** yes
 
-> Representation is the **catalytic microenvironment** (reaction-center residues, cofactors/metals, geometry, first shell) — not whole-protein fold similarity or pocket shape alone.
-
-**Takeaway:** Catalytic neighbors share chemistry family despite different fold neighborhoods — microenvironment captures convergent reaction logic.
+**Takeaway:** Neighbors share chemistry despite different fold neighborhoods.
 
 ---
 
-# Case study: Cofactor-aware chemistry hypothesis
+# Cofactor-aware chemistry hypothesis
 
 **Question:** Can Catalyst provide a plausible chemistry hypothesis from the reaction center?
 
-# Cofactor-aware chemistry hypothesis
 
 **Query enzyme:** `MCSA00661` — arylsulfatase
 **Context:** Site cofactors/metals: Ca
@@ -110,8 +101,4 @@ Real M-CSA reaction centers. Not a leaderboard — three questions enzyme chemis
 **Ground truth:** hydrolysis / metal activation
 **Catalyst Atlas correct:** yes
 
-> Representation is the **catalytic microenvironment** (reaction-center residues, cofactors/metals, geometry, first shell) — not whole-protein fold similarity or pocket shape alone.
-
-**Takeaway:** Cofactor/metal context in the microenvironment supports a chemistry hypothesis an enzymologist would recognize — not an EC digit alone.
-
----
+**Takeaway:** Cofactor/metal context supports a recognizable chemistry hypothesis.
