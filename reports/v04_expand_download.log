@@ -1,0 +1,27 @@
+18:33:02 INFO catalyst_atlas.data.download: Ingesting public M-CSA catalytic sites (n_enzymes=1000) — this downloads API JSON, UniProt sequences, and RCSB PDBs
+18:33:02 INFO catalyst_atlas.data.mcsa: Loaded cached M-CSA entries (1003)
+18:33:02 INFO catalyst_atlas.data.mcsa: Loaded cached M-CSA residues (5248)
+M-CSA sites+PDB:   0%|          | 0/1000 [00:00<?, ?it/s]M-CSA sites+PDB:   0%|          | 4/1000 [00:00<00:30, 33.04it/s]M-CSA sites+PDB:   1%|          | 8/1000 [00:00<00:30, 32.92it/s]M-CSA sites+PDB:   1%|          | 12/1000 [00:00<00:29, 34.03it/s]18:33:03 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
+18:33:03 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): rest.uniprot.org:443
+18:33:03 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P29894,%20P22619.fasta HTTP/1.1" 400 None
+18:33:03 DEBUG catalyst_atlas.data.mcsa: UniProt miss P29894, P22619 (400)
+M-CSA sites+PDB:   2%|▏         | 16/1000 [00:00<01:05, 15.02it/s]18:33:03 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
+M-CSA sites+PDB:   2%|▏         | 20/1000 [00:00<00:51, 18.95it/s]M-CSA sites+PDB:   2%|▏         | 24/1000 [00:01<00:44, 21.97it/s]M-CSA sites+PDB:   3%|▎         | 28/1000 [00:01<00:39, 24.66it/s]M-CSA sites+PDB:   3%|▎         | 32/1000 [00:01<00:36, 26.78it/s]M-CSA sites+PDB:   4%|▎         | 36/1000 [00:01<00:33, 28.46it/s]M-CSA sites+PDB:   4%|▍         | 40/1000 [00:01<00:35, 27.32it/s]M-CSA sites+PDB:   4%|▍         | 44/1000 [00:01<00:33, 28.54it/s]M-CSA sites+PDB:   5%|▍         | 48/1000 [00:01<00:31, 29.89it/s]18:33:04 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
+M-CSA sites+PDB:   5%|▌         | 52/1000 [00:01<00:30, 30.96it/s]M-CSA sites+PDB:   6%|▌         | 56/1000 [00:02<00:31, 30.45it/s]18:33:04 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
+18:33:04 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
+18:33:05 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P13448,%20P13449.fasta HTTP/1.1" 400 None
+18:33:05 DEBUG catalyst_atlas.data.mcsa: UniProt miss P13448, P13449 (400)
+18:33:05 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
+18:33:05 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P26769,%20P30803.fasta HTTP/1.1" 400 None
+18:33:05 DEBUG catalyst_atlas.data.mcsa: UniProt miss P26769, P30803 (400)
+M-CSA sites+PDB:   6%|▌         | 60/1000 [00:02<01:21, 11.55it/s]18:33:05 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
+18:33:06 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P11653,%20P11652.fasta HTTP/1.1" 400 None
+18:33:06 DEBUG catalyst_atlas.data.mcsa: UniProt miss P11653, P11652 (400)
+18:33:06 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
+18:33:06 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P80077,%20P80078.fasta HTTP/1.1" 400 None
+18:33:06 DEBUG catalyst_atlas.data.mcsa: UniProt miss P80077, P80078 (400)
+M-CSA sites+PDB:   6%|▋         | 63/1000 [00:03<02:07,  7.37it/s]M-CSA sites+PDB:   7%|▋         | 67/1000 [00:03<01:35,  9.81it/s]M-CSA sites+PDB:   7%|▋         | 71/1000 [00:04<01:13, 12.62it/s]M-CSA sites+PDB:   8%|▊         | 75/1000 [00:04<00:58, 15.69it/s]M-CSA sites+PDB:   8%|▊         | 79/1000 [00:04<00:49, 18.76it/s]M-CSA sites+PDB:   8%|▊         | 83/1000 [00:04<00:42, 21.42it/s]18:33:07 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
+18:33:07 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
+18:33:07 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P18316,%20P18315,%20P18314.fasta HTTP/1.1" 400 None
+18:33:07 DEBUG catalyst_atlas.data.mcsa: UniProt miss P18316, P18315, P18314 (400)
+M-CSA sites+PDB:   9%|▊         | 87/1000 [00:04<01:05, 14.01it/s]M-CSA sites+PDB:   9%|▉         | 91/1000 [00:05<00:54, 16.76it/s]
