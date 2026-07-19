@@ -268,7 +268,7 @@ Primary metric: **`fold_cluster`**. Convergent audit reports **n** explicitly. P
 | Annotation-style controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy centers |
 | Expanded atlas | `cat-download --public --expanded --n-extra 200` | UniProt ACT_SITE + EC labels; AFDB as `structure_source=alphafold` |
 
-Plan: [`docs/plans/v0.4_rigor_and_scale.md`](docs/plans/v0.4_rigor_and_scale.md).
+Expanded-track snapshot: **n=1157** (M-CSA 959 + UniProt 198; AlphaFold 50). Engineered fold holdout stays ~0.38. Summary: [`reports/v04_reeval_summary.json`](reports/v04_reeval_summary.json). Plan: [`docs/plans/v0.4_rigor_and_scale.md`](docs/plans/v0.4_rigor_and_scale.md).
 
 Out of scope for now: ESM fine-tuning, more engineered fusion variants, optimizing random-split accuracy.
 
