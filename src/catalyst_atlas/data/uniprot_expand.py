@@ -63,31 +63,6 @@ def attach_ec_labels(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _fetch_uniprot_act_site_page(
-    sess: requests.Session,
-    size: int = 50,
-    cursor: str | None = None,
-) -> dict[str, Any]:
-    # Proteins with ACT_SITE feature and a PDB cross-reference.
-    query = "(ft_act_site:*) AND (database:pdb)"
-    params = {
-        "query": query,
-        "format": "json",
-        "size": size,
-        "fields": "accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name",
-    }
-    headers = {}
-    if cursor:
-        headers["Link"] = cursor  # not used; UniProt uses query cursor in next URL
-    url = cursor or UNIPROT_SEARCH
-    if cursor and cursor.startswith("http"):
-        resp = sess.get(cursor, timeout=120)
-    else:
-        resp = sess.get(UNIPROT_SEARCH, params=params, timeout=120)
-    resp.raise_for_status()
-    return resp.json(), resp.headers
-
-
 def fetch_uniprot_catalytic_candidates(
     n_enzymes: int = 500,
     sess: requests.Session | None = None,

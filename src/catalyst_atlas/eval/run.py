@@ -447,24 +447,35 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
 
 
 def _enrich_meta_for_audits(meta: pd.DataFrame) -> pd.DataFrame:
-    """Attach catalytic_aas / cofactor_names from microenvironments when missing."""
+    """Attach catalytic_aas / cofactor_names / EC coarse labels when missing."""
+    from catalyst_atlas.data.uniprot_expand import attach_ec_labels
+
     out = meta.copy()
     micro_path = PROCESSED / "microenvironments.parquet"
-    if not micro_path.exists():
-        return out
-    micro = pd.read_parquet(micro_path)
-    cols = [c for c in ("catalytic_aas", "cofactor_names", "first_shell_aas") if c in micro.columns]
-    if not cols or "enzyme_id" not in micro.columns:
-        return out
-    m = micro[["enzyme_id", *cols]].drop_duplicates("enzyme_id")
-    out["enzyme_id"] = out["enzyme_id"].astype(str)
-    m["enzyme_id"] = m["enzyme_id"].astype(str)
-    merged = out.merge(m, on="enzyme_id", how="left", suffixes=("", "_micro"))
-    for c in cols:
-        if c not in out.columns and c in merged.columns:
-            out[c] = merged[c]
-        elif f"{c}_micro" in merged.columns:
-            out[c] = out[c].fillna(merged[f"{c}_micro"]) if c in out.columns else merged[c]
+    if micro_path.exists():
+        micro = pd.read_parquet(micro_path)
+        cols = [
+            c
+            for c in ("catalytic_aas", "cofactor_names", "first_shell_aas")
+            if c in micro.columns
+        ]
+        if cols and "enzyme_id" in micro.columns:
+            m = micro[["enzyme_id", *cols]].drop_duplicates("enzyme_id")
+            out["enzyme_id"] = out["enzyme_id"].astype(str)
+            m["enzyme_id"] = m["enzyme_id"].astype(str)
+            merged = out.merge(m, on="enzyme_id", how="left", suffixes=("", "_micro"))
+            for c in cols:
+                src = c if c in merged.columns else None
+                alt = f"{c}_micro" if f"{c}_micro" in merged.columns else None
+                if c not in out.columns and src:
+                    out[c] = merged[src]
+                elif alt:
+                    if c in out.columns:
+                        out[c] = out[c].where(out[c].notna(), merged[alt])
+                    else:
+                        out[c] = merged[alt]
+    if "ec_number" in out.columns:
+        out = attach_ec_labels(out)
     return out
 
 

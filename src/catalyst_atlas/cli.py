@@ -38,13 +38,36 @@ def download_main(argv: list[str] | None = None) -> int:
         help="Demo size, or max M-CSA entries when using --public",
     )
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--expanded",
+        action="store_true",
+        help="Merge UniProt ACT_SITE extras + EC labels / structure_source (public mode)",
+    )
+    parser.add_argument(
+        "--n-extra",
+        type=int,
+        default=200,
+        help="Max UniProt-sourced extras when using --expanded",
+    )
+    parser.add_argument(
+        "--no-alphafold",
+        action="store_true",
+        help="When expanding, skip AlphaFold fallback structures",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
 
     from catalyst_atlas.data.download import download_atlas
 
-    download_atlas(demo=not args.public, n_enzymes=args.n_enzymes, seed=args.seed)
+    download_atlas(
+        demo=not args.public,
+        n_enzymes=args.n_enzymes,
+        seed=args.seed,
+        expanded=args.expanded,
+        n_extra=args.n_extra,
+        allow_alphafold=not args.no_alphafold,
+    )
     return 0
 
 
