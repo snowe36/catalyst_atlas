@@ -59,9 +59,11 @@ def test_method_predictions_includes_optional_tracks():
     )
     assert "esm2_transfer" in methods
     assert "learned_catalytic_encoder" in methods
+    assert "catalyst_hybrid" in methods
     assert "catalyst_microenvironment" in methods
     assert len(methods["esm2_transfer"]) == 4
     assert len(methods["learned_catalytic_encoder"]) == 4
+    assert len(methods["catalyst_hybrid"]) == 4
 
 
 def test_knn_transfer_smoke():

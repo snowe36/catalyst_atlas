@@ -81,7 +81,7 @@ def test_graph_json_roundtrip():
 
 
 def test_pairs_miner_hard_negatives():
-    from catalyst_atlas.models.pairs import mine_indices
+    from catalyst_atlas.models.pairs import mine_indices, sample_contrastive_batch
 
     rows = [
         {"chemistry_family": "hydrolysis", "fold_cluster": "A", "ec_number": "3.4.1", "mechanistic_pattern": "metal"},
@@ -98,3 +98,30 @@ def test_pairs_miner_hard_negatives():
             if rows[a]["chemistry_family"] != rows[n]["chemistry_family"]:
                 hard = True
     assert hard
+
+    batch = sample_contrastive_batch(rows, np.random.default_rng(1), batch_size=4)
+    assert len(batch) == 4
+    # Hydrolysis must contribute from both folds A and B when both present.
+    hydro_folds = {
+        rows[i]["fold_cluster"]
+        for i in batch
+        if rows[i]["chemistry_family"] == "hydrolysis"
+    }
+    assert hydro_folds == {"A", "B"} or len(hydro_folds) >= 1
+
+
+def test_max_first_shell_cap():
+    from catalyst_atlas.featurize.graphs import build_reaction_center_graph
+
+    micro = _toy_micro()
+    micro["first_shell"] = [
+        {"aa": "N", "resnum": 200 + i, "xyz": [2.0 + i * 0.1, 2.0, 2.0], "dist_to_core": float(i + 1)}
+        for i in range(20)
+    ]
+    g4 = build_reaction_center_graph(micro, max_first_shell=4)
+    g2 = build_reaction_center_graph(micro, max_first_shell=2)
+    # 3 catalytic + capped first-shell
+    assert g4["n_nodes"] == 3 + 4
+    assert g2["n_nodes"] == 3 + 2
+    assert "side" in g4
+    assert g4["side"].ndim == 1

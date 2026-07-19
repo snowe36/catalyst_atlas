@@ -23,7 +23,7 @@ ROLE_VOCAB = ["catalytic", "first_shell", "metal", "cofactor"]
 EDGE_TYPE_VOCAB = ["distance", "coordination", "ligand_contact"]
 COORD_RADIUS = 3.5
 LIGAND_CONTACT_RADIUS = 6.0
-MAX_FIRST_SHELL = 12  # keep graphs small and chemistry-focused
+MAX_FIRST_SHELL = 4  # nearest first-shell only — cut fold-adjacent noise
 
 NODE_DIM = (
     len(ROLE_VOCAB)  # role
@@ -108,15 +108,50 @@ def _ligand_node(kind: str, name: str, lig: dict[str, Any]) -> np.ndarray:
     ).astype(np.float32)
 
 
-def build_reaction_center_graph(microenvironment_json: str | dict[str, Any]) -> dict[str, Any]:
+def graph_side_vector(microenvironment_json: str | dict[str, Any]) -> np.ndarray:
+    """Compact metal/cofactor engineered side features for fusion readout."""
+    from catalyst_atlas.featurize.features import (
+        _cofactor_onehot as _feat_cofactor_onehot,
+        _metal_coordination_features,
+    )
+
+    if isinstance(microenvironment_json, str):
+        micro = json.loads(microenvironment_json) if microenvironment_json else {}
+        raw = microenvironment_json or "{}"
+    else:
+        micro = microenvironment_json or {}
+        raw = json.dumps(micro)
+
+    names: list[str] = []
+    for lig in micro.get("ligands") or []:
+        n = str(lig.get("name") or "").strip()
+        if n:
+            names.append(n)
+    cofactor_names = ",".join(names) if names else "none"
+    cof = _feat_cofactor_onehot(cofactor_names).astype(np.float32)
+    metal = _metal_coordination_features(raw).astype(np.float32)
+    return np.concatenate([cof, metal]).astype(np.float32)
+
+
+SIDE_DIM = len(COFACTOR_VOCAB) + 6  # cofactor one-hot + metal coordination
+
+
+def build_reaction_center_graph(
+    microenvironment_json: str | dict[str, Any],
+    max_first_shell: int | None = None,
+) -> dict[str, Any]:
     """Build a fixed-schema graph dict from a microenvironment payload."""
     if isinstance(microenvironment_json, str):
         micro = json.loads(microenvironment_json) if microenvironment_json else {}
     else:
         micro = microenvironment_json or {}
 
+    n_shell = MAX_FIRST_SHELL if max_first_shell is None else int(max_first_shell)
     catalytic = list(micro.get("catalytic") or [])
-    first_shell = list(micro.get("first_shell") or [])[:MAX_FIRST_SHELL]
+    # Prefer nearest-to-core first-shell residues when distance is available.
+    shell_raw = list(micro.get("first_shell") or [])
+    shell_raw.sort(key=lambda r: float(r.get("dist_to_core") or 1e9))
+    first_shell = shell_raw[:n_shell]
     ligands = list(micro.get("ligands") or [])
 
     nodes: list[np.ndarray] = []
@@ -148,6 +183,8 @@ def build_reaction_center_graph(microenvironment_json: str | dict[str, Any]) -> 
         xyzs.append(np.asarray(lig["xyz"], dtype=float))
         node_meta.append({"kind": kind, "name": name})
 
+    side = graph_side_vector(micro)
+
     if not nodes:
         # Degenerate empty graph — single zero node so encoders stay well-defined.
         x = np.zeros((1, NODE_DIM), dtype=np.float32)
@@ -160,6 +197,7 @@ def build_reaction_center_graph(microenvironment_json: str | dict[str, Any]) -> 
             "n_nodes": 1,
             "n_edges": 0,
             "node_meta": [{"kind": "empty"}],
+            "side": side,
         }
 
     edges_src: list[int] = []
@@ -230,11 +268,12 @@ def build_reaction_center_graph(microenvironment_json: str | dict[str, Any]) -> 
         "n_nodes": int(x.shape[0]),
         "n_edges": int(edge_attr.shape[0]),
         "node_meta": node_meta,
+        "side": side,
     }
 
 
 def graph_to_jsonable(graph: dict[str, Any]) -> dict[str, Any]:
-    return {
+    out = {
         "x": graph["x"].tolist(),
         "edge_index": graph["edge_index"].tolist(),
         "edge_attr": graph["edge_attr"].tolist(),
@@ -242,10 +281,13 @@ def graph_to_jsonable(graph: dict[str, Any]) -> dict[str, Any]:
         "n_edges": graph["n_edges"],
         "node_meta": graph["node_meta"],
     }
+    if "side" in graph and graph["side"] is not None:
+        out["side"] = np.asarray(graph["side"], dtype=np.float32).tolist()
+    return out
 
 
 def graph_from_jsonable(payload: dict[str, Any]) -> dict[str, Any]:
-    return {
+    g = {
         "x": np.asarray(payload["x"], dtype=np.float32),
         "edge_index": np.asarray(payload["edge_index"], dtype=np.int64),
         "edge_attr": np.asarray(payload["edge_attr"], dtype=np.float32),
@@ -253,9 +295,17 @@ def graph_from_jsonable(payload: dict[str, Any]) -> dict[str, Any]:
         "n_edges": int(payload["n_edges"]),
         "node_meta": payload.get("node_meta") or [],
     }
+    if "side" in payload and payload["side"] is not None:
+        g["side"] = np.asarray(payload["side"], dtype=np.float32)
+    else:
+        g["side"] = np.zeros(SIDE_DIM, dtype=np.float32)
+    return g
 
 
-def build_graphs_table(micro_df: pd.DataFrame | None = None) -> pd.DataFrame:
+def build_graphs_table(
+    micro_df: pd.DataFrame | None = None,
+    max_first_shell: int | None = None,
+) -> pd.DataFrame:
     """Build and persist reaction-center graphs for the atlas."""
     ensure_dirs()
     if micro_df is None:
@@ -266,7 +316,10 @@ def build_graphs_table(micro_df: pd.DataFrame | None = None) -> pd.DataFrame:
 
     rows = []
     for _, row in micro_df.iterrows():
-        g = build_reaction_center_graph(row.get("microenvironment_json") or "{}")
+        g = build_reaction_center_graph(
+            row.get("microenvironment_json") or "{}",
+            max_first_shell=max_first_shell,
+        )
         rows.append(
             {
                 "enzyme_id": row["enzyme_id"],
@@ -295,14 +348,15 @@ def build_graphs_table(micro_df: pd.DataFrame | None = None) -> pd.DataFrame:
     return out
 
 
-def run_graphs() -> dict[str, Any]:
-    out = build_graphs_table()
+def run_graphs(max_first_shell: int | None = None) -> dict[str, Any]:
+    out = build_graphs_table(max_first_shell=max_first_shell)
     return {
         "n_enzymes": int(len(out)),
         "mean_nodes": float(out["n_nodes"].mean()),
         "mean_edges": float(out["n_edges"].mean()),
         "node_dim": NODE_DIM,
         "edge_dim": EDGE_DIM,
+        "max_first_shell": int(MAX_FIRST_SHELL if max_first_shell is None else max_first_shell),
     }
 
 

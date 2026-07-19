@@ -108,10 +108,12 @@ def eval_main(argv: list[str] | None = None) -> int:
         fs = methods.get("foldseek_transfer", {}).get("accuracy", float("nan"))
         esm = methods.get("esm2_transfer", {}).get("accuracy", float("nan"))
         learned = methods.get("learned_catalytic_encoder", {}).get("accuracy", float("nan"))
+        hybrid = methods.get("catalyst_hybrid", {}).get("accuracy", float("nan"))
+        fusion = methods.get("learned_fusion_encoder", {}).get("accuracy", float("nan"))
         print(
-            f"{split:14s}  catalyst={cat:.3f}  "
-            f"mmseqs={mm:.3f}  foldseek={fs:.3f}  "
-            f"esm={esm:.3f}  learned={learned:.3f}"
+            f"{split:14s}  catalyst={cat:.3f}  hybrid={hybrid:.3f}  "
+            f"fusion={fusion:.3f}  learned={learned:.3f}  "
+            f"mmseqs={mm:.3f}  foldseek={fs:.3f}  esm={esm:.3f}"
         )
     return 0
 
@@ -214,18 +216,25 @@ def graphs_main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Build explicit reaction-center graphs (catalytic machine graphs)"
     )
+    parser.add_argument(
+        "--max-first-shell",
+        type=int,
+        default=None,
+        help="Cap nearest first-shell residues (default: graphs.MAX_FIRST_SHELL=4)",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
 
     from catalyst_atlas.featurize.graphs import run_graphs
 
-    summary = run_graphs()
+    summary = run_graphs(max_first_shell=args.max_first_shell)
     print(
         f"graphs n={summary['n_enzymes']}  "
         f"mean_nodes={summary['mean_nodes']:.1f}  "
         f"mean_edges={summary['mean_edges']:.1f}  "
-        f"node_dim={summary['node_dim']}"
+        f"node_dim={summary['node_dim']}  "
+        f"max_first_shell={summary['max_first_shell']}"
     )
     return 0
 
@@ -264,13 +273,42 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
         default="fold_cluster",
         help="Leakage-aware split whose train set is used (default: fold_cluster)",
     )
-    parser.add_argument("--epochs", type=int, default=40)
+    parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--embed-dim", type=int, default=64)
     parser.add_argument("--hidden-dim", type=int, default=64)
     parser.add_argument("--device", type=str, default=None)
+    parser.add_argument(
+        "--val-folds",
+        type=int,
+        default=4,
+        help="Number of fold_clusters held out from train for validation",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=30,
+        help="Early-stop patience on validation chemistry accuracy",
+    )
+    parser.add_argument(
+        "--lambda-cls",
+        type=float,
+        default=0.3,
+        help="Weight on chemistry classification auxiliary loss",
+    )
+    parser.add_argument(
+        "--fusion",
+        action="store_true",
+        help="Fuse engineered features_full into GNN readout; write embedding_fusion.npy",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.1,
+        help="SupCon temperature",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
@@ -287,12 +325,19 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
             embed_dim=args.embed_dim,
             hidden_dim=args.hidden_dim,
             device=args.device,
+            n_val_folds=args.val_folds,
+            patience=args.patience,
+            lambda_cls=args.lambda_cls,
+            fusion=args.fusion,
+            temperature=args.temperature,
         )
     except ImportError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     print(
         f"trained split={summary['split']} n={summary['n_enzymes']} "
-        f"dim={summary['embed_dim']} loss={summary['final_loss']}"
+        f"dim={summary['embed_dim']} fusion={summary.get('fusion')} "
+        f"best_val={summary.get('best_val_acc')}@{summary.get('best_epoch')} "
+        f"loss={summary['final_loss']}"
     )
     return 0

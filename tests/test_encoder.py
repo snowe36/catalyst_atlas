@@ -49,8 +49,12 @@ def test_encoder_batch_encode():
 def test_train_step_runs():
     torch = pytest.importorskip("torch")
     from catalyst_atlas.models.graph_encoder import ReactionCenterEncoder
-    from catalyst_atlas.models.pairs import mine_indices
-    from catalyst_atlas.models.train_encoder import _supcon_loss, _triplet_loss
+    from catalyst_atlas.models.pairs import mine_indices, sample_contrastive_batch
+    from catalyst_atlas.models.train_encoder import (
+        _batched_supcon_loss,
+        _supcon_loss,
+        _triplet_loss,
+    )
 
     enc = ReactionCenterEncoder(hidden_dim=32, embed_dim=16, n_layers=2)
     opt = torch.optim.Adam(enc.parameters(), lr=1e-2)
@@ -108,3 +112,27 @@ def test_train_step_runs():
     loss.backward()
     opt.step()
     assert torch.isfinite(loss)
+
+    # Batched multi-positive SupCon path (fresh encoder — avoid dirty grads).
+    enc2 = ReactionCenterEncoder(hidden_dim=32, embed_dim=16, n_layers=2)
+    batch = sample_contrastive_batch(meta, np.random.default_rng(1), batch_size=6)
+    assert len(batch) >= 2
+    chem_map = {"a": 0, "b": 1}
+    z = torch.stack([enc2.encode_graph(graphs[i]) for i in batch])
+    chem_ids = torch.tensor([chem_map[meta[i]["chemistry_family"]] for i in batch])
+    loss2 = _batched_supcon_loss(z, chem_ids)
+    assert torch.isfinite(loss2)
+    loss2.backward()
+
+
+def test_fusion_encoder_eng_dim():
+    torch = pytest.importorskip("torch")
+    from catalyst_atlas.models.graph_encoder import ReactionCenterEncoder
+
+    eng_dim = 8
+    enc = ReactionCenterEncoder(hidden_dim=32, embed_dim=16, n_layers=2, eng_dim=eng_dim)
+    g = _tiny_graph()
+    eng = np.random.default_rng(0).normal(size=eng_dim).astype(np.float32)
+    z = enc.encode_graph(g, eng=eng)
+    assert z.shape == (16,)
+    assert torch.allclose(z.norm(), torch.tensor(1.0), atol=1e-4)

@@ -16,8 +16,12 @@ def build_mpnn(
     hidden_dim: int = 64,
     embed_dim: int = 64,
     n_layers: int = 3,
+    eng_dim: int = 0,
 ):
-    """Construct an MPNN module (requires torch)."""
+    """Construct an MPNN module (requires torch).
+
+    When ``eng_dim > 0``, readout is ``normalize(out([mean_pool; eng]))``.
+    """
     torch = require_torch()
     nn = torch.nn
     F = torch.nn.functional
@@ -41,16 +45,18 @@ def build_mpnn(
     class MPNN(nn.Module):
         def __init__(self):
             super().__init__()
+            self.eng_dim = eng_dim
             self.node_in = nn.Linear(node_dim, hidden_dim)
             self.edge_in = nn.Linear(edge_dim, hidden_dim)
             self.layers = nn.ModuleList([MessageLayer(hidden_dim) for _ in range(n_layers)])
+            out_in = hidden_dim + eng_dim
             self.out = nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim),
+                nn.Linear(out_in, hidden_dim),
                 nn.ReLU(),
                 nn.Linear(hidden_dim, embed_dim),
             )
 
-        def forward(self, x, edge_index, edge_attr):
+        def forward(self, x, edge_index, edge_attr, eng=None):
             h = F.relu(self.node_in(x))
             if edge_attr.numel() == 0:
                 e = x.new_zeros((0, h.size(-1)))
@@ -58,7 +64,18 @@ def build_mpnn(
                 e = F.relu(self.edge_in(edge_attr))
             for layer in self.layers:
                 h = layer(h, edge_index, e)
-            z = self.out(h.mean(dim=0))
+            pooled = h.mean(dim=0)
+            if self.eng_dim > 0:
+                if eng is None:
+                    eng = pooled.new_zeros(self.eng_dim)
+                else:
+                    eng = eng.to(dtype=pooled.dtype, device=pooled.device).view(-1)
+                    if eng.numel() != self.eng_dim:
+                        raise ValueError(
+                            f"eng dim {eng.numel()} != expected eng_dim {self.eng_dim}"
+                        )
+                pooled = torch.cat([pooled, eng], dim=-1)
+            z = self.out(pooled)
             return F.normalize(z, p=2, dim=-1)
 
     return MPNN()
@@ -72,14 +89,17 @@ class ReactionCenterEncoder:
         hidden_dim: int = 64,
         embed_dim: int = 64,
         n_layers: int = 3,
+        eng_dim: int = 0,
     ):
         self.torch = require_torch()
+        self.eng_dim = eng_dim
         self.model = build_mpnn(
             node_dim=node_dim,
             edge_dim=edge_dim,
             hidden_dim=hidden_dim,
             embed_dim=embed_dim,
             n_layers=n_layers,
+            eng_dim=eng_dim,
         )
         self.embed_dim = embed_dim
 
@@ -104,19 +124,33 @@ class ReactionCenterEncoder:
     def load_state_dict(self, state):
         self.model.load_state_dict(state)
 
-    def encode_graph(self, graph: dict[str, Any], device=None):
+    def encode_graph(self, graph: dict[str, Any], device=None, eng: np.ndarray | None = None):
         torch = self.torch
         x = torch.as_tensor(graph["x"], dtype=torch.float32, device=device)
         ei = torch.as_tensor(graph["edge_index"], dtype=torch.long, device=device)
         ea = torch.as_tensor(graph["edge_attr"], dtype=torch.float32, device=device)
-        return self.model(x, ei, ea)
+        eng_t = None
+        if self.eng_dim > 0:
+            if eng is not None:
+                eng_t = torch.as_tensor(eng, dtype=torch.float32, device=device)
+            elif graph.get("side") is not None and len(np.asarray(graph["side"])) == self.eng_dim:
+                eng_t = torch.as_tensor(graph["side"], dtype=torch.float32, device=device)
+            else:
+                eng_t = torch.zeros(self.eng_dim, dtype=torch.float32, device=device)
+        return self.model(x, ei, ea, eng=eng_t)
 
-    def encode_graphs(self, graphs: list[dict[str, Any]], device=None) -> np.ndarray:
+    def encode_graphs(
+        self,
+        graphs: list[dict[str, Any]],
+        device=None,
+        eng_matrix: np.ndarray | None = None,
+    ) -> np.ndarray:
         torch = self.torch
         self.model.eval()
         out = []
         with torch.no_grad():
-            for g in graphs:
-                emb = self.encode_graph(g, device=device)
+            for i, g in enumerate(graphs):
+                eng = None if eng_matrix is None else eng_matrix[i]
+                emb = self.encode_graph(g, device=device, eng=eng)
                 out.append(tensor_to_numpy(emb))
         return np.stack(out, axis=0)

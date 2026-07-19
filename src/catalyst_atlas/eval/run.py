@@ -92,8 +92,8 @@ def _load_unscaled_features() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
 
 def _load_optional_learned_embeddings(
     meta: pd.DataFrame,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
-    """Frozen ESM + learned reaction-center embeddings if present on disk."""
+) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
+    """Frozen ESM + learned / fusion reaction-center embeddings if present."""
     X_esm = _align_embedding(
         meta,
         PROCESSED / "embedding_esm.npy",
@@ -104,11 +104,18 @@ def _load_optional_learned_embeddings(
         PROCESSED / "embedding_learned.npy",
         PROCESSED / "embedding_learned_meta.parquet",
     )
+    X_fusion = _align_embedding(
+        meta,
+        PROCESSED / "embedding_fusion.npy",
+        PROCESSED / "embedding_fusion_meta.parquet",
+    )
     if X_esm is not None:
         logger.info("Loaded ESM control embeddings %s", X_esm.shape)
     if X_learned is not None:
         logger.info("Loaded learned catalytic embeddings %s", X_learned.shape)
-    return X_esm, X_learned
+    if X_fusion is not None:
+        logger.info("Loaded fusion catalytic embeddings %s", X_fusion.shape)
+    return X_esm, X_learned, X_fusion
 
 
 def _scale_train_test(
@@ -147,6 +154,7 @@ def _method_predictions(
     foldseek_hits: pd.DataFrame | None = None,
     X_esm: np.ndarray | None = None,
     X_learned: np.ndarray | None = None,
+    X_fusion: np.ndarray | None = None,
 ) -> tuple[list[str], dict[str, list[str]], np.ndarray, np.ndarray]:
     """Return y_test, method→preds, and scaled full train/test matrices."""
     label_col = label_col or chemistry_label_col(meta)
@@ -192,6 +200,16 @@ def _method_predictions(
         methods["learned_catalytic_encoder"] = knn_transfer(
             X_learned[train_idx], y_train, X_learned[test_idx], k=k
         )
+        # Eval-time hybrid: z-score both blocks on train, then concat.
+        eng_tr, eng_te = _scale_train_test(X_full, train_idx, test_idx)
+        lrn_tr, lrn_te = _scale_train_test(X_learned, train_idx, test_idx)
+        Xh_tr = np.hstack([eng_tr, lrn_tr])
+        Xh_te = np.hstack([eng_te, lrn_te])
+        methods["catalyst_hybrid"] = knn_transfer(Xh_tr, y_train, Xh_te, k=k)
+    if X_fusion is not None:
+        methods["learned_fusion_encoder"] = knn_transfer(
+            X_fusion[train_idx], y_train, X_fusion[test_idx], k=k
+        )
     return y_test, methods, X_full_train, X_full_test
 
 
@@ -208,6 +226,7 @@ def evaluate_split(
     foldseek_hits: pd.DataFrame | None = None,
     X_esm: np.ndarray | None = None,
     X_learned: np.ndarray | None = None,
+    X_fusion: np.ndarray | None = None,
 ) -> dict[str, Any]:
     label_col = label_col or chemistry_label_col(meta)
     y_train = meta.iloc[train_idx][label_col].tolist()
@@ -224,6 +243,7 @@ def evaluate_split(
         foldseek_hits=foldseek_hits,
         X_esm=X_esm,
         X_learned=X_learned,
+        X_fusion=X_fusion,
     )
 
     neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
@@ -261,6 +281,8 @@ def _plot_results(results: dict[str, Any]) -> None:
     # Focus plot on the distinctive comparison.
     keep = [
         "catalyst_microenvironment",
+        "catalyst_hybrid",
+        "learned_fusion_encoder",
         "learned_catalytic_encoder",
         "esm2_transfer",
         "mmseqs_transfer",
@@ -272,6 +294,8 @@ def _plot_results(results: dict[str, Any]) -> None:
     plot_df["method"] = plot_df["method"].map(
         {
             "catalyst_microenvironment": "Catalyst Atlas",
+            "catalyst_hybrid": "Hybrid (eng+learned)",
+            "learned_fusion_encoder": "Learned fusion",
             "learned_catalytic_encoder": "Learned RC encoder",
             "esm2_transfer": "ESM-2 (frozen)",
             "mmseqs_transfer": "MMseqs2 transfer",
@@ -419,7 +443,9 @@ def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
     ]
     method_order = [
         ("catalyst_microenvironment", "Catalyst", "#0E7490"),
-        ("learned_catalytic_encoder", "Learned RC", "#B45309"),
+        ("catalyst_hybrid", "Hybrid", "#047857"),
+        ("learned_fusion_encoder", "Fusion", "#B45309"),
+        ("learned_catalytic_encoder", "Learned RC", "#D97706"),
         ("esm2_transfer", "ESM-2", "#7C3AED"),
         ("foldseek_transfer", "Foldseek", "#6B7280"),
         ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
@@ -467,7 +493,7 @@ def run_eval(
 ) -> dict[str, Any]:
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
-    X_esm, X_learned = _load_optional_learned_embeddings(meta)
+    X_esm, X_learned, X_fusion = _load_optional_learned_embeddings(meta)
     label_col = chemistry_label_col(meta)
     seq_sim = None
     if "sequence" in meta.columns and meta["sequence"].fillna("").str.len().gt(0).any():
@@ -492,6 +518,7 @@ def run_eval(
         "optional_embeddings": {
             "esm2": X_esm is not None,
             "learned_catalytic_encoder": X_learned is not None,
+            "learned_fusion_encoder": X_fusion is not None,
         },
         "splits": {},
     }
@@ -510,6 +537,7 @@ def run_eval(
             foldseek_hits=foldseek_hits,
             X_esm=X_esm,
             X_learned=X_learned,
+            X_fusion=X_fusion,
         )
 
     # Cryptic-analog diagnostic: test enzymes whose seq_cluster is unseen in train
@@ -536,6 +564,7 @@ def run_eval(
             foldseek_hits=foldseek_hits,
             X_esm=X_esm,
             X_learned=X_learned,
+            X_fusion=X_fusion,
         )
         results["cryptic_seq_holdout"] = sub
 
@@ -554,6 +583,7 @@ def run_eval(
         foldseek_hits=foldseek_hits,
         X_esm=X_esm,
         X_learned=X_learned,
+        X_fusion=X_fusion,
     )
     nearest_id, id_source = nearest_train_sequence_identity(
         meta,
@@ -566,6 +596,8 @@ def run_eval(
         name: preds_rand[name]
         for name in (
             "catalyst_microenvironment",
+            "catalyst_hybrid",
+            "learned_fusion_encoder",
             "learned_catalytic_encoder",
             "esm2_transfer",
             "mmseqs_transfer",
