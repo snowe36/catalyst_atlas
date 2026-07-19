@@ -57,13 +57,29 @@ def test_method_predictions_includes_optional_tracks():
         X_esm=X_esm,
         X_learned=X_learned,
     )
+    X_esm_gnn = rng.normal(size=(8, 8)).astype(np.float32)
+    X_esm_gnn /= np.linalg.norm(X_esm_gnn, axis=1, keepdims=True) + 1e-8
+    _, methods2, _, _ = _method_predictions(
+        meta,
+        X_full,
+        X_comp,
+        train_idx,
+        test_idx,
+        k=2,
+        label_col="chemistry_family",
+        X_esm=X_esm,
+        X_learned=X_learned,
+        X_esm_gnn=X_esm_gnn,
+    )
     assert "esm2_transfer" in methods
     assert "learned_catalytic_encoder" in methods
     assert "catalyst_hybrid" in methods
     assert "catalyst_microenvironment" in methods
+    assert "esm_gnn_fusion" in methods2
     assert len(methods["esm2_transfer"]) == 4
     assert len(methods["learned_catalytic_encoder"]) == 4
     assert len(methods["catalyst_hybrid"]) == 4
+    assert len(methods2["esm_gnn_fusion"]) == 4
 
 
 def test_knn_transfer_smoke():

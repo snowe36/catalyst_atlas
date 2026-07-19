@@ -110,10 +110,11 @@ def eval_main(argv: list[str] | None = None) -> int:
         learned = methods.get("learned_catalytic_encoder", {}).get("accuracy", float("nan"))
         hybrid = methods.get("catalyst_hybrid", {}).get("accuracy", float("nan"))
         fusion = methods.get("learned_fusion_encoder", {}).get("accuracy", float("nan"))
+        esm_gnn = methods.get("esm_gnn_fusion", {}).get("accuracy", float("nan"))
         print(
-            f"{split:14s}  catalyst={cat:.3f}  hybrid={hybrid:.3f}  "
-            f"fusion={fusion:.3f}  learned={learned:.3f}  "
-            f"mmseqs={mm:.3f}  foldseek={fs:.3f}  esm={esm:.3f}"
+            f"{split:14s}  catalyst={cat:.3f}  esm_gnn={esm_gnn:.3f}  "
+            f"esm={esm:.3f}  hybrid={hybrid:.3f}  fusion={fusion:.3f}  "
+            f"learned={learned:.3f}  mmseqs={mm:.3f}  foldseek={fs:.3f}"
         )
     return 0
 
@@ -273,7 +274,7 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
         default="fold_cluster",
         help="Leakage-aware split whose train set is used (default: fold_cluster)",
     )
-    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--epochs", type=int, default=250)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=3e-3)
     parser.add_argument("--seed", type=int, default=7)
@@ -283,19 +284,19 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--val-folds",
         type=int,
-        default=8,
+        default=12,
         help="Number of fold_clusters held out from train for validation",
     )
     parser.add_argument(
         "--patience",
         type=int,
-        default=40,
+        default=50,
         help="Early-stop patience on validation chemistry accuracy",
     )
     parser.add_argument(
         "--min-epochs",
         type=int,
-        default=40,
+        default=100,
         help="Do not early-stop before this many epochs",
     )
     parser.add_argument(
@@ -308,6 +309,27 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
         "--fusion",
         action="store_true",
         help="Fuse engineered features_full into GNN readout; write embedding_fusion.npy",
+    )
+    parser.add_argument(
+        "--fusion-side",
+        action="store_true",
+        help="Fuse metal/cofactor side vector only (less fold leakage than --fusion)",
+    )
+    parser.add_argument(
+        "--fusion-esm",
+        action="store_true",
+        help="Fuse frozen ESM-2 embedding into GNN readout; write embedding_esm_gnn.npy",
+    )
+    parser.add_argument(
+        "--no-early-stop",
+        action="store_true",
+        help="Run all epochs; select best among checkpoints every --checkpoint-every",
+    )
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=10,
+        help="Save a snapshot every N epochs for bake-off (default: 10)",
     )
     parser.add_argument(
         "--temperature",
@@ -336,6 +358,10 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
             min_epochs=args.min_epochs,
             lambda_cls=args.lambda_cls,
             fusion=args.fusion,
+            fusion_side=args.fusion_side,
+            fusion_esm=args.fusion_esm,
+            no_early_stop=args.no_early_stop,
+            checkpoint_every=args.checkpoint_every,
             temperature=args.temperature,
         )
     except ImportError as exc:
@@ -343,7 +369,8 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
         return 1
     print(
         f"trained split={summary['split']} n={summary['n_enzymes']} "
-        f"dim={summary['embed_dim']} fusion={summary.get('fusion')} "
+        f"dim={summary['embed_dim']} fusion_esm={summary.get('fusion_esm')} "
+        f"selected={summary.get('selected_checkpoint')} "
         f"best_val={summary.get('best_val_acc')}@{summary.get('best_epoch')} "
         f"loss={summary['final_loss']}"
     )

@@ -92,8 +92,8 @@ def _load_unscaled_features() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
 
 def _load_optional_learned_embeddings(
     meta: pd.DataFrame,
-) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
-    """Frozen ESM + learned / fusion reaction-center embeddings if present."""
+) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None, np.ndarray | None]:
+    """Frozen ESM + learned / fusion / ESM+GNN embeddings if present."""
     X_esm = _align_embedding(
         meta,
         PROCESSED / "embedding_esm.npy",
@@ -109,13 +109,20 @@ def _load_optional_learned_embeddings(
         PROCESSED / "embedding_fusion.npy",
         PROCESSED / "embedding_fusion_meta.parquet",
     )
+    X_esm_gnn = _align_embedding(
+        meta,
+        PROCESSED / "embedding_esm_gnn.npy",
+        PROCESSED / "embedding_esm_gnn_meta.parquet",
+    )
     if X_esm is not None:
         logger.info("Loaded ESM control embeddings %s", X_esm.shape)
     if X_learned is not None:
         logger.info("Loaded learned catalytic embeddings %s", X_learned.shape)
     if X_fusion is not None:
         logger.info("Loaded fusion catalytic embeddings %s", X_fusion.shape)
-    return X_esm, X_learned, X_fusion
+    if X_esm_gnn is not None:
+        logger.info("Loaded ESM+GNN fusion embeddings %s", X_esm_gnn.shape)
+    return X_esm, X_learned, X_fusion, X_esm_gnn
 
 
 def _scale_train_test(
@@ -155,6 +162,7 @@ def _method_predictions(
     X_esm: np.ndarray | None = None,
     X_learned: np.ndarray | None = None,
     X_fusion: np.ndarray | None = None,
+    X_esm_gnn: np.ndarray | None = None,
 ) -> tuple[list[str], dict[str, list[str]], np.ndarray, np.ndarray]:
     """Return y_test, method→preds, and scaled full train/test matrices."""
     label_col = label_col or chemistry_label_col(meta)
@@ -210,6 +218,10 @@ def _method_predictions(
         methods["learned_fusion_encoder"] = knn_transfer(
             X_fusion[train_idx], y_train, X_fusion[test_idx], k=k
         )
+    if X_esm_gnn is not None:
+        methods["esm_gnn_fusion"] = knn_transfer(
+            X_esm_gnn[train_idx], y_train, X_esm_gnn[test_idx], k=k
+        )
     return y_test, methods, X_full_train, X_full_test
 
 
@@ -227,6 +239,7 @@ def evaluate_split(
     X_esm: np.ndarray | None = None,
     X_learned: np.ndarray | None = None,
     X_fusion: np.ndarray | None = None,
+    X_esm_gnn: np.ndarray | None = None,
 ) -> dict[str, Any]:
     label_col = label_col or chemistry_label_col(meta)
     y_train = meta.iloc[train_idx][label_col].tolist()
@@ -244,6 +257,7 @@ def evaluate_split(
         X_esm=X_esm,
         X_learned=X_learned,
         X_fusion=X_fusion,
+        X_esm_gnn=X_esm_gnn,
     )
 
     neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
@@ -282,6 +296,7 @@ def _plot_results(results: dict[str, Any]) -> None:
     keep = [
         "catalyst_microenvironment",
         "catalyst_hybrid",
+        "esm_gnn_fusion",
         "learned_fusion_encoder",
         "learned_catalytic_encoder",
         "esm2_transfer",
@@ -295,6 +310,7 @@ def _plot_results(results: dict[str, Any]) -> None:
         {
             "catalyst_microenvironment": "Catalyst Atlas",
             "catalyst_hybrid": "Hybrid (eng+learned)",
+            "esm_gnn_fusion": "ESM-2 + GNN",
             "learned_fusion_encoder": "Learned fusion",
             "learned_catalytic_encoder": "Learned RC encoder",
             "esm2_transfer": "ESM-2 (frozen)",
@@ -444,6 +460,7 @@ def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
     method_order = [
         ("catalyst_microenvironment", "Catalyst", "#0E7490"),
         ("catalyst_hybrid", "Hybrid", "#047857"),
+        ("esm_gnn_fusion", "ESM+GNN", "#065F46"),
         ("learned_fusion_encoder", "Fusion", "#B45309"),
         ("learned_catalytic_encoder", "Learned RC", "#D97706"),
         ("esm2_transfer", "ESM-2", "#7C3AED"),
@@ -493,7 +510,7 @@ def run_eval(
 ) -> dict[str, Any]:
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
-    X_esm, X_learned, X_fusion = _load_optional_learned_embeddings(meta)
+    X_esm, X_learned, X_fusion, X_esm_gnn = _load_optional_learned_embeddings(meta)
     label_col = chemistry_label_col(meta)
     seq_sim = None
     if "sequence" in meta.columns and meta["sequence"].fillna("").str.len().gt(0).any():
@@ -519,6 +536,7 @@ def run_eval(
             "esm2": X_esm is not None,
             "learned_catalytic_encoder": X_learned is not None,
             "learned_fusion_encoder": X_fusion is not None,
+            "esm_gnn_fusion": X_esm_gnn is not None,
         },
         "splits": {},
     }
@@ -538,6 +556,7 @@ def run_eval(
             X_esm=X_esm,
             X_learned=X_learned,
             X_fusion=X_fusion,
+            X_esm_gnn=X_esm_gnn,
         )
 
     # Cryptic-analog diagnostic: test enzymes whose seq_cluster is unseen in train
@@ -565,6 +584,7 @@ def run_eval(
             X_esm=X_esm,
             X_learned=X_learned,
             X_fusion=X_fusion,
+            X_esm_gnn=X_esm_gnn,
         )
         results["cryptic_seq_holdout"] = sub
 
@@ -584,6 +604,7 @@ def run_eval(
         X_esm=X_esm,
         X_learned=X_learned,
         X_fusion=X_fusion,
+        X_esm_gnn=X_esm_gnn,
     )
     nearest_id, id_source = nearest_train_sequence_identity(
         meta,
@@ -597,6 +618,7 @@ def run_eval(
         for name in (
             "catalyst_microenvironment",
             "catalyst_hybrid",
+            "esm_gnn_fusion",
             "learned_fusion_encoder",
             "learned_catalytic_encoder",
             "esm2_transfer",
