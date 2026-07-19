@@ -198,12 +198,18 @@ def figures_main(argv: list[str] | None = None) -> int:
     _setup_logging(args.verbose)
 
     from catalyst_atlas.viz.readme_figures import generate_readme_figures
+    from catalyst_atlas.viz.retrieval_figure import generate_retrieval_figure
     from catalyst_atlas.viz.structure_figures import generate_structure_figures
 
     paths: list = []
     try:
         paths.extend(generate_structure_figures(dpi=args.dpi))
         paths.extend(generate_readme_figures(dpi=args.dpi))
+        try:
+            paths.append(generate_retrieval_figure(dpi=args.dpi))
+        except (FileNotFoundError, RuntimeError) as exc:
+            # Optional — needs ESM + ESM+GNN embeddings.
+            print(f"retrieval figure skipped: {exc}", file=sys.stderr)
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -359,6 +365,11 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
         help="Fuse frozen ESM-2 embedding into GNN readout; write embedding_esm_gnn.npy",
     )
     parser.add_argument(
+        "--random-graphs",
+        action="store_true",
+        help="Ablation with --fusion-esm: shuffle node features within each graph",
+    )
+    parser.add_argument(
         "--no-early-stop",
         action="store_true",
         help="Run all epochs; select best among checkpoints every --checkpoint-every",
@@ -398,6 +409,7 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
             fusion=args.fusion,
             fusion_side=args.fusion_side,
             fusion_esm=args.fusion_esm,
+            random_graphs=args.random_graphs,
             no_early_stop=args.no_early_stop,
             checkpoint_every=args.checkpoint_every,
             temperature=args.temperature,

@@ -298,6 +298,30 @@ def graph_from_jsonable(payload: dict[str, Any]) -> dict[str, Any]:
     return g
 
 
+def permute_graph_node_features(
+    graph: dict[str, Any],
+    rng: np.random.Generator,
+) -> dict[str, Any]:
+    """Shuffle node feature rows within a graph; keep edges/topology.
+
+    Ablation: same parameter budget as catalytic graphs, but node identity
+    no longer matches the residue that sits at each graph position.
+    """
+    out = dict(graph)
+    x = np.asarray(graph["x"], dtype=np.float32).copy()
+    n = x.shape[0]
+    if n <= 1:
+        out["x"] = x
+        return out
+    order = rng.permutation(n)
+    out["x"] = x[order]
+    # Keep node_meta aligned with the shuffled features when present.
+    meta = list(graph.get("node_meta") or [])
+    if len(meta) == n:
+        out["node_meta"] = [meta[i] for i in order]
+    return out
+
+
 def build_graphs_table(
     micro_df: pd.DataFrame | None = None,
     max_first_shell: int | None = None,

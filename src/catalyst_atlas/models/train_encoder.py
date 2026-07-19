@@ -14,7 +14,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from catalyst_atlas.eval.labels import chemistry_label_col
 from catalyst_atlas.eval.splits import make_splits
 from catalyst_atlas.featurize.features import _aa_composition
-from catalyst_atlas.featurize.graphs import graph_from_jsonable
+from catalyst_atlas.featurize.graphs import graph_from_jsonable, permute_graph_node_features
 from catalyst_atlas.models.device import get_device, require_torch
 from catalyst_atlas.models.graph_encoder import ReactionCenterEncoder
 from catalyst_atlas.models.pairs import sample_contrastive_batch
@@ -23,6 +23,15 @@ from catalyst_atlas.paths import PROCESSED, ROOT, ensure_dirs
 logger = logging.getLogger(__name__)
 
 ARTIFACTS = ROOT / "artifacts"
+
+
+def _seed_everything(seed: int) -> None:
+    """Seed numpy + torch so multi-seed bake-offs are meaningful."""
+    torch = require_torch()
+    np.random.seed(int(seed))
+    torch.manual_seed(int(seed))
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(int(seed))
 
 
 def _triplet_loss(za, zp, zn, margin: float = 0.2):
@@ -184,6 +193,7 @@ def train_reaction_center_encoder(
     fusion: bool = False,
     fusion_side: bool = False,
     fusion_esm: bool = False,
+    random_graphs: bool = False,
     steps_per_epoch: int | None = None,
     min_epochs: int = 100,
     no_early_stop: bool = False,
@@ -195,10 +205,13 @@ def train_reaction_center_encoder(
     torch = require_torch()
     ensure_dirs()
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
+    _seed_everything(seed)
 
     n_modes = int(fusion) + int(fusion_side) + int(fusion_esm)
     if n_modes > 1:
         raise ValueError("Pass only one of --fusion / --fusion-side / --fusion-esm")
+    if random_graphs and not fusion_esm:
+        raise ValueError("--random-graphs is meant for --fusion-esm ablation")
 
     graphs_path = PROCESSED / "reaction_center_graphs.parquet"
     if not graphs_path.exists():
@@ -218,6 +231,12 @@ def train_reaction_center_encoder(
     graphs = [graph_from_jsonable(json.loads(s)) for s in gdf["graph_json"]]
     for i, row in gdf.iterrows():
         graphs[i]["enzyme_id"] = row["enzyme_id"]
+
+    if random_graphs:
+        # Ablation: permute node features within each graph; keep topology.
+        rng_g = np.random.default_rng(seed + 91)
+        graphs = [permute_graph_node_features(g, rng_g) for g in graphs]
+        logger.info("Random-graph ablation: shuffled node features on %d graphs", len(graphs))
 
     # Side vector for fusion readout (optional).
     # fusion → features_full; fusion_side → metal/cofactor; fusion_esm → frozen ESM-2.
@@ -542,7 +561,12 @@ def train_reaction_center_encoder(
     encoder.eval()
     embeddings = _encode_all(encoder, graphs, device=dev, eng_matrix=eng_all)
 
-    if fusion_esm:
+    if fusion_esm and random_graphs:
+        emb_path = PROCESSED / "embedding_esm_gnn_randnodes.npy"
+        meta_out = PROCESSED / "embedding_esm_gnn_randnodes_meta.parquet"
+        ckpt_path = ARTIFACTS / "reaction_center_esm_gnn_randnodes.pt"
+        summary_name = "train_esm_gnn_randnodes_summary.json"
+    elif fusion_esm:
         emb_path = PROCESSED / "embedding_esm_gnn.npy"
         meta_out = PROCESSED / "embedding_esm_gnn_meta.parquet"
         ckpt_path = ARTIFACTS / "reaction_center_esm_gnn.pt"
@@ -569,6 +593,7 @@ def train_reaction_center_encoder(
         "fusion": fusion,
         "fusion_side": fusion_side,
         "fusion_esm": fusion_esm,
+        "random_graphs": random_graphs,
         "split": split,
         "seed": seed,
         "epochs_ran": len(history),
@@ -596,6 +621,7 @@ def train_reaction_center_encoder(
         "fusion": fusion,
         "fusion_side": fusion_side,
         "fusion_esm": fusion_esm,
+        "random_graphs": random_graphs,
         "final_loss": history[-1]["loss"] if history else None,
         "best_val_acc": best_val_acc,
         "best_epoch": best_epoch + 1,

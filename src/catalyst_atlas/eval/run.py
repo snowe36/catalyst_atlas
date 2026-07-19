@@ -93,8 +93,14 @@ def _load_unscaled_features() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
 
 def _load_optional_learned_embeddings(
     meta: pd.DataFrame,
-) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None, np.ndarray | None]:
-    """Frozen ESM + learned / fusion / ESM+GNN embeddings if present."""
+) -> tuple[
+    np.ndarray | None,
+    np.ndarray | None,
+    np.ndarray | None,
+    np.ndarray | None,
+    np.ndarray | None,
+]:
+    """Frozen ESM + learned / fusion / ESM+GNN (+ random-graph ablation) if present."""
     X_esm = _align_embedding(
         meta,
         PROCESSED / "embedding_esm.npy",
@@ -115,6 +121,11 @@ def _load_optional_learned_embeddings(
         PROCESSED / "embedding_esm_gnn.npy",
         PROCESSED / "embedding_esm_gnn_meta.parquet",
     )
+    X_esm_gnn_rand = _align_embedding(
+        meta,
+        PROCESSED / "embedding_esm_gnn_randnodes.npy",
+        PROCESSED / "embedding_esm_gnn_randnodes_meta.parquet",
+    )
     if X_esm is not None:
         logger.info("Loaded ESM control embeddings %s", X_esm.shape)
     if X_learned is not None:
@@ -123,7 +134,9 @@ def _load_optional_learned_embeddings(
         logger.info("Loaded fusion catalytic embeddings %s", X_fusion.shape)
     if X_esm_gnn is not None:
         logger.info("Loaded ESM+GNN fusion embeddings %s", X_esm_gnn.shape)
-    return X_esm, X_learned, X_fusion, X_esm_gnn
+    if X_esm_gnn_rand is not None:
+        logger.info("Loaded ESM+random-graph ablation embeddings %s", X_esm_gnn_rand.shape)
+    return X_esm, X_learned, X_fusion, X_esm_gnn, X_esm_gnn_rand
 
 
 def _scale_train_test(
@@ -164,6 +177,7 @@ def _method_predictions(
     X_learned: np.ndarray | None = None,
     X_fusion: np.ndarray | None = None,
     X_esm_gnn: np.ndarray | None = None,
+    X_esm_gnn_rand: np.ndarray | None = None,
 ) -> tuple[list[str], dict[str, list[str]], np.ndarray, np.ndarray]:
     """Return y_test, method→preds, and scaled full train/test matrices."""
     label_col = label_col or chemistry_label_col(meta)
@@ -223,6 +237,10 @@ def _method_predictions(
         methods["esm_gnn_fusion"] = knn_transfer(
             X_esm_gnn[train_idx], y_train, X_esm_gnn[test_idx], k=k
         )
+    if X_esm_gnn_rand is not None:
+        methods["esm_gnn_random_graph"] = knn_transfer(
+            X_esm_gnn_rand[train_idx], y_train, X_esm_gnn_rand[test_idx], k=k
+        )
     return y_test, methods, X_full_train, X_full_test
 
 
@@ -241,6 +259,7 @@ def evaluate_split(
     X_learned: np.ndarray | None = None,
     X_fusion: np.ndarray | None = None,
     X_esm_gnn: np.ndarray | None = None,
+    X_esm_gnn_rand: np.ndarray | None = None,
 ) -> dict[str, Any]:
     label_col = label_col or chemistry_label_col(meta)
     y_train = meta.iloc[train_idx][label_col].tolist()
@@ -259,6 +278,7 @@ def evaluate_split(
         X_learned=X_learned,
         X_fusion=X_fusion,
         X_esm_gnn=X_esm_gnn,
+        X_esm_gnn_rand=X_esm_gnn_rand,
     )
 
     neigh_lists = _neighbor_label_lists(X_full_train, y_train, X_full_test, k=k)
@@ -298,6 +318,7 @@ def _plot_results(results: dict[str, Any]) -> None:
         "catalyst_microenvironment",
         "catalyst_hybrid",
         "esm_gnn_fusion",
+        "esm_gnn_random_graph",
         "learned_fusion_encoder",
         "learned_catalytic_encoder",
         "esm2_transfer",
@@ -600,7 +621,9 @@ def run_eval(
     ensure_dirs()
     meta, X_full, X_comp = _load_unscaled_features()
     meta = _enrich_meta_for_audits(meta)
-    X_esm, X_learned, X_fusion, X_esm_gnn = _load_optional_learned_embeddings(meta)
+    X_esm, X_learned, X_fusion, X_esm_gnn, X_esm_gnn_rand = _load_optional_learned_embeddings(
+        meta
+    )
     label_col = label_col or chemistry_label_col(meta)
     if label_col not in meta.columns:
         raise ValueError(f"label_col={label_col!r} not in meta columns")
@@ -629,9 +652,17 @@ def run_eval(
             "learned_catalytic_encoder": X_learned is not None,
             "learned_fusion_encoder": X_fusion is not None,
             "esm_gnn_fusion": X_esm_gnn is not None,
+            "esm_gnn_random_graph": X_esm_gnn_rand is not None,
         },
         "splits": {},
     }
+    emb_kw = dict(
+        X_esm=X_esm,
+        X_learned=X_learned,
+        X_fusion=X_fusion,
+        X_esm_gnn=X_esm_gnn,
+        X_esm_gnn_rand=X_esm_gnn_rand,
+    )
     for name, (train_idx, test_idx) in splits.items():
         logger.info("Evaluating split=%s (train=%d test=%d)", name, len(train_idx), len(test_idx))
         results["splits"][name] = evaluate_split(
@@ -645,10 +676,7 @@ def run_eval(
             label_col=label_col,
             mmseqs_hits=mmseqs_hits,
             foldseek_hits=foldseek_hits,
-            X_esm=X_esm,
-            X_learned=X_learned,
-            X_fusion=X_fusion,
-            X_esm_gnn=X_esm_gnn,
+            **emb_kw,
         )
 
     # Cryptic-analog diagnostic: test enzymes whose seq_cluster is unseen in train
@@ -673,10 +701,7 @@ def run_eval(
             label_col=label_col,
             mmseqs_hits=mmseqs_hits,
             foldseek_hits=foldseek_hits,
-            X_esm=X_esm,
-            X_learned=X_learned,
-            X_fusion=X_fusion,
-            X_esm_gnn=X_esm_gnn,
+            **emb_kw,
         )
         results["cryptic_seq_holdout"] = sub
 
@@ -693,10 +718,7 @@ def run_eval(
         label_col=label_col,
         mmseqs_hits=mmseqs_hits,
         foldseek_hits=foldseek_hits,
-        X_esm=X_esm,
-        X_learned=X_learned,
-        X_fusion=X_fusion,
-        X_esm_gnn=X_esm_gnn,
+        **emb_kw,
     )
     nearest_id, id_source = nearest_train_sequence_identity(
         meta,
@@ -711,6 +733,7 @@ def run_eval(
             "catalyst_microenvironment",
             "catalyst_hybrid",
             "esm_gnn_fusion",
+            "esm_gnn_random_graph",
             "learned_fusion_encoder",
             "learned_catalytic_encoder",
             "esm2_transfer",
@@ -760,10 +783,7 @@ def run_eval(
         label_col=label_col,
         mmseqs_hits=mmseqs_hits,
         foldseek_hits=foldseek_hits,
-        X_esm=X_esm,
-        X_learned=X_learned,
-        X_fusion=X_fusion,
-        X_esm_gnn=X_esm_gnn,
+        **emb_kw,
     )
     fold_focus = {n: preds_fold[n] for n in focus_preds if n in preds_fold}
     results["annotation_style_audits_fold_cluster"] = annotation_style_audits(
