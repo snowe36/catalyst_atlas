@@ -9,6 +9,8 @@ __pycache__/
 data/raw/
 data/processed/
 !data/processed/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
 reports/figures/*
 !reports/figures/.gitkeep
 !reports/figures/hero_*

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "catalyst-atlas"
-version = "0.2.0"
+version = "0.3.0"
 description = "Chemistry-aware reaction-center representations — what chemistry can this protein perform?"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,6 +26,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.4", "ruff>=0.6"]
 structure = ["biopython>=1.83"]
+gpu = [
+  "torch>=2.1",
+  "fair-esm>=2.0.0",
+  "transformers>=4.38",
+]
 
 [project.scripts]
 cat-download = "catalyst_atlas.cli:download_main"
@@ -36,6 +41,9 @@ cat-search = "catalyst_atlas.cli:search_main"
 cat-figures = "catalyst_atlas.cli:figures_main"
 cat-enrich = "catalyst_atlas.cli:enrich_main"
 cat-cases = "catalyst_atlas.cli:cases_main"
+cat-graphs = "catalyst_atlas.cli:graphs_main"
+cat-esm = "catalyst_atlas.cli:esm_main"
+cat-train-encoder = "catalyst_atlas.cli:train_encoder_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
