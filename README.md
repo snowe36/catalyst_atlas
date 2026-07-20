@@ -2,7 +2,7 @@
 
 **A leakage-aware benchmark for chemistry identification from catalytic microenvironments** — ask what chemistry a protein site supports from its reaction center, then stress-test whether that signal survives when sequence and fold neighbors are held out.
 
-> *Ask a protein what chemistry it can do — not what it looks like.*
+> *Catalyst Atlas evaluates whether catalytic chemistry can be identified beyond evolutionary neighborhood shortcuts.*
 
 [![CI](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -17,9 +17,9 @@ Repo: [github.com/snowe36/catalyst_atlas](https://github.com/snowe36/catalyst_at
 
 Evolutionary similarity is a strong proxy for function when homologs exist. The harder question is what remains when they do not:
 
-**Can we identify what catalytic transformation a protein site is equipped to perform from its microenvironment — and how much of that apparent skill is really neighborhood leakage rather than chemistry-aware signal?**
+**Can we tell what chemistry a site is set up to do from its microenvironment — and how much of that score is just leftover sequence/fold leakage?**
 
-This is an evaluation-hygiene / representation problem with explicit negative controls (sequence-cluster and fold-cluster holdouts). The claim is **not** “we beat Foldseek.” Foldseek is excellent when fold neighbors are available. Catalytic representations become valuable when chemistry is conserved independently of sequence and fold.
+The benchmark uses sequence-cluster and fold-cluster holdouts as negative controls. This is not “beat Foldseek.” Foldseek is the right tool when fold neighbors exist. Local catalytic representations matter when chemistry is shared across unrelated folds.
 
 ---
 
@@ -29,39 +29,49 @@ This is an evaluation-hygiene / representation problem with explicit negative co
 
 Primary metric: `fold_cluster` chemistry accuracy on the expanded atlas (**n=1157**; M-CSA 959 + UniProt 198).
 
+Multi-seed bake-off (seeds 7 / 11 / 13; same protocol, different fold holdouts):
+
+| Method | fold_cluster (mean ± std) |
+|--------|--------------------------:|
+| Engineered microenvironment | 0.40 ± 0.02 |
+| ESM-2 | 0.40 ± 0.06 |
+| ESM+GNN | 0.42 ± 0.06 |
+
+Neighborhood baselines on a single fold holdout (seed 7) for context: MMseqs2 0.04, Foldseek 0.13.
+
+Seed 7 example split (not the multi-seed mean):
+
 | Method | fold_cluster accuracy |
 |--------|----------------------:|
-| MMseqs2 | 0.04 |
-| Foldseek | 0.13 |
 | Engineered catalytic microenvironment | 0.38 |
 | ESM-2 (frozen sequence) | 0.46 |
-| **ESM+GNN** (sequence + reaction-center structure) | **0.49** |
+| ESM+GNN | 0.49 |
 
-A learned representation that combines evolutionary-scale sequence information with local catalytic geometry captures chemistry-transfer signal beyond either alone. The gain over ESM-2 is modest (+0.03) — the GNN is adding local chemical context, not replacing the foundation model.
+Averaged across seeds the ESM+GNN edge over ESM-2 is small (+0.02) and sits inside the noise. Frozen protein language models already carry most fold-disconnected signal at this scale; reaction-center fusion is a complementary contribution, not a replacement.
 
-How the pieces read together:
+Random-graph ablation (seed 7): ESM + **shuffled** node features scores **0.50**, matching or beating catalytic graphs (0.49). Geometry-specific gains are **not yet established** — treat the seed-7 bump as a fusion/capacity effect until a stricter graph control wins.
 
 | Representation | fold_cluster | Reading |
 |----------------|-------------:|---------|
-| GNN alone (reaction-center graphs) | ~0.32 | Learning chemistry from local graphs alone is hard at n≈1000 |
-| ESM-2 | 0.46 | Sequence models already encode substantial biochemical information |
-| ESM+GNN | **0.49** | The catalytic microenvironment adds signal sequence alone does not fully capture |
+| GNN alone (reaction-center graphs) | ~0.32 | Local graphs alone are hard at n≈1000 |
+| ESM-2 | 0.40 ± 0.06 (0.46 on seed 7) | Sequence models already encode a lot of biochemistry |
+| ESM+GNN | 0.42 ± 0.06 (0.49 on seed 7) | Complementary; geometry-specific gains not yet established |
 
-Neighborhood baselines (MMseqs / Foldseek) collapse under fold holdout; engineered microenvironments stay competitive and interpretable. Prior MCSA-only track (n=959): ESM+GNN 0.45 — see [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
+Sources: [`reports/v05_seed_summary.json`](reports/v05_seed_summary.json), [`reports/v05_ablation_summary.json`](reports/v05_ablation_summary.json). Prior MCSA-only track (n=959): ESM+GNN 0.45 — see [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
 
-On a small convergent-chemistry audit (**n=29**), ESM+GNN retrieves cross-fold chemical analogs with high accuracy (0.83), suggesting improved sensitivity to chemistry conserved across divergent evolutionary solutions. That subset is hypothesis-generating, not the primary benchmark.
+On a small convergent-chemistry audit (**n=29**), ESM+GNN retrieves cross-fold chemical analogs at 0.83. That subset is hypothesis-generating, not the primary benchmark.
 
 Annotation-style controls (same-residue / same-cofactor / shuffled shell / decoy centers) are in `cat-eval` — figure [`reports/figures/fig_annotation_style_controls.png`](reports/figures/fig_annotation_style_controls.png).
 
 <p align="center">
-  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: ESM+GNN 0.49 vs ESM 0.46 vs engineered 0.38" width="720"/>
+  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: multi-seed means with seed-7 example split" width="720"/>
 </p>
 
 <p align="center">
   <img src="reports/figures/fig_retrieval_neighbors.png" alt="Query enzyme with ESM-2 nearest neighbor vs ESM+GNN nearest neighbor" width="720"/>
 </p>
 
-<p align="center"><em>ESM-2 often retrieves a sequence/fold neighbor; ESM+GNN more often surfaces same chemistry across folds.</em></p>
+<p align="center"><em>Retrieval example: the model sometimes finds chemistry across folds — without claiming a consistent win over ESM.</em></p>
 
 ---
 
@@ -129,7 +139,7 @@ The artifact is **prediction + why** — chemistry family, mechanistic pattern, 
 
 | Check | Result |
 |-------|--------|
-| Curated catalytic sites (M-CSA v1) | **959** |
+| Expanded atlas sites (M-CSA + UniProt) | **1157** |
 | Fold-disconnected Catalyst / MMseqs / Foldseek | **0.37** / 0.04 / 0.13 |
 | Chemistry Recall@5 (fold_cluster) | **0.67** |
 | Chemistry MRR (fold_cluster) | **0.46** |
@@ -137,7 +147,7 @@ The artifact is **prediction + why** — chemistry family, mechanistic pattern, 
 | Different-fold / same-chemistry | Catalyst **0.50** vs Foldseek **0.04** — **informative audit, n=26** |
 | Same-fold / different-chemistry | Foldseek **0.51** vs Catalyst 0.39 (**n=131**) — fold info is legitimately useful |
 
-> **Key observation:** when enzymes share chemistry but not fold, structure retrieval fails while reaction-center representations retain signal.
+> **Key observation:** when enzymes share chemistry but not fold, standard sequence/structure retrieval can fail; interpretable reaction-center representations provide a complementary signal.
 
 The fold-disconnected benchmark (**n=461** test) carries the quantitative claim. The convergent-chemistry subset (**n=26**) is a biologically informative hard audit — not the primary win metric. Do not oversell it.
 
@@ -187,7 +197,9 @@ Leakage-aware splits (expanded atlas):
 |-------|---------:|------:|--------:|--------:|---------:|
 | Random | 0.48 | 0.60 | **0.79** | 0.22 | 0.41 |
 | Seq cluster | 0.45 | 0.59 | **0.77** | 0.22 | 0.40 |
-| Fold cluster | 0.38 | 0.46 | **0.49** | 0.04 | 0.13 |
+| Fold cluster (seed 7) | 0.38 | 0.46 | **0.49** | 0.04 | 0.13 |
+
+Fold-cluster numbers above are the seed-7 run. Multi-seed means: engineered 0.40 ± 0.02, ESM-2 0.40 ± 0.06, ESM+GNN 0.42 ± 0.06.
 
 Recall@5 / MRR ask: does the true chemistry appear among retrieved catalytic neighbors? Accuracy alone understates a retrieval system.
 
@@ -210,7 +222,7 @@ Recall@5 / MRR ask: does the true chemistry appear among retrieved catalytic nei
 
 ## Figure 4 — Evidence cards
 
-Most protein AI repos end at a score. The deliverable here is a **chemistry card**: family, mechanistic pattern, catalytic evidence, and nearest chemical analogs.
+The practical output is a **chemistry card**: family, mechanistic pattern, catalytic evidence, and nearest chemical analogs — not just a leaderboard number.
 
 <p align="center">
   <img src="reports/figures/fig4_chemistry_cards.png" alt="Example chemistry cards for convergent chemistry and same-fold different-chemistry cases" width="900"/>
@@ -245,33 +257,37 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 
 | Item | Detail |
 |------|--------|
-| Source | [M-CSA](https://www.ebi.ac.uk/thornton-srv/m-csa/) |
-| Structures | [RCSB PDB](https://www.rcsb.org/) (`data/raw/mcsa_cache/pdb`) |
-| Enzymes / sites | **959** |
-| With site cofactors / metals | **324** |
-| Convergent-chemistry audit subset | **26** (hard; informative, not large) |
+| M-CSA curated sites | **959** |
+| Additional UniProt ACT_SITE sites | **198** |
+| Expanded atlas sites | **1157** |
+| Structures | [RCSB PDB](https://www.rcsb.org/) + AFDB (`structure_source=alphafold` where used) |
+| With site cofactors / metals (M-CSA track) | **324** |
+| Convergent-chemistry audit subset | **26–29** (hard; informative, not large) |
 | Demo atlas | CI harness (`cat-download --demo`) |
 
 ---
 
 ## Limitations
 
-- M-CSA is curated and relatively small; not a proteome-scale claim
-- Convergent-chemistry audit is **n=26** — biologically on-point, statistically modest
+- Expanded atlas is still curated-scale (n=1157), not proteome-wide
+- Fold-cluster scores are **split-sensitive** (ESM-2 and ESM+GNN both move ±0.06 across three seeds)
+- Random-graph ablation: geometry-specific gains are **not yet established** (shuffled nodes ≥ catalytic graphs on seed 7)
+- Convergent-chemistry audit is small (**n≈26–29**) — useful, not decisive
 - Labels are ontology families / patterns, not full kinetic schemes
-- Chemistry cards cite pattern / cofactor / fold-span evidence — not yet full mechanistic feature checklists
-- Deep models deferred until they beat this engineered baseline on hard holdouts
+- Chemistry cards cite pattern / cofactor / fold-span evidence — not full mechanistic checklists
 
 ---
 
 ## Versions / thesis
+
+Catalyst Atlas evaluates whether catalytic chemistry can be identified beyond evolutionary neighborhood shortcuts. At n=1157, frozen protein language models capture most fold-disconnected signal, while reaction-center representations provide a complementary but not yet fully isolated contribution. The benchmark emphasizes leakage-aware evaluation and mechanistic evidence rather than raw prediction scores.
 
 | Version | Claim |
 |---------|--------|
 | v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
 | v0.3 | Learned representations require leakage-aware evaluation |
 | v0.4 | Expanded atlas + controls separate chemistry from annotation shortcuts |
-| v0.5 | ESM+GNN combines sequence-scale and reaction-center representations to improve fold-disconnected chemistry transfer |
+| v0.5 | ESM+GNN can improve a fold holdout on individual splits (seed 7: 0.49), but multi-seed and random-graph controls show that geometry-specific gains are not yet established |
 
 | Step | Command | Role |
 |------|---------|------|
@@ -280,9 +296,10 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 | ESM + GNN fusion | `cat-train-encoder --fusion-esm` | Sequence + local structure |
 | Annotation controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy |
 | Expanded atlas | `cat-download --public --expanded` | UniProt ACT_SITE + EC; AFDB as `structure_source=alphafold` |
-| Multi-seed / graph ablation | `scripts/v05_seed_bakeoff.py` | Variance + random-graph control |
+| Multi-seed bake-off | `scripts/v05_seed_bakeoff.py` / `v05_parallel_bakeoff.py` | Split variance |
+| Random-graph ablation | `scripts/v05_ablation_run.py` | Geometry vs capacity control |
 
-Lead metric: **`fold_cluster`**. Summary: [`reports/v04_reeval_summary.json`](reports/v04_reeval_summary.json). Plans: [`v0.3`](docs/plans/v0.3_learn_catalytic_language.md), [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
+Lead metric: **`fold_cluster`**. Summaries: [`v04_reeval`](reports/v04_reeval_summary.json), [`v05_seed`](reports/v05_seed_summary.json), [`v05_ablation`](reports/v05_ablation_summary.json). Plans: [`v0.3`](docs/plans/v0.3_learn_catalytic_language.md), [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
 
 Out of scope for now: ESM fine-tuning, hard-negative mining, multi-task heads, optimizing random-split accuracy.
 

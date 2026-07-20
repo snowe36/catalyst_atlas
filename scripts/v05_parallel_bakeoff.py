@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Run remaining v05 seed trains (+ optional ablation) in parallel on one GPU.
+"""Train several ESM+GNN seeds (and optional random-graph ablation) in parallel.
 
-Bottleneck is Python graph-encode overhead (~12% GPU util, ~0.5GB VRAM), so a
-faster GPU barely helps — parallel seed jobs on the same 4090 do.
+Training is mostly Python graph-encode overhead, so one 4090 can host a few
+jobs at once. Use this instead of a sequential bake-off when wall-clock matters.
 
 Env:
   V05_SEEDS=11,13
