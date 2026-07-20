@@ -200,8 +200,13 @@ def train_reaction_center_encoder(
     checkpoint_every: int = 10,
     val_ema: float = 0.7,
     conv_weight: float = 0.4,
+    run_tag: str | None = None,
 ) -> dict[str, Any]:
-    """Train on one leakage-aware split's train set; encode full catalog."""
+    """Train on one leakage-aware split's train set; encode full catalog.
+
+    ``run_tag`` suffixes output artifacts (e.g. ``seed11`` →
+    ``embedding_esm_gnn_seed11.npy``) so parallel trains do not clobber each other.
+    """
     torch = require_torch()
     ensure_dirs()
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
@@ -561,26 +566,29 @@ def train_reaction_center_encoder(
     encoder.eval()
     embeddings = _encode_all(encoder, graphs, device=dev, eng_matrix=eng_all)
 
+    tag = (run_tag or "").strip()
+    tag_suffix = f"_{tag}" if tag else ""
+
     if fusion_esm and random_graphs:
-        emb_path = PROCESSED / "embedding_esm_gnn_randnodes.npy"
-        meta_out = PROCESSED / "embedding_esm_gnn_randnodes_meta.parquet"
-        ckpt_path = ARTIFACTS / "reaction_center_esm_gnn_randnodes.pt"
-        summary_name = "train_esm_gnn_randnodes_summary.json"
+        emb_path = PROCESSED / f"embedding_esm_gnn_randnodes{tag_suffix}.npy"
+        meta_out = PROCESSED / f"embedding_esm_gnn_randnodes{tag_suffix}_meta.parquet"
+        ckpt_path = ARTIFACTS / f"reaction_center_esm_gnn_randnodes{tag_suffix}.pt"
+        summary_name = f"train_esm_gnn_randnodes{tag_suffix}_summary.json"
     elif fusion_esm:
-        emb_path = PROCESSED / "embedding_esm_gnn.npy"
-        meta_out = PROCESSED / "embedding_esm_gnn_meta.parquet"
-        ckpt_path = ARTIFACTS / "reaction_center_esm_gnn.pt"
-        summary_name = "train_esm_gnn_summary.json"
+        emb_path = PROCESSED / f"embedding_esm_gnn{tag_suffix}.npy"
+        meta_out = PROCESSED / f"embedding_esm_gnn{tag_suffix}_meta.parquet"
+        ckpt_path = ARTIFACTS / f"reaction_center_esm_gnn{tag_suffix}.pt"
+        summary_name = f"train_esm_gnn{tag_suffix}_summary.json"
     elif use_fusion:
-        emb_path = PROCESSED / "embedding_fusion.npy"
-        meta_out = PROCESSED / "embedding_fusion_meta.parquet"
-        ckpt_path = ARTIFACTS / "reaction_center_fusion.pt"
-        summary_name = "train_fusion_summary.json"
+        emb_path = PROCESSED / f"embedding_fusion{tag_suffix}.npy"
+        meta_out = PROCESSED / f"embedding_fusion{tag_suffix}_meta.parquet"
+        ckpt_path = ARTIFACTS / f"reaction_center_fusion{tag_suffix}.pt"
+        summary_name = f"train_fusion{tag_suffix}_summary.json"
     else:
-        emb_path = PROCESSED / "embedding_learned.npy"
-        meta_out = PROCESSED / "embedding_learned_meta.parquet"
-        ckpt_path = ARTIFACTS / "reaction_center_encoder.pt"
-        summary_name = "train_encoder_summary.json"
+        emb_path = PROCESSED / f"embedding_learned{tag_suffix}.npy"
+        meta_out = PROCESSED / f"embedding_learned{tag_suffix}_meta.parquet"
+        ckpt_path = ARTIFACTS / f"reaction_center_encoder{tag_suffix}.pt"
+        summary_name = f"train_encoder{tag_suffix}_summary.json"
     np.save(emb_path, embeddings)
     meta.copy().to_parquet(meta_out, index=False)
 

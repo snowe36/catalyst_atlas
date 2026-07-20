@@ -18,6 +18,10 @@ sys.path.insert(0, str(ROOT / "src"))
 from catalyst_atlas.paths import PROCESSED, REPORTS, ensure_dirs  # noqa: E402
 
 
+def _log(msg: str) -> None:
+    print(msg, flush=True)
+
+
 def main() -> int:
     ensure_dirs()
     REPORTS.mkdir(parents=True, exist_ok=True)
@@ -32,7 +36,7 @@ def main() -> int:
     from catalyst_atlas.models.train_encoder import train_reaction_center_encoder
 
     if not skip_train:
-        print("=== train ESM + random graphs ===")
+        _log("=== train ESM + random graphs ===")
         train_reaction_center_encoder(
             split="fold_cluster",
             epochs=epochs,
@@ -47,6 +51,7 @@ def main() -> int:
             checkpoint_every=10,
         )
 
+    _log("=== eval (fold_cluster + diagnostics) ===")
     results = run_eval(k=5, seed=7, run_external=False)
     fold = results["splits"]["fold_cluster"]["methods"]
 
@@ -70,9 +75,9 @@ def main() -> int:
     }
     out = REPORTS / "v05_ablation_summary.json"
     out.write_text(json.dumps(summary, indent=2))
-    print(f"wrote {out}")
+    _log(f"wrote {out}")
     for k, v in summary["fold_cluster"].items():
-        print(f"  {k}: {v}")
+        _log(f"  {k}: {v}")
     return 0
 
 
