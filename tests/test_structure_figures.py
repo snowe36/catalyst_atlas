@@ -51,6 +51,13 @@ def test_render_microenvironment_writes_png(tmp_path: Path):
     assert path.stat().st_size > 1000
 
 
+def test_render_metal_focus_writes_png(tmp_path: Path):
+    out = tmp_path / "toy_zn.png"
+    path = render_microenvironment(_toy_micro_row(), out, dpi=72, metal_focus=True)
+    assert path.exists()
+    assert path.stat().st_size > 1000
+
+
 def test_generate_structure_figures_pipeline(isolated_data_dirs: Path):
     download_atlas(demo=True, n_enzymes=120, seed=7)
     run_site_extraction()
