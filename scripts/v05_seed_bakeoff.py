@@ -54,8 +54,8 @@ def _fold_cluster_scores(seed: int, k: int = 5) -> dict[str, float | None]:
     import numpy as np
     from sklearn.preprocessing import StandardScaler
 
-    from catalyst_atlas.data.labels import chemistry_label_col
     from catalyst_atlas.eval.baselines import knn_transfer
+    from catalyst_atlas.eval.labels import chemistry_label_col
     from catalyst_atlas.eval.run import _align_embedding, _load_unscaled_features
     from catalyst_atlas.eval.splits import make_splits
 

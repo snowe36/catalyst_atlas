@@ -1,0 +1,11 @@
+{
+  "seed": 7,
+  "epochs": 200,
+  "fold_cluster": {
+    "esm2_transfer": 0.45770065075921906,
+    "esm_gnn_random_graph": 0.49891540130151846,
+    "esm_gnn_fusion": 0.48590021691973967,
+    "catalyst_microenvironment": 0.3839479392624729
+  },
+  "note": "Parallel ablation train; catalytic column from seed7 embedding when present."
+}
