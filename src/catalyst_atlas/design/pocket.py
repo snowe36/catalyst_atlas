@@ -103,23 +103,23 @@ def _residue_record(
 def _pdb_chain_map(
     pdb_id: str,
     chain: str,
-) -> tuple[str, dict[int, int]]:
-    """Return (chain_sequence, resnum→seq_index) from CA atoms.
+) -> tuple[str, dict[int, int], list[int], str]:
+    """Return (chain_sequence, resnum→seq_index, ordered_resnums, chain_id).
 
     Design indexing must follow the structure chain — PDB resnums are not
     UniProt offsets.
     """
     if not pdb_id:
-        return "", {}
+        return "", {}, [], chain
     text = fetch_pdb_text(str(pdb_id).lower(), RAW / "pdb")
     if not text:
-        return "", {}
+        return "", {}, [], chain
     atoms = [a for a in parse_ca_atoms(text) if str(a["chain"]) == str(chain)]
     if not atoms:
         # Fall back to first chain present.
         all_atoms = parse_ca_atoms(text)
         if not all_atoms:
-            return "", {}
+            return "", {}, [], chain
         chain = str(all_atoms[0]["chain"])
         atoms = [a for a in all_atoms if str(a["chain"]) == chain]
     # Stable unique residues ordered by resnum.
@@ -129,7 +129,7 @@ def _pdb_chain_map(
     resnums = sorted(by_res)
     seq = "".join(by_res[n] for n in resnums)
     mapping = {n: i for i, n in enumerate(resnums)}
-    return seq, mapping
+    return seq, mapping, resnums, chain
 
 
 def _seq_index_for(
@@ -179,7 +179,9 @@ def build_pocket(row: pd.Series) -> dict[str, Any]:
         catalytic_raw = [r for r in residues if r.get("role") != "first_shell"]
 
     design_chain = str((catalytic_raw[0].get("chain") if catalytic_raw else "A") or "A")
-    pdb_seq, resnum_to_idx = _pdb_chain_map(str(row.get("pdb_id") or ""), design_chain)
+    pdb_seq, resnum_to_idx, chain_resnums, design_chain = _pdb_chain_map(
+        str(row.get("pdb_id") or ""), design_chain
+    )
     sequence = pdb_seq or uniprot_sequence
     index_map = resnum_to_idx if pdb_seq else None
 
@@ -254,6 +256,7 @@ def build_pocket(row: pd.Series) -> dict[str, Any]:
         "uniprot_id": str(row.get("uniprot_id") or ""),
         "enzyme_name": str(row.get("enzyme_name") or row.get("family_id") or ""),
         "design_chain": design_chain,
+        "chain_resnums": chain_resnums,
         "sequence": sequence,
         "uniprot_sequence": uniprot_sequence,
         "sequence_source": "pdb_chain" if pdb_seq else "uniprot",

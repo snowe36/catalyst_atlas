@@ -134,12 +134,20 @@ def test_design_invariants_reject_outside_shell():
         assert_design_invariants("".join(bad), wt, pocket)
 
 
-def test_fixed_positions_use_pdb_resnums():
+def test_fixed_positions_freeze_non_shell():
     pocket = build_pocket(_toy_atlas_row())
+    # Demo pockets lack full chain_resnums; inject a chain covering all site resnums.
+    pocket["design_chain"] = "A"
+    site_nums = {r["resnum"] for r in pocket["catalytic_residues"]} | {
+        r["resnum"] for r in pocket["redesignable"]
+    }
+    pocket["chain_resnums"] = sorted(site_nums | set(range(1, 21)))
     fixed = fixed_positions_from_pocket(pocket)
-    assert fixed["fixed_positions"]["A"] == sorted(
-        r["resnum"] for r in pocket["catalytic_residues"]
-    )
+    redesignable = {r["resnum"] for r in pocket["redesignable"]}
+    assert set(fixed["designed_positions"]["A"]) == redesignable
+    assert not (set(fixed["fixed_positions"]["A"]) & redesignable)
+    for r in pocket["catalytic_residues"]:
+        assert r["resnum"] in fixed["fixed_positions"]["A"]
 
 
 def test_chemistry_preservation_score_weights():

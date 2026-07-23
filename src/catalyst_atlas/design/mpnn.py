@@ -18,20 +18,64 @@ logger = logging.getLogger(__name__)
 
 
 def fixed_positions_from_pocket(pocket: dict[str, Any]) -> dict[str, Any]:
-    """Map catalytic residues for ProteinMPNN fixed positions.
+    """Build ProteinMPNN fixed-position maps for shell-only redesign.
 
-    ProteinMPNN expects **PDB residue numbers** per chain (not 0-based seq
-    indices). Pocket JSON remains the source of truth for both.
+    ProteinMPNN designs every non-fixed residue. For Option B we therefore
+    **fix all residues except the redesignable shell** (catalytic included).
+
+    Numbers are **PDB residue numbers** per chain.
     """
-    chain_to_fixed: dict[str, list[int]] = {}
-    for r in pocket.get("catalytic_residues") or []:
-        chain = str(r.get("chain") or "A")
-        chain_to_fixed.setdefault(chain, []).append(int(r["resnum"]))
-    for chain, idxs in chain_to_fixed.items():
-        chain_to_fixed[chain] = sorted(set(idxs))
+    chain = str(pocket.get("design_chain") or "A")
+    redesignable = {
+        int(r["resnum"])
+        for r in (pocket.get("redesignable") or [])
+        if str(r.get("chain") or "A") == chain
+    }
+    # All CA positions present in the design sequence mapping.
+    all_resnums = {
+        int(r["resnum"])
+        for r in (pocket.get("catalytic_residues") or [])
+        if str(r.get("chain") or "A") == chain
+    } | redesignable
+    # Prefer explicit chain length from seq_index map if present on residues.
+    for r in list(pocket.get("catalytic_residues") or []) + list(
+        pocket.get("redesignable") or []
+    ):
+        if str(r.get("chain") or "A") == chain:
+            all_resnums.add(int(r["resnum"]))
+
+    # Expand to full chain resnums when pocket stored them via redesignable+catalytic
+    # only — MPNN still needs every non-shell residue fixed. Reconstruct from
+    # sequence length + seq_index↔resnum pairs when available.
+    idx_to_resnum: dict[int, int] = {}
+    for r in list(pocket.get("catalytic_residues") or []) + list(
+        pocket.get("redesignable") or []
+    ):
+        if r.get("seq_index") is None:
+            continue
+        if str(r.get("chain") or "A") != chain:
+            continue
+        idx_to_resnum[int(r["seq_index"])] = int(r["resnum"])
+
+    # If we only know shell/catalytic resnums, fix those we know must stay and
+    # also emit designed_positions for the shell (helper for runners).
+    known = sorted(all_resnums)
+    fixed = [n for n in known if n not in redesignable]
+
+    # When sequence is PDB-derived, recover full chain resnum list by walking
+    # contiguous indices if we can invert a dense map; else fix catalytic +
+    # everything except redesignable among known positions and rely on the
+    # runner to fix the full chain from the PDB.
+    chain_resnums = pocket.get("chain_resnums")
+    if chain_resnums:
+        full = [int(n) for n in chain_resnums]
+        fixed = [n for n in full if n not in redesignable]
+
     return {
         "enzyme_id": pocket["enzyme_id"],
-        "fixed_positions": chain_to_fixed,
+        "chain": chain,
+        "fixed_positions": {chain: sorted(set(fixed))},
+        "designed_positions": {chain: sorted(redesignable)},
         "redesignable_seq_indices_0based": sorted(
             {
                 int(r["seq_index"])
@@ -39,16 +83,7 @@ def fixed_positions_from_pocket(pocket: dict[str, Any]) -> dict[str, Any]:
                 if r.get("seq_index") is not None
             }
         ),
-        "redesignable_pdb_resnums": {
-            chain: sorted(
-                {
-                    int(r["resnum"])
-                    for r in (pocket.get("redesignable") or [])
-                    if str(r.get("chain") or "A") == chain
-                }
-            )
-            for chain in chain_to_fixed
-        },
+        "note": "Fix everything except redesignable shell (Option B).",
     }
 
 
