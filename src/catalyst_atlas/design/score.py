@@ -1,4 +1,4 @@
-"""chemistry_preservation_score — proxies for keeping mechanistic chemistry, not catalysis."""
+"""chemistry_constraint_score — proxies for constraint satisfaction, not measured catalysis."""
 
 from __future__ import annotations
 
@@ -103,13 +103,13 @@ def esm_plausibility(design_seq: str, wt_seq: str, *, wt_emb: np.ndarray | None 
     return float(max(0.0, min(1.0, cos)))
 
 
-def chemistry_preservation_score(
+def chemistry_constraint_score(
     *,
     geometry: float,
     structure: float,
     esm: float,
 ) -> float:
-    """Weighted proxy score — not a measured catalytic rate."""
+    """Weighted proxy for constraint satisfaction — not measured catalysis."""
     return float(
         W_GEOMETRY * geometry + W_STRUCTURE * structure + W_ESM * esm
     )
@@ -166,7 +166,7 @@ def score_enzyme_designs(
     wt_struct = structure_confidence_from_metrics(wt_metrics)
     wt_emb = embed_sequences([wt_seq])[0]
     wt_esm = 1.0
-    wt_score = chemistry_preservation_score(
+    wt_score = chemistry_constraint_score(
         geometry=wt_geom, structure=wt_struct, esm=wt_esm
     )
 
@@ -181,7 +181,7 @@ def score_enzyme_designs(
             "geometry_preservation": wt_geom,
             "structure_confidence": wt_struct,
             "esm_plausibility": wt_esm,
-            "chemistry_preservation_score": wt_score,
+            "chemistry_constraint_score": wt_score,
             "delta_geometry_vs_wt": 0.0,
             "delta_score_vs_wt": 0.0,
             "chemistry_family": pocket["reaction"]["chemistry_family"],
@@ -215,7 +215,7 @@ def score_enzyme_designs(
             load_prediction_metrics(enzyme_id, design_id)
         )
         esm = esm_plausibility(seq, wt_seq, wt_emb=wt_emb)
-        score = chemistry_preservation_score(geometry=geom, structure=struct, esm=esm)
+        score = chemistry_constraint_score(geometry=geom, structure=struct, esm=esm)
         rows.append(
             {
                 "enzyme_id": enzyme_id,
@@ -227,7 +227,7 @@ def score_enzyme_designs(
                 "geometry_preservation": geom,
                 "structure_confidence": struct,
                 "esm_plausibility": esm,
-                "chemistry_preservation_score": score,
+                "chemistry_constraint_score": score,
                 "delta_geometry_vs_wt": geom - wt_geom,
                 "delta_score_vs_wt": score - wt_score,
                 "chemistry_family": pocket["reaction"]["chemistry_family"],
@@ -292,8 +292,8 @@ def run_score(
             "structure": W_STRUCTURE,
             "esm": W_ESM,
         },
-        "score_name": "chemistry_preservation_score",
-        "note": "Proxies for chemistry preservation — not measured catalysis.",
+        "score_name": "chemistry_constraint_score",
+        "note": "Proxies for constraint satisfaction — not measured catalysis.",
     }
     (PROCESSED / "design" / "score_meta.json").write_text(json.dumps(meta, indent=2))
     logger.info("Scored %d rows → %s", len(out), out_path)

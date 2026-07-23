@@ -1,12 +1,9 @@
-"""Optional MD deep-dive for top WT/design pairs (OpenMM).
+"""MD helpers — **out of scope for this repo's design campaign**.
 
-Not required for the AF funnel case study. Use for 1–2 enzymes after
-mechanistic ranking to compare catalytic distances / pocket RMSD.
-
-Expected workflow (external GPU):
-  1. Pick WT + top design PDB from AF outputs
-  2. Minimize + 50 ns production (or shorter smoke)
-  3. Write md_metrics.json consumed by the design report
+The v0.6 funnel ends at AF + mechanistic ranking. Nothing in the CLI or
+``run_design_pipeline`` proceeds to MD. This module is retained only as a
+stub if an external follow-up ever imports metrics; do not call it from
+the case-study path.
 """
 
 from __future__ import annotations

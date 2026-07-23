@@ -19,11 +19,13 @@ Repo: [github.com/snowe36/catalyst_atlas](https://github.com/snowe36/catalyst_at
 
 **Can generative models optimize the molecular environment surrounding known catalytic machinery?**
 
+Many protein design workflows optimize global stability or binding metrics. This project focuses on a complementary problem: preserving chemically precise local environments where catalytic function emerges.
+
 This is not a claim that AI invented a new enzyme. The workflow keeps **catalytic residues fixed** and redesigns **first-/second-shell** (pocket-shaping) positions — then ranks designs with structure confidence, sequence plausibility, and catalytic geometry / ligand-contact constraints from the atlas.
 
 ```text
-ProteinMPNN (shell only; catalysts fixed)  →  ~1000 sequences
-        │
+ProteinMPNN proposes shell sequences (catalysts fixed)
+        │   — generator = proposal mechanism, not an oracle
         ▼
  hard filters + ESM + fixed-backbone chemistry
         │
@@ -35,22 +37,30 @@ ProteinMPNN (shell only; catalysts fixed)  →  ~1000 sequences
   AF2  ESM2  catalytic geometry / ligand contacts
    └────┼────┘
         ▼
- chemistry_preservation_score  (vs WT baseline)
-        │
-        ▼
- optional MD deep-dive (1–2 top pairs)
+ chemistry_constraint_score  (vs WT baseline)
 ```
+
+ProteinMPNN proposes sequences; the chemistry-aware evaluator determines whether designs satisfy mechanistic constraints.
 
 The portfolio story is a **chemistry-constrained design funnel** (1000 → ~100 AF jobs), not “predict every design.”
 
 | Piece | Role |
 |-------|------|
 | Pocket artifact | Catalytic (fixed) + redesignable shell with chain/resnum/aa/xyz |
-| Generator | ProteinMPNN adapter (or mock / FASTA import) — swappable |
+| Generator | ProteinMPNN adapter (or mock / FASTA import) — swappable proposal mechanism |
 | Evaluation | AF metrics + ESM neighborhood + catalytic geometry proxies |
-| Score | `chemistry_preservation_score` = 0.4 geometry + 0.3 structure + 0.3 ESM |
+| Score | `chemistry_constraint_score` = 0.4 geometry + 0.3 structure + 0.3 ESM |
 
 Hard invariants: designed sequence matches WT at catalytic indices; every mutation lies in the redesignable set.
+
+### Design assumptions
+
+This workflow assumes:
+
+- catalytic residues define the invariant chemical core
+- first-/second-shell residues encode tunable aspects of the catalytic environment
+- sequence plausibility and structural confidence are necessary but insufficient filters
+- experimental validation remains required
 
 ```bash
 cat-download --demo
@@ -59,18 +69,20 @@ cat-design-run --panel-size 10 --n-sequences 100 --mock
 
 ---
 
-## Shell redesign case study
+## Offline demonstration
 
-Offline demo panel — mock ProteinMPNN sequences + mock AF metrics — to exercise the funnel, invariants, and `chemistry_preservation_score` end-to-end. Not a wet-lab or ProteinMPNN bake-off claim.
+This repository includes a CPU-only mock execution path (mock ProteinMPNN sequences + mock AF metrics) so the funnel, invariants, and ranking can be exercised without a GPU or wet-lab claim. **Do not read mock Δ-vs-WT as catalytic improvement.** The product here is the chemistry-constrained funnel, not “mock sequences beat WT.”
+
+### Shell redesign case study
 
 | Check | Result |
 |-------|--------|
-| Panel enzymes | **8** (demo metalloprotease / redox / transferase / cofactor pairs) |
-| Designs scored | **160** |
+| Panel enzymes | **10** (demo metalloprotease / redox / transferase / cofactor pairs) |
+| Designs scored | **80** |
 | Score | `0.4·geometry + 0.3·structure + 0.3·ESM` vs WT |
 | Hard invariants | catalytic aa fixed; mutations ⊆ redesignable shell |
 
-On this mock shortlist, top designs sit slightly below WT on the composite proxy (typical Δ ≈ −0.02 to −0.05) — expected until real ProteinMPNN / ColabFold metrics are imported. The product here is the **chemistry-constrained funnel**, not “mock sequences beat WT.”
+On this mock shortlist, top designs sit slightly below WT on the composite proxy (typical Δ ≈ −0.02 to −0.05) — expected until real ProteinMPNN / ColabFold metrics are imported.
 
 Full writeup: [`out/design_case_study.md`](out/design_case_study.md).
 
@@ -81,16 +93,22 @@ Full writeup: [`out/design_case_study.md`](out/design_case_study.md).
 <p align="center"><em>Figure D1. Fixed catalytic core vs redesignable first-/second-shell positions.</em></p>
 
 <p align="center">
+  <img src="out/figures/fig_design_landscape.png" alt="Design landscape: geometry vs ESM plausibility" width="720"/>
+</p>
+
+<p align="center"><em>Figure D2. Design landscape — geometry vs ESM plausibility; WT, shortlisted, and rejected candidates.</em></p>
+
+<p align="center">
   <img src="out/figures/fig_design_geometry_vs_wt.png" alt="Design geometry relative to WT baseline" width="720"/>
 </p>
 
-<p align="center"><em>Figure D2. Designs scored relative to a WT geometry baseline.</em></p>
+<p align="center"><em>Figure D3. Designs scored relative to a WT geometry baseline.</em></p>
 
 <p align="center">
-  <img src="out/figures/fig_design_score_scatter.png" alt="Chemistry preservation score vs geometry" width="720"/>
+  <img src="out/figures/fig_design_score_scatter.png" alt="Chemistry constraint score vs geometry" width="720"/>
 </p>
 
-<p align="center"><em>Figure D3. Composite chemistry-preservation score vs geometry axis (WT marked).</em></p>
+<p align="center"><em>Figure D4. Composite chemistry-constraint score vs geometry axis (WT marked).</em></p>
 
 External runners: export `data/processed/design/mpnn_jobs/`, run ProteinMPNN with catalytic positions fixed, funnel to `af_queue.fasta`, run ColabFold/AF2 on the shortlist only, import metrics, then `cat-design-score --af-queue-only`.
 
@@ -175,7 +193,7 @@ The artifact is **prediction + why** — chemistry family, mechanistic pattern, 
 
 | Check | Result |
 |-------|--------|
-| Shell redesign demo | **8** enzymes · **160** designs · funnel + `chemistry_preservation_score` |
+| Shell redesign demo | **10** enzymes · **80** designs · funnel + `chemistry_constraint_score` |
 | Expanded atlas sites (M-CSA + UniProt) | **1157** |
 | Fold-disconnected Catalyst / MMseqs / Foldseek | **0.37** / 0.04 / 0.13 |
 | Chemistry Recall@5 (fold_cluster) | **0.67** |
@@ -311,7 +329,7 @@ Narrative case studies: `cat-cases` → [`out/case_studies/`](out/case_studies/)
 ## Limitations
 
 - Design case study currently ships with **mock** generator / AF metrics unless external ProteinMPNN + ColabFold outputs are imported — do not read mock Δ-vs-WT as catalytic improvement
-- Score axes are **proxies** (geometry / pLDDT-like confidence / ESM plausibility), not measured catalysis
+- Score axes are **proxies** (geometry / pLDDT-like confidence / ESM plausibility), not measured catalysis — `chemistry_constraint_score` ranks constraint satisfaction, not proven chemistry preservation
 - Redesign panel is small (~8–10 enzymes), not a full-atlas ProteinMPNN campaign
 - Expanded atlas is still curated-scale (n=1157), not proteome-wide
 - Fold-cluster scores are **split-sensitive** (ESM-2 and ESM+GNN both move ±0.06 across three seeds)
@@ -361,6 +379,7 @@ Out of scope: full-atlas ProteinMPNN, new generative model training, generator b
 |----------|------|
 | Design case study | `out/design_case_study.md` |
 | Design pocket map | `out/figures/fig_design_pocket_map.png` |
+| Design landscape | `out/figures/fig_design_landscape.png` |
 | Design geometry vs WT | `out/figures/fig_design_geometry_vs_wt.png` |
 | Design score scatter | `out/figures/fig_design_score_scatter.png` |
 | Fig 1 representation pipeline | `out/figures/fig1_pipeline.png` |

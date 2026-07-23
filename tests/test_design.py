@@ -26,7 +26,7 @@ from catalyst_atlas.design.panel import passes_pocket_qc, resolve_panel
 from catalyst_atlas.design.pocket import build_pocket, run_pockets
 from catalyst_atlas.design.report import write_design_case_study
 from catalyst_atlas.design.score import (
-    chemistry_preservation_score,
+    chemistry_constraint_score,
     geometry_preservation,
     reference_geometry_vector,
     run_score,
@@ -144,14 +144,19 @@ def test_fixed_positions_freeze_non_shell():
     pocket["chain_resnums"] = sorted(site_nums | set(range(1, 21)))
     fixed = fixed_positions_from_pocket(pocket)
     redesignable = {r["resnum"] for r in pocket["redesignable"]}
-    assert set(fixed["designed_positions"]["A"]) == redesignable
-    assert not (set(fixed["fixed_positions"]["A"]) & redesignable)
+    # PDB numbering (runner helper fields)
+    assert set(fixed["designed_positions_pdb"]["A"]) == redesignable
+    assert not (set(fixed["fixed_positions_pdb"]["A"]) & redesignable)
     for r in pocket["catalytic_residues"]:
-        assert r["resnum"] in fixed["fixed_positions"]["A"]
+        assert r["resnum"] in fixed["fixed_positions_pdb"]["A"]
+    # ProteinMPNN fixed_pos uses sequential 1-based indices into chain_resnums
+    resnum_to_seq1 = {n: i + 1 for i, n in enumerate(pocket["chain_resnums"])}
+    assert set(fixed["designed_positions"]["A"]) == {resnum_to_seq1[n] for n in redesignable}
+    assert not (set(fixed["fixed_positions"]["A"]) & set(fixed["designed_positions"]["A"]))
 
 
-def test_chemistry_preservation_score_weights():
-    s = chemistry_preservation_score(geometry=1.0, structure=0.0, esm=0.0)
+def test_chemistry_constraint_score_weights():
+    s = chemistry_constraint_score(geometry=1.0, structure=0.0, esm=0.0)
     assert abs(s - 0.4) < 1e-9
     assert geometry_preservation(
         reference_geometry_vector(build_pocket(_toy_atlas_row())),
@@ -205,12 +210,12 @@ def test_end_to_end_mock_pipeline(tmp_path, monkeypatch):
     assert len(designs) == 8 * len(eids)
     scores = run_score(eids, mock_predictions=True, seed=7)
     assert (scores["is_wt"]).sum() == len(eids)
-    assert "chemistry_preservation_score" in scores.columns
+    assert "chemistry_constraint_score" in scores.columns
     assert (scores.loc[scores["is_wt"], "delta_score_vs_wt"] == 0).all()
 
     report = write_design_case_study(scores, panel=panel)
     assert report.exists()
-    assert "chemistry_preservation_score" in report.read_text()
+    assert "chemistry_constraint_score" in report.read_text()
 
 
 def test_mock_designs_respect_invariants():

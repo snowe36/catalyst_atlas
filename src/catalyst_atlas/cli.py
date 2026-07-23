@@ -539,7 +539,7 @@ def design_funnel_main(argv: list[str] | None = None) -> int:
 
 def design_score_main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Score designs with chemistry_preservation_score (WT baseline first)"
+        description="Score designs with chemistry_constraint_score (WT baseline first)"
     )
     parser.add_argument("--enzyme-id", action="append", default=None)
     parser.add_argument(
@@ -572,7 +572,7 @@ def design_score_main(argv: list[str] | None = None) -> int:
     n_des = int((~df["is_wt"]).sum())
     print(
         f"scored rows={len(df)} designs={n_des} "
-        f"mean_score={df.loc[~df['is_wt'], 'chemistry_preservation_score'].mean():.3f}"
+        f"mean_score={df.loc[~df['is_wt'], 'chemistry_constraint_score'].mean():.3f}"
     )
     return 0
 

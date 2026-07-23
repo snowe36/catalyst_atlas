@@ -13,6 +13,8 @@ cd "$ROOT"
 
 python -m pip install -U pip
 python -m pip install -e ".[gpu]"
+# ColabFold 1.6 + dm-haiku need JAX 0.4.x CUDA wheels (not jax 0.11 CPU/CPU-break).
+python -m pip install -U "jax[cuda12]==0.4.38"
 
 N_SEQ="${N_SEQ:-100}"
 TOP_K="${TOP_K:-10}"

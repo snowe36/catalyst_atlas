@@ -147,20 +147,103 @@ def render_score_scatter(scores: pd.DataFrame, path: Path | None = None) -> Path
     return out
 
 
+def render_design_landscape(
+    scores: pd.DataFrame,
+    path: Path | None = None,
+    *,
+    top_k_per_enzyme: int = 3,
+) -> Path:
+    """Geometry vs ESM landscape: WT, top candidates, rejected shortlist."""
+    ensure_dirs()
+    out = path or (FIGURES / "fig_design_landscape.png")
+    fig, ax = plt.subplots(figsize=(6.8, 5.4))
+
+    score_col = (
+        "chemistry_constraint_score"
+        if "chemistry_constraint_score" in scores.columns
+        else "chemistry_preservation_score"
+    )
+    wt = scores[scores["is_wt"]]
+    des = scores[~scores["is_wt"]].copy()
+    top_ids: set[str] = set()
+    if not des.empty and score_col in des.columns:
+        for _, grp in des.groupby("enzyme_id"):
+            top_ids.update(
+                grp.sort_values(score_col, ascending=False)
+                .head(top_k_per_enzyme)["design_id"]
+                .astype(str)
+            )
+    top = des[des["design_id"].astype(str).isin(top_ids)]
+    rejected = des[~des["design_id"].astype(str).isin(top_ids)]
+
+    if not rejected.empty:
+        ax.scatter(
+            rejected["geometry_preservation"],
+            rejected["esm_plausibility"],
+            s=22,
+            c=MUTED,
+            alpha=0.4,
+            edgecolors="none",
+            label="rejected candidates",
+            zorder=1,
+        )
+    if not top.empty:
+        ax.scatter(
+            top["geometry_preservation"],
+            top["esm_plausibility"],
+            s=52,
+            c=TEAL,
+            alpha=0.95,
+            edgecolors=INK,
+            linewidths=0.4,
+            label="top candidates",
+            zorder=2,
+        )
+    if not wt.empty:
+        ax.scatter(
+            wt["geometry_preservation"],
+            wt["esm_plausibility"],
+            s=120,
+            c=ACCENT,
+            marker="*",
+            edgecolors=INK,
+            linewidths=0.5,
+            label="WT",
+            zorder=3,
+        )
+        ax.axvline(float(wt["geometry_preservation"].mean()), color=RULE, ls="--", lw=0.9, zorder=0)
+        ax.axhline(float(wt["esm_plausibility"].mean()), color=RULE, ls="--", lw=0.9, zorder=0)
+
+    ax.set_xlabel("geometry (proxy)")
+    ax.set_ylabel("ESM plausibility")
+    ax.set_title("Design landscape — search space vs WT")
+    ax.set_xlim(0, 1.02)
+    ax.set_ylim(0, 1.05)
+    ax.legend(frameon=False, loc="lower left", fontsize=8)
+    fig.tight_layout()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=160)
+    plt.close(fig)
+    return out
+
+
 def _top_designs_table(scores: pd.DataFrame, k: int = 3) -> list[dict[str, Any]]:
+    score_col = (
+        "chemistry_constraint_score"
+        if "chemistry_constraint_score" in scores.columns
+        else "chemistry_preservation_score"
+    )
     rows = []
     for eid, grp in scores.groupby("enzyme_id"):
         wt = grp[grp["is_wt"]]
-        des = grp[~grp["is_wt"]].sort_values(
-            "chemistry_preservation_score", ascending=False
-        )
-        wt_score = float(wt.iloc[0]["chemistry_preservation_score"]) if len(wt) else float("nan")
+        des = grp[~grp["is_wt"]].sort_values(score_col, ascending=False)
+        wt_score = float(wt.iloc[0][score_col]) if len(wt) else float("nan")
         for _, r in des.head(k).iterrows():
             rows.append(
                 {
                     "enzyme_id": eid,
                     "design_id": r["design_id"],
-                    "chemistry_preservation_score": round(float(r["chemistry_preservation_score"]), 3),
+                    "chemistry_constraint_score": round(float(r[score_col]), 3),
                     "delta_vs_wt": round(float(r["delta_score_vs_wt"]), 3),
                     "geometry": round(float(r["geometry_preservation"]), 3),
                     "structure": round(float(r["structure_confidence"]), 3),
@@ -187,6 +270,7 @@ def write_design_case_study(
 
     first_eid = sorted(scores["enzyme_id"].unique())[0]
     fig_pocket = render_pocket_map(first_eid)
+    fig_landscape = render_design_landscape(scores)
     fig_geom = render_geometry_vs_wt(scores)
     fig_scatter = render_score_scatter(scores)
 
@@ -197,6 +281,7 @@ def write_design_case_study(
             return str(path)
 
     fig_pocket_rel = _rel(fig_pocket)
+    fig_landscape_rel = _rel(fig_landscape)
     fig_geom_rel = _rel(fig_geom)
     fig_scatter_rel = _rel(fig_scatter)
 
@@ -211,13 +296,17 @@ def write_design_case_study(
         "surrounding known catalytic machinery?",
         "",
         "Catalytic residues are held fixed; first-/second-shell positions are redesigned. "
-        "Designs are ranked by `chemistry_preservation_score` "
+        "Designs are ranked by `chemistry_constraint_score` "
         "(0.4 geometry + 0.3 structure confidence + 0.3 ESM plausibility) — "
-        "**proxies for chemistry preservation, not measured catalysis**.",
+        "**proxies for constraint satisfaction, not measured catalysis**.",
+        "",
+        "ProteinMPNN proposes sequences; the chemistry-aware evaluator determines "
+        "whether designs satisfy mechanistic constraints.",
         "",
         f"- Enzymes: **{n_enz}**",
         f"- Designs scored: **{n_des}**",
         f"- Pocket example figure: `{fig_pocket_rel}`",
+        f"- Design landscape: `{fig_landscape_rel}`",
         f"- Geometry vs WT: `{fig_geom_rel}`",
         f"- Score scatter: `{fig_scatter_rel}`",
         "",
@@ -250,7 +339,7 @@ def write_design_case_study(
     )
     for r in top:
         lines.append(
-            f"| `{r['enzyme_id']}` | `{r['design_id']}` | {r['chemistry_preservation_score']} | "
+            f"| `{r['enzyme_id']}` | `{r['design_id']}` | {r['chemistry_constraint_score']} | "
             f"{r['delta_vs_wt']:+.3f} | {r['geometry']} | {r['structure']} | {r['esm']} | "
             f"{r['n_mutations']} |"
         )
@@ -280,10 +369,11 @@ def write_design_case_study(
             "",
             "- Funnel: generate → hard filters → ESM + fixed-backbone chemistry → AF shortlist → mechanistic rank.",
             "- Generator and evaluation are separated (`generate` / `mpnn` vs `predict` / `score`).",
+            "- The generator is a proposal mechanism, not an oracle.",
             "- Hard invariants: catalytic sequence identity; mutations ⊆ redesignable shell.",
             "- WT is scored with the same axes before any design comparison.",
             "- ProteinMPNN / AF2 are external runners; this report may use imported or mock predictions.",
-            "- Optional MD deep-dive (`design.md_deepdive`) for 1–2 top WT/design pairs.",
+            "- Scope ends at mechanistic ranking after AF — no MD in this repo.",
             "",
         ]
     )
@@ -293,7 +383,7 @@ def write_design_case_study(
     summary = {
         "n_enzymes": n_enz,
         "n_designs": n_des,
-        "figures": [fig_pocket_rel, fig_geom_rel, fig_scatter_rel],
+        "figures": [fig_pocket_rel, fig_landscape_rel, fig_geom_rel, fig_scatter_rel],
         "top_designs": top,
     }
     (REPORTS / "design_case_study_summary.json").write_text(json.dumps(summary, indent=2))
@@ -313,7 +403,6 @@ def run_design_pipeline(
     """End-to-end case study with chemistry-constrained AF funnel."""
     from catalyst_atlas.design.funnel import run_funnel
     from catalyst_atlas.design.generate import run_generate
-    from catalyst_atlas.design.md_deepdive import write_md_plan
     from catalyst_atlas.design.panel import resolve_panel
     from catalyst_atlas.design.pocket import run_pockets
     from catalyst_atlas.design.score import run_score
@@ -327,16 +416,6 @@ def run_design_pipeline(
     scores = run_score(
         eids, mock_predictions=mock, seed=seed, af_queue_only=True
     )
-    # Optional MD plan for top design per first two enzymes.
-    pairs = []
-    for eid in eids[:2]:
-        sub = scores[(scores["enzyme_id"] == eid) & (~scores["is_wt"])]
-        if sub.empty:
-            continue
-        top = sub.sort_values("chemistry_preservation_score", ascending=False).iloc[0]
-        pairs.append({"enzyme_id": eid, "wt_design_id": "WT", "design_id": str(top["design_id"])})
-    if pairs:
-        write_md_plan(pairs)
 
     report = write_design_case_study(scores, panel=panel)
     return {
