@@ -13,7 +13,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,9 +22,9 @@ LOG = OUT / "colabfold_monitor.log"
 ACTION = OUT / "design_watchdog_action.json"
 STATUS = OUT / "design_run_status.json"
 
-DEFAULT_POD = "2q4vmmnmm0h0m4"
+DEFAULT_POD = "ggn7kl3zubwjfj"
 DEFAULT_HOST = "194.14.47.19"
-DEFAULT_PORT = "23297"
+DEFAULT_PORT = "23358"
 DEFAULT_TARGET_PDB = 88
 # No progress for this long → failure (MSA can be slow; WT×8 + designs).
 STALL_SEC = 45 * 60
@@ -33,7 +33,7 @@ POLL_SEC = 90
 
 
 def _utc() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _log(msg: str) -> None:
@@ -251,7 +251,8 @@ def main() -> int:
             )
             return 0
 
-        if probe.get("traceback") and not alive:
+        stalled = (time.time() - last_progress) > args.stall_sec
+        if probe.get("traceback") and (not alive or stalled):
             _request_stop(
                 args.pod_id,
                 "traceback_dead",
@@ -260,7 +261,6 @@ def main() -> int:
             )
             return 1
 
-        stalled = (time.time() - last_progress) > args.stall_sec
         if stalled and not alive:
             _request_stop(
                 args.pod_id,
@@ -269,13 +269,13 @@ def main() -> int:
                 detail={"best_pdb": best_pdb, "best_took": best_took, **probe},
             )
             return 1
-        if stalled and alive and n_pdb == 0 and n_took == 0:
-            # Alive but zero progress for a long time (e.g. MSA hang on first query)
+        if stalled and alive:
+            # Alive but no new PDBs/folds for stall_sec (MSA hang or zombie "alive")
             _request_stop(
                 args.pod_id,
                 "stalled_no_progress",
                 success=False,
-                detail={"stall_sec": args.stall_sec, **probe},
+                detail={"stall_sec": args.stall_sec, "best_pdb": best_pdb, **probe},
             )
             return 1
 

@@ -552,10 +552,25 @@ def design_score_main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Score only the funnel AF shortlist (+ WT), not all generative designs",
     )
+    parser.add_argument(
+        "--backfill-af-geometry",
+        action="store_true",
+        help="Extract catalytic CA pairwise geometry from colabfold_out PDBs into metrics.json",
+    )
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
+
+    if args.backfill_af_geometry:
+        from catalyst_atlas.design.af_geometry import (
+            backfill_af_queue_geometry,
+            purge_mock_prediction_trees,
+        )
+
+        n_purged = purge_mock_prediction_trees()
+        summary = backfill_af_queue_geometry()
+        print(f"af_geometry backfill ok={summary['n_ok']} fail={summary['n_fail']} purged_trees={n_purged}")
 
     from catalyst_atlas.design.score import run_score
 
@@ -570,9 +585,11 @@ def design_score_main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     n_des = int((~df["is_wt"]).sum())
+    geom = df.loc[~df["is_wt"], "geometry_preservation"]
     print(
         f"scored rows={len(df)} designs={n_des} "
-        f"mean_score={df.loc[~df['is_wt'], 'chemistry_constraint_score'].mean():.3f}"
+        f"mean_score={df.loc[~df['is_wt'], 'chemistry_constraint_score'].mean():.3f} "
+        f"geom_mean={geom.mean():.3f} geom_std={geom.std():.3f}"
     )
     return 0
 

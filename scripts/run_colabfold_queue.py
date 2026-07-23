@@ -116,18 +116,25 @@ def _find_wt_a3m(eid: str) -> Path | None:
 
 
 def _a3m_with_query(wt_a3m: Path, query_name: str, query_seq: str) -> str:
-    """Replace the first (query) sequence in an A3M with query_seq; keep hits."""
+    """Replace the first (query) sequence in an A3M with query_seq; keep hits.
+
+    ColabFold A3Ms often start with a ``#length\\tnseq`` comment line before
+    the first ``>`` header — skip those.
+    """
     lines = wt_a3m.read_text(errors="replace").splitlines()
-    if not lines or not lines[0].startswith(">"):
-        raise ValueError(f"bad a3m: {wt_a3m}")
-    # skip first record
-    i = 1
+    i = 0
     while i < len(lines) and not lines[i].startswith(">"):
         i += 1
-    rest = lines[i:]
+    if i >= len(lines):
+        raise ValueError(f"bad a3m (no header): {wt_a3m}")
+    # skip first record (query + its sequence lines)
+    j = i + 1
+    while j < len(lines) and not lines[j].startswith(">"):
+        j += 1
+    rest = lines[j:]
     out = [f">{query_name}"]
-    for j in range(0, len(query_seq), 80):
-        out.append(query_seq[j : j + 80])
+    for k in range(0, len(query_seq), 80):
+        out.append(query_seq[k : k + 80])
     out.extend(rest)
     return "\n".join(out) + "\n"
 
@@ -184,24 +191,36 @@ def _strategy_reuse_wt(recs: list[tuple[str, str, str]]) -> None:
     # 2) Design A3Ms from WT MSA
     A3M_DIR.mkdir(parents=True, exist_ok=True)
     n_a3m = 0
+    n_skip = 0
     missing_wt_msa: set[str] = set()
     for eid, did, seq in designs:
+        # Skip if this design already has a PDB
+        existing = list(OUT.glob(f"{eid}_{did}*.pdb")) + list(
+            OUT.glob(f"{eid}|{did}*.pdb")
+        )
+        if existing:
+            n_skip += 1
+            continue
         wt_a3m = _find_wt_a3m(eid)
         if wt_a3m is None:
             missing_wt_msa.add(eid)
             continue
-        # ColabFold input stem becomes job name; use enzyme_design
         stem = f"{eid}_{did}"
         dest = A3M_DIR / f"{stem}.a3m"
         dest.write_text(_a3m_with_query(wt_a3m, stem, seq))
         n_a3m += 1
     if missing_wt_msa:
         print(f"WARNING: no WT MSA for {sorted(missing_wt_msa)}", flush=True)
-    print(f"wrote {n_a3m} design a3ms → {A3M_DIR}", flush=True)
+    print(
+        f"wrote {n_a3m} design a3ms → {A3M_DIR} (skipped {n_skip} already folded)",
+        flush=True,
+    )
 
     # 3) Predict designs from A3M dir (ColabFold treats a3m as MSA input)
     if n_a3m:
         _run_colabfold(A3M_DIR, OUT, msa_mode=None)
+    elif n_skip:
+        print("all designs already folded; skip colabfold_batch", flush=True)
 
 
 def main() -> int:
