@@ -254,3 +254,34 @@ def test_funnel_shortlists_top_k(tmp_path, monkeypatch):
     assert meta["n_af_wt"] == 1
     assert meta["n_af_total"] == 6
 
+
+def test_af_geometry_from_synthetic_pdb(tmp_path):
+    from catalyst_atlas.design.af_geometry import (
+        geometry_vector_from_pdb,
+        parse_ca_coords,
+    )
+
+    # Minimal PDB: three CA atoms at known positions
+    pdb = tmp_path / "toy.pdb"
+    lines = []
+    for i, (x, y, z) in enumerate([(0.0, 0.0, 0.0), (3.0, 0.0, 0.0), (0.0, 4.0, 0.0)], start=1):
+        lines.append(
+            f"ATOM  {i:5d}  CA  ALA A{i:4d}    {x:8.3f}{y:8.3f}{z:8.3f}  1.00 90.00           C"
+        )
+    pdb.write_text("\n".join(lines) + "\n")
+    ca = parse_ca_coords(pdb)
+    assert set(ca) == {1, 2, 3}
+    pocket = {
+        "catalytic_residues": [
+            {"seq_index": 0, "resnum": 1, "xyz": [0, 0, 0]},
+            {"seq_index": 1, "resnum": 2, "xyz": [3, 0, 0]},
+            {"seq_index": 2, "resnum": 3, "xyz": [0, 4, 0]},
+        ]
+    }
+    vec = geometry_vector_from_pdb(pdb, pocket)
+    assert vec is not None
+    assert len(vec) == 3
+    assert abs(vec[0] - 3.0) < 1e-3
+    assert abs(vec[1] - 4.0) < 1e-3
+    assert abs(vec[2] - 5.0) < 1e-3  # 3-4-5 triangle
+
