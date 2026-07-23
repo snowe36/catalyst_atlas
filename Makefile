@@ -14,5 +14,6 @@ reproduce:
 	bash scripts/reproduce.sh
 
 clean:
-	rm -rf data/raw/* data/processed/* reports/figures/*
-	touch data/processed/.gitkeep reports/figures/.gitkeep
+	rm -rf data/raw/* data/processed/*
+	rm -rf out/*.md out/*.json out/*.log out/case_studies
+	touch data/processed/.gitkeep

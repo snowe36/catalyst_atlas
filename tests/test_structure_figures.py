@@ -77,7 +77,7 @@ def test_generate_structure_figures_pipeline(isolated_data_dirs: Path):
             }
         )
     )
-    out_dir = isolated_data_dirs / "reports" / "figures"
+    out_dir = isolated_data_dirs / "out" / "figures"
     paths_out = generate_structure_figures(out_dir=out_dir, dpi=72)
     assert paths_out
     names = {p.name for p in paths_out}

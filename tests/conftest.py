@@ -26,7 +26,7 @@ def isolated_data_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Redirect package data/report paths into an isolated temp tree."""
     raw = tmp_path / "data" / "raw"
     processed = tmp_path / "data" / "processed"
-    reports = tmp_path / "reports"
+    reports = tmp_path / "out"
     figures = reports / "figures"
     for path in (raw, processed, figures):
         path.mkdir(parents=True, exist_ok=True)

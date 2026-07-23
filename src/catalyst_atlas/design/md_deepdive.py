@@ -50,7 +50,7 @@ def write_md_plan(
 
 
 def import_md_metrics(path: Path) -> Path:
-    """Copy/normalize an external MD metrics JSON into reports/."""
+    """Copy/normalize an external MD metrics JSON into out/."""
     ensure_dirs()
     payload: dict[str, Any] = json.loads(Path(path).read_text())
     out = REPORTS / "design_md_deepdive.json"

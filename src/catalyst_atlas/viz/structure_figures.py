@@ -895,7 +895,7 @@ def generate_structure_figures(
     *,
     dpi: int = 180,
 ) -> list[Path]:
-    """Write README-ready catalytic microenvironment PNGs under reports/figures/."""
+    """Write README-ready catalytic microenvironment PNGs under out/figures/."""
     ensure_dirs()
     df = _load_micro_table(micro_path)
     dest = Path(out_dir) if out_dir else FIGURES

@@ -11,10 +11,6 @@ data/processed/
 !data/processed/.gitkeep
 artifacts/*
 !artifacts/.gitkeep
-reports/figures/*
-!reports/figures/.gitkeep
-!reports/figures/hero_*
-!reports/figures/*.png
 data/raw/*
 !data/raw/.gitkeep
 *.parquet
@@ -25,5 +21,9 @@ data/raw/*
 tools/mmseqs/
 tools/foldseek/
 tools/*.tar.gz
-reports/*.log
-
+# Pipeline outputs (keep README figures tracked)
+out/*
+!out/figures/
+out/figures/*
+!out/figures/.gitkeep
+!out/figures/*.png

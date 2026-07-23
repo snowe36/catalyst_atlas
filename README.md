@@ -72,22 +72,22 @@ Offline demo panel — mock ProteinMPNN sequences + mock AF metrics — to exerc
 
 On this mock shortlist, top designs sit slightly below WT on the composite proxy (typical Δ ≈ −0.02 to −0.05) — expected until real ProteinMPNN / ColabFold metrics are imported. The product here is the **chemistry-constrained funnel**, not “mock sequences beat WT.”
 
-Full writeup: [`reports/design_case_study.md`](reports/design_case_study.md).
+Full writeup: [`out/design_case_study.md`](out/design_case_study.md).
 
 <p align="center">
-  <img src="reports/figures/fig_design_pocket_map.png" alt="Fixed catalytic residues vs redesignable shell" width="640"/>
+  <img src="out/figures/fig_design_pocket_map.png" alt="Fixed catalytic residues vs redesignable shell" width="640"/>
 </p>
 
 <p align="center"><em>Figure D1. Fixed catalytic core vs redesignable first-/second-shell positions.</em></p>
 
 <p align="center">
-  <img src="reports/figures/fig_design_geometry_vs_wt.png" alt="Design geometry relative to WT baseline" width="720"/>
+  <img src="out/figures/fig_design_geometry_vs_wt.png" alt="Design geometry relative to WT baseline" width="720"/>
 </p>
 
 <p align="center"><em>Figure D2. Designs scored relative to a WT geometry baseline.</em></p>
 
 <p align="center">
-  <img src="reports/figures/fig_design_score_scatter.png" alt="Chemistry preservation score vs geometry" width="720"/>
+  <img src="out/figures/fig_design_score_scatter.png" alt="Chemistry preservation score vs geometry" width="720"/>
 </p>
 
 <p align="center"><em>Figure D3. Composite chemistry-preservation score vs geometry axis (WT marked).</em></p>
@@ -120,10 +120,10 @@ Multi-seed bake-off (seeds 7 / 11 / 13):
 | ESM-2 | 0.40 ± 0.06 |
 | ESM+GNN | 0.42 ± 0.06 |
 
-Neighborhood baselines (seed 7): MMseqs2 0.04, Foldseek 0.13. Random-graph ablation: geometry-specific gains are **not yet established**. Sources: [`reports/v05_seed_summary.json`](reports/v05_seed_summary.json), [`reports/v05_ablation_summary.json`](reports/v05_ablation_summary.json).
+Neighborhood baselines (seed 7): MMseqs2 0.04, Foldseek 0.13. Random-graph ablation: geometry-specific gains are **not yet established**. Sources: [`out/v05_seed_summary.json`](out/v05_seed_summary.json), [`out/v05_ablation_summary.json`](out/v05_ablation_summary.json).
 
 <p align="center">
-  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer" width="720"/>
+  <img src="out/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer" width="720"/>
 </p>
 
 ### Convergent chemistry (representation evidence)
@@ -134,10 +134,10 @@ Neighborhood baselines (seed 7): MMseqs2 0.04, Foldseek 0.13. Random-graph ablat
 | Fold / CATH | `1.10.390` | `3.40.390` |
 | Reaction chemistry | hydrolysis / metal activation | hydrolysis / metal activation |
 
-Full writeup: [`reports/hero_convergent_chemistry.md`](reports/hero_convergent_chemistry.md).
+Full writeup: [`out/hero_convergent_chemistry.md`](out/hero_convergent_chemistry.md).
 
 <p align="center">
-  <img src="reports/figures/fig1_pipeline.png" alt="Pipeline: structure → reaction center → representation → retrieval → card" width="900"/>
+  <img src="out/figures/fig1_pipeline.png" alt="Pipeline: structure → reaction center → representation → retrieval → card" width="900"/>
 </p>
 
 <p align="center"><em>Representation pipeline used to validate catalytic microenvironment features.</em></p>
@@ -188,7 +188,7 @@ The artifact is **prediction + why** — chemistry family, mechanistic pattern, 
 
 The fold-disconnected benchmark (**n=461** test) carries the quantitative claim. The convergent-chemistry subset (**n=26**) is a biologically informative hard audit — not the primary win metric. Do not oversell it.
 
-Full writeup: [`reports/mcsa_v02_n959_results.md`](reports/mcsa_v02_n959_results.md).
+Full writeup: [`out/mcsa_v02_n959_results.md`](out/mcsa_v02_n959_results.md).
 
 ---
 
@@ -227,7 +227,7 @@ At high identity, sequence is the right tool. At remote homology, sequence trans
 | <20% | 154 | **0.45** | 0.00 | 0.27 |
 
 <p align="center">
-  <img src="reports/figures/fig_chemistry_by_seq_identity.png" alt="Chemistry transfer accuracy stratified by nearest-train sequence identity" width="720"/>
+  <img src="out/figures/fig_chemistry_by_seq_identity.png" alt="Chemistry transfer accuracy stratified by nearest-train sequence identity" width="720"/>
 </p>
 
 <p align="center"><em>Figure 2. Expanded atlas (n=1157, random split). MMseqs2 is strong in the mid-identity band and collapses below 20%; engineered microenvironments keep signal when homologs are gone. High-identity bins are small-n.</em></p>
@@ -254,7 +254,7 @@ Recall@5 / MRR ask: does the true chemistry appear among retrieved catalytic nei
 | **B** Different fold, same chemistry | Recognize convergent chemistry? | **26** | **0.50** | 0.04 | 0.08 |
 
 <p align="center">
-  <img src="reports/figures/fig_fold_chemistry_audits.png" alt="Same-fold different-chemistry trap vs different-fold same-chemistry recovery" width="720"/>
+  <img src="out/figures/fig_fold_chemistry_audits.png" alt="Same-fold different-chemistry trap vs different-fold same-chemistry recovery" width="720"/>
 </p>
 
 <p align="center"><em>Figure 3. Panel A: fold information is legitimately useful — leave it visible. Panel B (n=26): chemistry can be conserved despite different evolutionary solutions.</em></p>
@@ -266,12 +266,12 @@ Recall@5 / MRR ask: does the true chemistry appear among retrieved catalytic nei
 The practical output is a **chemistry card**: family, mechanistic pattern, catalytic evidence, and nearest chemical analogs — not just a leaderboard number.
 
 <p align="center">
-  <img src="reports/figures/fig4_chemistry_cards.png" alt="Example chemistry cards for convergent chemistry and same-fold different-chemistry cases" width="900"/>
+  <img src="out/figures/fig4_chemistry_cards.png" alt="Example chemistry cards for convergent chemistry and same-fold different-chemistry cases" width="900"/>
 </p>
 
 <p align="center"><em>Figure 4. Prediction + mechanistic evidence — the thing a scientist would actually use.</em></p>
 
-Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_studies/).
+Narrative case studies: `cat-cases` → [`out/case_studies/`](out/case_studies/).
 
 ---
 
@@ -287,7 +287,7 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 | Labels | `chemistry_family` + `mechanistic_pattern` |
 
 <p align="center">
-  <img src="reports/figures/fig_microenv_zn_activation.png" alt="Zn-activation catalytic microenvironment" width="640"/>
+  <img src="out/figures/fig_microenv_zn_activation.png" alt="Zn-activation catalytic microenvironment" width="640"/>
 </p>
 
 <p align="center"><em>Zn-activation reaction center — a local chemical machine, not a fold fingerprint.</em></p>
@@ -359,16 +359,16 @@ Out of scope: full-atlas ProteinMPNN, new generative model training, generator b
 
 | Artifact | Path |
 |----------|------|
-| Design case study | `reports/design_case_study.md` |
-| Design pocket map | `reports/figures/fig_design_pocket_map.png` |
-| Design geometry vs WT | `reports/figures/fig_design_geometry_vs_wt.png` |
-| Design score scatter | `reports/figures/fig_design_score_scatter.png` |
-| Fig 1 representation pipeline | `reports/figures/fig1_pipeline.png` |
-| Fig 2 identity stratification | `reports/figures/fig_chemistry_by_seq_identity.png` |
-| Fig 3 fold–chemistry audits | `reports/figures/fig_fold_chemistry_audits.png` |
-| Fig 4 chemistry cards | `reports/figures/fig4_chemistry_cards.png` |
-| Convergent case study | `reports/hero_convergent_chemistry.md` |
-| Seed / ablation summaries | `reports/v05_seed_summary.json`, `reports/v05_ablation_summary.json` |
+| Design case study | `out/design_case_study.md` |
+| Design pocket map | `out/figures/fig_design_pocket_map.png` |
+| Design geometry vs WT | `out/figures/fig_design_geometry_vs_wt.png` |
+| Design score scatter | `out/figures/fig_design_score_scatter.png` |
+| Fig 1 representation pipeline | `out/figures/fig1_pipeline.png` |
+| Fig 2 identity stratification | `out/figures/fig_chemistry_by_seq_identity.png` |
+| Fig 3 fold–chemistry audits | `out/figures/fig_fold_chemistry_audits.png` |
+| Fig 4 chemistry cards | `out/figures/fig4_chemistry_cards.png` |
+| Convergent case study | `out/hero_convergent_chemistry.md` |
+| Seed / ablation summaries | `out/v05_seed_summary.json`, `out/v05_ablation_summary.json` |
 
 ---
 
@@ -380,7 +380,7 @@ src/catalyst_atlas/
   data/ site/ featurize/ models/ eval/ explain/ viz/
 scripts/              reproduce.sh, embed_esm.py, runpod_train.sh
 data/processed/design/ pockets, designs, scores, mpnn_jobs
-reports/              design_case_study.md + figures + eval summaries
+out/              design_case_study.md + figures + eval summaries
 tests/                unit + design invariants + pipeline smoke
 ```
 

@@ -174,8 +174,8 @@ def test_fasta_roundtrip(tmp_path):
 def test_end_to_end_mock_pipeline(tmp_path, monkeypatch):
     monkeypatch.setattr("catalyst_atlas.paths.RAW", tmp_path / "raw")
     monkeypatch.setattr("catalyst_atlas.paths.PROCESSED", tmp_path / "processed")
-    monkeypatch.setattr("catalyst_atlas.paths.REPORTS", tmp_path / "reports")
-    monkeypatch.setattr("catalyst_atlas.paths.FIGURES", tmp_path / "reports" / "figures")
+    monkeypatch.setattr("catalyst_atlas.paths.REPORTS", tmp_path / "out")
+    monkeypatch.setattr("catalyst_atlas.paths.FIGURES", tmp_path / "out" / "figures")
     monkeypatch.setattr("catalyst_atlas.design.pocket.RAW", tmp_path / "raw")
     monkeypatch.setattr("catalyst_atlas.design.pocket.PROCESSED", tmp_path / "processed")
     monkeypatch.setattr("catalyst_atlas.design.panel.RAW", tmp_path / "raw")
@@ -185,8 +185,8 @@ def test_end_to_end_mock_pipeline(tmp_path, monkeypatch):
     monkeypatch.setattr("catalyst_atlas.design.predict.PROCESSED", tmp_path / "processed")
     monkeypatch.setattr("catalyst_atlas.design.score.PROCESSED", tmp_path / "processed")
     monkeypatch.setattr("catalyst_atlas.design.report.PROCESSED", tmp_path / "processed")
-    monkeypatch.setattr("catalyst_atlas.design.report.REPORTS", tmp_path / "reports")
-    monkeypatch.setattr("catalyst_atlas.design.report.FIGURES", tmp_path / "reports" / "figures")
+    monkeypatch.setattr("catalyst_atlas.design.report.REPORTS", tmp_path / "out")
+    monkeypatch.setattr("catalyst_atlas.design.report.FIGURES", tmp_path / "out" / "figures")
     monkeypatch.setattr("catalyst_atlas.data.generate_demo.RAW", tmp_path / "raw")
 
     (tmp_path / "raw").mkdir(parents=True)
