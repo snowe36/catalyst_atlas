@@ -1,35 +1,95 @@
-# catalyst_atlas
+# Catalyst Atlas
 
-**A leakage-aware benchmark for chemistry identification from catalytic microenvironments** — ask what chemistry a protein site supports from its reaction center, then stress-test whether that signal survives when sequence and fold neighbors are held out.
+**AI-guided redesign of catalytic microenvironments**
 
-> *Catalyst Atlas evaluates whether catalytic chemistry can be identified beyond evolutionary neighborhood shortcuts.*
+*Generative protein design constrained by mechanistic chemistry.*
+
+> Catalytic function is encoded not only by global fold but by local geometric and chemical environments that can be computationally optimized.
 
 [![CI](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Benchmark](https://img.shields.io/badge/benchmark-expanded%20n%3D1157-0E7490)
+![Design](https://img.shields.io/badge/design-shell%20redesign-0E7490)
 
 Repo: [github.com/snowe36/catalyst_atlas](https://github.com/snowe36/catalyst_atlas)
 
 ---
 
-## The problem
+## The question
 
-Evolutionary similarity is a strong proxy for function when homologs exist. The harder question is what remains when they do not:
+**Can generative models optimize the molecular environment surrounding known catalytic machinery?**
 
-**Can we tell what chemistry a site is set up to do from its microenvironment — and how much of that score is just leftover sequence/fold leakage?**
+This is not a claim that AI invented a new enzyme. The workflow keeps **catalytic residues fixed** and redesigns **first-/second-shell** (pocket-shaping) positions — then ranks designs with structure confidence, sequence plausibility, and catalytic geometry / ligand-contact constraints from the atlas.
 
-The benchmark uses sequence-cluster and fold-cluster holdouts as negative controls. This is not “beat Foldseek.” Foldseek is the right tool when fold neighbors exist. Local catalytic representations matter when chemistry is shared across unrelated folds.
+```text
+ProteinMPNN (shell only; catalysts fixed)  →  ~1000 sequences
+        │
+        ▼
+ hard filters + ESM + fixed-backbone chemistry
+        │
+        ▼
+ AF shortlist (WT + top ~5–10 / enzyme ≈ 110 structures)
+        │
+   ┌────┼────┐
+   ▼    ▼    ▼
+  AF2  ESM2  catalytic geometry / ligand contacts
+   └────┼────┘
+        ▼
+ chemistry_preservation_score  (vs WT baseline)
+        │
+        ▼
+ optional MD deep-dive (1–2 top pairs)
+```
+
+The portfolio story is a **chemistry-constrained design funnel** (1000 → ~100 AF jobs), not “predict every design.”
+
+| Piece | Role |
+|-------|------|
+| Pocket artifact | Catalytic (fixed) + redesignable shell with chain/resnum/aa/xyz |
+| Generator | ProteinMPNN adapter (or mock / FASTA import) — swappable |
+| Evaluation | AF metrics + ESM neighborhood + catalytic geometry proxies |
+| Score | `chemistry_preservation_score` = 0.4 geometry + 0.3 structure + 0.3 ESM |
+
+Hard invariants: designed sequence matches WT at catalytic indices; every mutation lies in the redesignable set.
+
+```bash
+cat-download --demo
+cat-design-run --panel-size 10 --n-sequences 100 --mock
+```
+
+Case study writeup: [`reports/design_case_study.md`](reports/design_case_study.md) · plan: [`docs/plans/v0.6_generative_design.md`](docs/plans/v0.6_generative_design.md).
+
+<p align="center">
+  <img src="reports/figures/fig_design_pocket_map.png" alt="Fixed catalytic residues vs redesignable shell" width="640"/>
+</p>
+
+<p align="center"><em>Fixed catalytic core vs redesignable first-/second-shell positions.</em></p>
+
+<p align="center">
+  <img src="reports/figures/fig_design_geometry_vs_wt.png" alt="Design geometry relative to WT baseline" width="720"/>
+</p>
+
+<p align="center"><em>Designs scored relative to a WT baseline — improved vs worse geometry preservation.</em></p>
 
 ---
 
-## The key experiment: remove evolutionary neighborhoods
+## What this repo builds
 
-**Can a model identify catalytic chemistry when sequence/fold neighbors are removed?**
+1. **Curate** M-CSA catalytic sites with structures, cofactors, and chemistry labels
+2. **Define** pocket artifacts (fixed catalysts + redesignable shells)
+3. **Generate** shell-only sequence designs (ProteinMPNN or import)
+4. **Score** designs vs WT with AF / ESM / catalytic geometry proxies
+5. **Validate** learned catalytic representations under leakage-aware holdouts (below)
+
+---
+
+## Validation of learned catalytic representations
+
+Evolutionary similarity is a strong proxy for function when homologs exist. The supporting benchmark asks what remains when they do not — chemistry identification from the reaction center under sequence/fold holdouts.
 
 Primary metric: `fold_cluster` chemistry accuracy on the expanded atlas (**n=1157**; M-CSA 959 + UniProt 198).
 
-Multi-seed bake-off (seeds 7 / 11 / 13; same protocol, different fold holdouts):
+Multi-seed bake-off (seeds 7 / 11 / 13):
 
 | Method | fold_cluster (mean ± std) |
 |--------|--------------------------:|
@@ -37,74 +97,27 @@ Multi-seed bake-off (seeds 7 / 11 / 13; same protocol, different fold holdouts):
 | ESM-2 | 0.40 ± 0.06 |
 | ESM+GNN | 0.42 ± 0.06 |
 
-Neighborhood baselines on a single fold holdout (seed 7) for context: MMseqs2 0.04, Foldseek 0.13.
-
-Seed 7 example split (not the multi-seed mean):
-
-| Method | fold_cluster accuracy |
-|--------|----------------------:|
-| Engineered catalytic microenvironment | 0.38 |
-| ESM-2 (frozen sequence) | 0.46 |
-| ESM+GNN | 0.49 |
-
-Averaged across seeds the ESM+GNN edge over ESM-2 is small (+0.02) and sits inside the noise. Frozen protein language models already carry most fold-disconnected signal at this scale; reaction-center fusion is a complementary contribution, not a replacement.
-
-Random-graph ablation (seed 7): ESM + **shuffled** node features scores **0.50**, matching or beating catalytic graphs (0.49). Geometry-specific gains are **not yet established** — treat the seed-7 bump as a fusion/capacity effect until a stricter graph control wins.
-
-| Representation | fold_cluster | Reading |
-|----------------|-------------:|---------|
-| GNN alone (reaction-center graphs) | ~0.32 | Local graphs alone are hard at n≈1000 |
-| ESM-2 | 0.40 ± 0.06 (0.46 on seed 7) | Sequence models already encode a lot of biochemistry |
-| ESM+GNN | 0.42 ± 0.06 (0.49 on seed 7) | Complementary; geometry-specific gains not yet established |
-
-Sources: [`reports/v05_seed_summary.json`](reports/v05_seed_summary.json), [`reports/v05_ablation_summary.json`](reports/v05_ablation_summary.json). Prior MCSA-only track (n=959): ESM+GNN 0.45 — see [`docs/plans/v0.3_learn_catalytic_language.md`](docs/plans/v0.3_learn_catalytic_language.md).
-
-On a small convergent-chemistry audit (**n=29**), ESM+GNN retrieves cross-fold chemical analogs at 0.83. That subset is hypothesis-generating, not the primary benchmark.
-
-Annotation-style controls (same-residue / same-cofactor / shuffled shell / decoy centers) are in `cat-eval` — figure [`reports/figures/fig_annotation_style_controls.png`](reports/figures/fig_annotation_style_controls.png).
+Neighborhood baselines (seed 7): MMseqs2 0.04, Foldseek 0.13. Random-graph ablation: geometry-specific gains are **not yet established**. Sources: [`reports/v05_seed_summary.json`](reports/v05_seed_summary.json), [`reports/v05_ablation_summary.json`](reports/v05_ablation_summary.json).
 
 <p align="center">
-  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer: multi-seed means with seed-7 example split" width="720"/>
+  <img src="reports/figures/fig_fold_disconnected_chemistry.png" alt="Fold-disconnected chemistry transfer" width="720"/>
 </p>
 
-<p align="center">
-  <img src="reports/figures/fig_retrieval_neighbors.png" alt="Query enzyme with ESM-2 nearest neighbor vs ESM+GNN nearest neighbor" width="720"/>
-</p>
-
-<p align="center"><em>Retrieval example: the model sometimes finds chemistry across folds — without claiming a consistent win over ESM.</em></p>
-
----
-
-## Case study: convergent chemistry across unrelated folds
-
-A fold-disconnected pair with shared chemistry recovered by reaction-center similarity — what the representation encodes, not a blind discovery claim.
+### Convergent chemistry (representation evidence)
 
 | | Thermolysin `MCSA00176` | Neprilysin `MCSA00623` |
 |--|-------------------------|-------------------------|
 | Sequence neighborhood | remote (~5–7% k-mer Jaccard) | remote |
 | Fold / CATH | `1.10.390` | `3.40.390` |
 | Reaction chemistry | hydrolysis / metal activation | hydrolysis / metal activation |
-| Catalyst Atlas | ranks neprilysin among top catalytic neighbors | — |
-
-**Why:** shared reaction-center geometry · Zn cofactor environment · His/Asp/Glu catalytic arrangement — not fold TM-score.
 
 Full writeup: [`reports/hero_convergent_chemistry.md`](reports/hero_convergent_chemistry.md).
 
----
-
-## What this repo builds
-
-1. **Download & curate** M-CSA catalytic sites with RCSB coordinates
-2. **Extract** catalytic microenvironments (residues, geometry, cofactors, first shell)
-3. **Represent** chemistry with engineered reaction-center features
-4. **Retrieve** catalytic neighbors under leakage-aware splits
-5. **Explain** with evidence cards — prediction + mechanistic evidence, not a score alone
-
 <p align="center">
-  <img src="reports/figures/fig1_pipeline.png" alt="Pipeline: structure → reaction center extraction → chemical representation → chemistry retrieval → evidence card" width="900"/>
+  <img src="reports/figures/fig1_pipeline.png" alt="Pipeline: structure → reaction center → representation → retrieval → card" width="900"/>
 </p>
 
-<p align="center"><em>Figure 1. From structure to chemistry evidence — microenvironment retrieval, not fold search.</em></p>
+<p align="center"><em>Representation pipeline used to validate catalytic microenvironment features.</em></p>
 
 ### Example output
 
@@ -167,10 +180,14 @@ bash scripts/reproduce.sh && pytest -q
 ```
 
 ```text
+# Redesign case study (offline mock OK)
+cat-download → cat-design-run
+
+# Representation validation track
 cat-download → cat-enrich → cat-sites → cat-embed → cat-eval → cat-cases → cat-figures
 ```
 
-Optional: **MMseqs2** / **Foldseek** on `PATH` (or vendored under `tools/`) for live retrieval baselines.
+Optional: **MMseqs2** / **Foldseek** on `PATH` for retrieval baselines; ProteinMPNN / ColabFold externally for real designs (see [`docs/plans/v0.6_generative_design.md`](docs/plans/v0.6_generative_design.md)).
 
 ---
 
@@ -280,14 +297,15 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 
 ## Versions / thesis
 
-Catalyst Atlas evaluates whether catalytic chemistry can be identified beyond evolutionary neighborhood shortcuts. At n=1157, frozen protein language models capture most fold-disconnected signal, while reaction-center representations provide a complementary but not yet fully isolated contribution. The benchmark emphasizes leakage-aware evaluation and mechanistic evidence rather than raw prediction scores.
+Catalyst Atlas is an AI-guided enzyme redesign workflow that preserves mechanistic chemistry while exploring shell sequence space. Learned catalytic representations (leakage-aware holdouts) support the scoring features; they are not the product claim.
 
 | Version | Claim |
 |---------|--------|
 | v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
 | v0.3 | Learned representations require leakage-aware evaluation |
 | v0.4 | Expanded atlas + controls separate chemistry from annotation shortcuts |
-| v0.5 | ESM+GNN can improve a fold holdout on individual splits (seed 7: 0.49), but multi-seed and random-graph controls show that geometry-specific gains are not yet established |
+| v0.5 | ESM+GNN can improve a fold holdout on individual splits; multi-seed / random-graph controls limit geometry claims |
+| v0.6 | Shell redesign with fixed catalysts + `chemistry_preservation_score` vs WT |
 
 | Step | Command | Role |
 |------|---------|------|
@@ -299,9 +317,9 @@ Catalyst Atlas evaluates whether catalytic chemistry can be identified beyond ev
 | Multi-seed bake-off | `scripts/v05_seed_bakeoff.py` / `v05_parallel_bakeoff.py` | Split variance |
 | Random-graph ablation | `scripts/v05_ablation_run.py` | Geometry vs capacity control |
 
-Lead metric: **`fold_cluster`**. Summaries: [`v04_reeval`](reports/v04_reeval_summary.json), [`v05_seed`](reports/v05_seed_summary.json), [`v05_ablation`](reports/v05_ablation_summary.json). Plans: [`v0.3`](docs/plans/v0.3_learn_catalytic_language.md), [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
+Design plan: [`v0.6`](docs/plans/v0.6_generative_design.md). Representation summaries: [`v05_seed`](reports/v05_seed_summary.json), [`v05_ablation`](reports/v05_ablation_summary.json). Earlier plans: [`v0.3`](docs/plans/v0.3_learn_catalytic_language.md), [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
 
-Out of scope for now: ESM fine-tuning, hard-negative mining, multi-task heads, optimizing random-split accuracy.
+Out of scope: full-atlas ProteinMPNN, new generative model training, generator bake-offs, wet-lab validation claims.
 
 ---
 
@@ -328,14 +346,15 @@ cat-search --enzyme-id MCSA00176
 
 | Artifact | Path |
 |----------|------|
-| Fig 1 pipeline | `reports/figures/fig1_pipeline.png` |
+| Design case study | `reports/design_case_study.md` |
+| Design pocket map | `reports/figures/fig_design_pocket_map.png` |
+| Design geometry vs WT | `reports/figures/fig_design_geometry_vs_wt.png` |
+| Design score scatter | `reports/figures/fig_design_score_scatter.png` |
+| Fig 1 representation pipeline | `reports/figures/fig1_pipeline.png` |
 | Fig 2 identity stratification | `reports/figures/fig_chemistry_by_seq_identity.png` |
 | Fig 3 fold–chemistry audits | `reports/figures/fig_fold_chemistry_audits.png` |
 | Fig 4 chemistry cards | `reports/figures/fig4_chemistry_cards.png` |
-| Retrieval neighbors | `reports/figures/fig_retrieval_neighbors.png` |
-| Annotation controls | `reports/figures/fig_annotation_style_controls.png` |
 | Convergent case study | `reports/hero_convergent_chemistry.md` |
-| Metrics | `data/processed/eval_metrics.json` |
 | Seed / ablation summaries | `reports/v05_seed_summary.json`, `reports/v05_ablation_summary.json` |
 
 ---
@@ -343,15 +362,14 @@ cat-search --enzyme-id MCSA00176
 ## Project layout
 
 ```text
-src/catalyst_atlas/   package (data, site, featurize, models, eval, explain, viz)
+src/catalyst_atlas/
+  design/             pocket, panel, generate, mpnn, predict, score, report
+  data/ site/ featurize/ models/ eval/ explain/ viz/
 scripts/              reproduce.sh, embed_esm.py, runpod_train.sh
-docs/plans/           v0.3 bake-off + v0.4 rigor/scale plans
-data/raw|processed/   M-CSA / PDB cache + features, graphs, embeddings, metrics
-artifacts/            trained encoder checkpoints (gitignored)
-reports/figures/      Fig 1–4 + microenvironment panels
-reports/case_studies/ three scientific narratives
-tests/                unit + pipeline smoke tests
-.github/workflows/    CI (ruff + pytest; GPU optional)
+docs/plans/           v0.3–v0.6 (design case study in v0.6)
+data/processed/design/ pockets, designs, scores, mpnn_jobs
+reports/              design_case_study.md + figures
+tests/                unit + design invariants + pipeline smoke
 ```
 
 ---

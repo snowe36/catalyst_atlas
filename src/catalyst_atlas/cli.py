@@ -1,4 +1,4 @@
-"""Console entry points: cat-download, cat-sites, cat-embed, cat-eval, cat-search, cat-figures."""
+"""Console entry points: cat-download, cat-sites, cat-embed, cat-eval, cat-search, cat-figures, cat-design-*."""
 
 from __future__ import annotations
 
@@ -423,5 +423,209 @@ def train_encoder_main(argv: list[str] | None = None) -> int:
         f"selected={summary.get('selected_checkpoint')} "
         f"best_val={summary.get('best_val_acc')}@{summary.get('best_epoch')} "
         f"loss={summary['final_loss']}"
+    )
+    return 0
+
+
+def design_pockets_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Build catalytic pocket artifacts (fixed catalytic + redesignable shells)"
+    )
+    parser.add_argument(
+        "--enzyme-id",
+        action="append",
+        default=None,
+        help="Limit to enzyme id(s); repeatable. Default: full atlas.",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from catalyst_atlas.design.pocket import run_pockets
+
+    df = run_pockets(enzyme_ids=args.enzyme_id)
+    print(f"pockets n={len(df)} mean_redesignable={df['n_redesignable'].mean():.1f}")
+    return 0
+
+
+def design_generate_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Generate or import shell-only designs (catalytic residues fixed)"
+    )
+    parser.add_argument(
+        "--enzyme-id",
+        action="append",
+        default=None,
+        help="Enzyme id(s); default: resolved design panel",
+    )
+    parser.add_argument("--n-sequences", type=int, default=100)
+    parser.add_argument(
+        "--from-sequences",
+        type=str,
+        default=None,
+        help="Import designs from FASTA instead of running ProteinMPNN",
+    )
+    parser.add_argument(
+        "--mock",
+        action="store_true",
+        help="Generate valid mock shell designs (CI / offline)",
+    )
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--panel-size", type=int, default=10)
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from pathlib import Path
+
+    from catalyst_atlas.design.generate import run_generate
+    from catalyst_atlas.design.panel import resolve_panel
+
+    if args.enzyme_id:
+        eids = args.enzyme_id
+    else:
+        eids = [p["enzyme_id"] for p in resolve_panel(target_size=args.panel_size)]
+
+    try:
+        df = run_generate(
+            eids,
+            n_sequences=args.n_sequences,
+            from_sequences=Path(args.from_sequences) if args.from_sequences else None,
+            use_mock=args.mock,
+            seed=args.seed,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"designs n={len(df)} enzymes={df['enzyme_id'].nunique()}")
+    return 0
+
+
+def design_funnel_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Chemistry-constrained funnel: hard filters + ESM/chemistry rank → AF shortlist"
+        )
+    )
+    parser.add_argument("--enzyme-id", action="append", default=None)
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=10,
+        help="Designs per enzyme to carry into AF (default: 10)",
+    )
+    parser.add_argument("--max-mutations", type=int, default=12)
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from catalyst_atlas.design.funnel import run_funnel
+
+    try:
+        meta = run_funnel(
+            top_k=args.top_k,
+            max_mutations=args.max_mutations,
+            enzyme_ids=args.enzyme_id,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(
+        f"funnel in={meta['n_input_designs']} hard_pass={meta['n_passed_hard_filter']} "
+        f"af={meta['n_af_designs']}+{meta['n_af_wt']}wt → {meta['paths']['af_fasta']}"
+    )
+    return 0
+
+
+def design_score_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Score designs with chemistry_preservation_score (WT baseline first)"
+    )
+    parser.add_argument("--enzyme-id", action="append", default=None)
+    parser.add_argument(
+        "--mock-predictions",
+        action="store_true",
+        help="Write placeholder AF metrics when real predictions are absent",
+    )
+    parser.add_argument(
+        "--af-queue-only",
+        action="store_true",
+        help="Score only the funnel AF shortlist (+ WT), not all generative designs",
+    )
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from catalyst_atlas.design.score import run_score
+
+    try:
+        df = run_score(
+            args.enzyme_id,
+            mock_predictions=args.mock_predictions,
+            seed=args.seed,
+            af_queue_only=args.af_queue_only,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    n_des = int((~df["is_wt"]).sum())
+    print(
+        f"scored rows={len(df)} designs={n_des} "
+        f"mean_score={df.loc[~df['is_wt'], 'chemistry_preservation_score'].mean():.3f}"
+    )
+    return 0
+
+
+def design_run_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="End-to-end redesign case study (generate → funnel → AF rank → report)"
+    )
+    parser.add_argument("--panel-size", type=int, default=10)
+    parser.add_argument("--n-sequences", type=int, default=100)
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=10,
+        help="AF shortlist size per enzyme after cheap ranking",
+    )
+    parser.add_argument("--max-mutations", type=int, default=12)
+    parser.add_argument(
+        "--mock",
+        action="store_true",
+        default=True,
+        help="Use mock generator + AF metrics (default for offline)",
+    )
+    parser.add_argument(
+        "--no-mock",
+        action="store_true",
+        help="Require real imported sequences/predictions",
+    )
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args(argv)
+    _setup_logging(args.verbose)
+
+    from catalyst_atlas.design.report import run_design_pipeline
+
+    mock = not args.no_mock
+    try:
+        summary = run_design_pipeline(
+            target_size=args.panel_size,
+            n_sequences=args.n_sequences,
+            mock=mock,
+            seed=args.seed,
+            top_k=args.top_k,
+            max_mutations=args.max_mutations,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    funnel = summary.get("funnel") or {}
+    print(
+        f"design case study enzymes={len(summary['panel'])} "
+        f"af_shortlist={summary['n_designs']} "
+        f"funnel_in={funnel.get('n_input_designs')} "
+        f"report={summary['report']}"
     )
     return 0

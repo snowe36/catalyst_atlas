@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "catalyst-atlas"
-version = "0.3.0"
-description = "Chemistry-aware reaction-center representations — what chemistry can this protein perform?"
+version = "0.6.0"
+description = "AI-guided redesign of catalytic microenvironments — generative design constrained by mechanistic chemistry"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -46,6 +46,11 @@ cat-cases = "catalyst_atlas.cli:cases_main"
 cat-graphs = "catalyst_atlas.cli:graphs_main"
 cat-esm = "catalyst_atlas.cli:esm_main"
 cat-train-encoder = "catalyst_atlas.cli:train_encoder_main"
+cat-design-pockets = "catalyst_atlas.cli:design_pockets_main"
+cat-design-generate = "catalyst_atlas.cli:design_generate_main"
+cat-design-funnel = "catalyst_atlas.cli:design_funnel_main"
+cat-design-score = "catalyst_atlas.cli:design_score_main"
+cat-design-run = "catalyst_atlas.cli:design_run_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

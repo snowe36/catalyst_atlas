@@ -76,13 +76,14 @@ def _catalytic_coords(
 def _neighborhood(
     rng: np.random.Generator,
     catalytic: list[dict[str, Any]],
-    n_extra: int = 8,
+    n_first: int = 8,
+    n_second: int = 4,
 ) -> list[dict[str, Any]]:
-    """Add first-shell neighbors around the catalytic core."""
+    """Add first- and second-shell neighbors around the catalytic core."""
     core = np.array([r["xyz"] for r in catalytic], dtype=float)
     center = core.mean(axis=0)
     neighbors = []
-    for j in range(n_extra):
+    for j in range(n_first):
         direction = rng.normal(size=3)
         direction /= np.linalg.norm(direction) + 1e-6
         radius = rng.uniform(4.0, 7.5)
@@ -94,6 +95,21 @@ def _neighborhood(
                 "resnum": 200 + j,
                 "aa": str(aa),
                 "role": "first_shell",
+                "xyz": xyz.tolist(),
+            }
+        )
+    for j in range(n_second):
+        direction = rng.normal(size=3)
+        direction /= np.linalg.norm(direction) + 1e-6
+        radius = rng.uniform(8.5, 11.5)
+        xyz = center + direction * radius
+        aa = rng.choice(list("AILMFVWSTNQY"))
+        neighbors.append(
+            {
+                "chain": "A",
+                "resnum": 220 + j,
+                "aa": str(aa),
+                "role": "second_shell",
                 "xyz": xyz.tolist(),
             }
         )
@@ -176,9 +192,9 @@ def generate_demo_atlas(
                 ) % n_fold_clusters
 
             seq = _random_sequence(rng, length=int(rng.integers(220, 360)))
-            # Plant catalytic residues into the sequence at annotated positions.
+            # Plant catalytic + shell residues into the sequence at annotated positions.
             seq_list = list(seq)
-            for res in catalytic:
+            for res in site_residues:
                 pos = min(len(seq_list) - 1, max(0, res["resnum"] - 1))
                 seq_list[pos] = res["aa"]
             seq = "".join(seq_list)
