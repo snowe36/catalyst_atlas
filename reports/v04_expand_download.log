@@ -1,521 +1,0 @@
-18:42:02 INFO catalyst_atlas.data.download: Ingesting public M-CSA catalytic sites (n_enzymes=1000) — this downloads API JSON, UniProt sequences, and RCSB PDBs
-18:42:02 INFO catalyst_atlas.data.mcsa: Loaded cached M-CSA entries (1003)
-18:42:02 INFO catalyst_atlas.data.mcsa: Loaded cached M-CSA residues (5248)
-M-CSA sites+PDB:   0%|          | 0/1000 [00:00<?, ?it/s]M-CSA sites+PDB:   0%|          | 4/1000 [00:00<00:30, 32.19it/s]M-CSA sites+PDB:   1%|          | 8/1000 [00:00<00:32, 30.96it/s]M-CSA sites+PDB:   1%|          | 12/1000 [00:00<00:30, 32.51it/s]18:42:02 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:02 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): rest.uniprot.org:443
-18:42:03 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P29894,%20P22619.fasta HTTP/1.1" 400 None
-18:42:03 DEBUG catalyst_atlas.data.mcsa: UniProt miss P29894, P22619 (400)
-M-CSA sites+PDB:   2%|▏         | 16/1000 [00:00<01:06, 14.75it/s]18:42:03 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-M-CSA sites+PDB:   2%|▏         | 20/1000 [00:00<00:52, 18.67it/s]M-CSA sites+PDB:   2%|▏         | 23/1000 [00:01<00:47, 20.66it/s]M-CSA sites+PDB:   3%|▎         | 27/1000 [00:01<00:40, 23.79it/s]M-CSA sites+PDB:   3%|▎         | 30/1000 [00:01<00:38, 25.09it/s]M-CSA sites+PDB:   3%|▎         | 34/1000 [00:01<00:35, 27.32it/s]M-CSA sites+PDB:   4%|▍         | 38/1000 [00:01<00:37, 25.99it/s]M-CSA sites+PDB:   4%|▍         | 41/1000 [00:01<00:35, 26.75it/s]M-CSA sites+PDB:   4%|▍         | 44/1000 [00:01<00:34, 27.47it/s]M-CSA sites+PDB:   5%|▍         | 48/1000 [00:01<00:32, 29.73it/s]18:42:04 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:   5%|▌         | 52/1000 [00:02<00:31, 30.34it/s]M-CSA sites+PDB:   6%|▌         | 56/1000 [00:02<00:31, 29.54it/s]18:42:04 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-18:42:04 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:05 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P13448,%20P13449.fasta HTTP/1.1" 400 None
-18:42:05 DEBUG catalyst_atlas.data.mcsa: UniProt miss P13448, P13449 (400)
-18:42:05 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:05 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P26769,%20P30803.fasta HTTP/1.1" 400 None
-18:42:05 DEBUG catalyst_atlas.data.mcsa: UniProt miss P26769, P30803 (400)
-M-CSA sites+PDB:   6%|▌         | 60/1000 [00:03<01:25, 10.98it/s]18:42:05 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:05 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P11653,%20P11652.fasta HTTP/1.1" 400 None
-18:42:05 DEBUG catalyst_atlas.data.mcsa: UniProt miss P11653, P11652 (400)
-18:42:05 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:06 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P80077,%20P80078.fasta HTTP/1.1" 400 None
-18:42:06 DEBUG catalyst_atlas.data.mcsa: UniProt miss P80077, P80078 (400)
-M-CSA sites+PDB:   6%|▋         | 63/1000 [00:03<02:11,  7.11it/s]M-CSA sites+PDB:   7%|▋         | 67/1000 [00:04<01:37,  9.56it/s]M-CSA sites+PDB:   7%|▋         | 71/1000 [00:04<01:15, 12.33it/s]M-CSA sites+PDB:   8%|▊         | 75/1000 [00:04<01:00, 15.36it/s]M-CSA sites+PDB:   8%|▊         | 79/1000 [00:04<00:49, 18.66it/s]M-CSA sites+PDB:   8%|▊         | 83/1000 [00:04<00:43, 21.24it/s]18:42:07 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:07 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:07 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P18316,%20P18315,%20P18314.fasta HTTP/1.1" 400 None
-18:42:07 DEBUG catalyst_atlas.data.mcsa: UniProt miss P18316, P18315, P18314 (400)
-M-CSA sites+PDB:   9%|▊         | 87/1000 [00:04<01:02, 14.55it/s]M-CSA sites+PDB:   9%|▉         | 90/1000 [00:05<00:54, 16.58it/s]M-CSA sites+PDB:   9%|▉         | 94/1000 [00:05<00:46, 19.61it/s]M-CSA sites+PDB:  10%|▉         | 97/1000 [00:05<00:42, 21.06it/s]18:42:07 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:08 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P38539,%20P38540.fasta HTTP/1.1" 400 None
-18:42:08 DEBUG catalyst_atlas.data.mcsa: UniProt miss P38539, P38540 (400)
-M-CSA sites+PDB:  10%|█         | 100/1000 [00:05<01:08, 13.12it/s]M-CSA sites+PDB:  10%|█         | 104/1000 [00:05<00:54, 16.35it/s]18:42:08 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:08 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P21874,%20P21873.fasta HTTP/1.1" 400 110
-18:42:08 DEBUG catalyst_atlas.data.mcsa: UniProt miss P21874, P21873 (400)
-18:42:08 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:09 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P19921,%20P19919,%20P19920.fasta HTTP/1.1" 400 None
-18:42:09 DEBUG catalyst_atlas.data.mcsa: UniProt miss P19921, P19919, P19920 (400)
-M-CSA sites+PDB:  11%|█         | 107/1000 [00:06<01:50,  8.06it/s]M-CSA sites+PDB:  11%|█         | 111/1000 [00:06<01:23, 10.60it/s]M-CSA sites+PDB:  12%|█▏        | 115/1000 [00:07<01:05, 13.50it/s]18:42:09 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:09 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q2RSB2,%20Q2RSB4.fasta HTTP/1.1" 400 None
-18:42:09 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q2RSB2, Q2RSB4 (400)
-M-CSA sites+PDB:  12%|█▏        | 118/1000 [00:07<01:22, 10.74it/s]M-CSA sites+PDB:  12%|█▏        | 121/1000 [00:07<01:08, 12.87it/s]18:42:10 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:10 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/O28603,%20O28604.fasta HTTP/1.1" 400 None
-18:42:10 DEBUG catalyst_atlas.data.mcsa: UniProt miss O28603, O28604 (400)
-18:42:10 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:10 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00396,%20P68530,%20Q6JTG5.fasta HTTP/1.1" 400 None
-18:42:10 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00396, P68530, Q6JTG5 (400)
-M-CSA sites+PDB:  12%|█▏        | 124/1000 [00:08<01:59,  7.33it/s]18:42:11 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:11 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P07598,%20P07603.fasta HTTP/1.1" 400 110
-18:42:11 DEBUG catalyst_atlas.data.mcsa: UniProt miss P07598, P07603 (400)
-M-CSA sites+PDB:  13%|█▎        | 127/1000 [00:09<02:07,  6.86it/s]18:42:11 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:11 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0A110,%20P0A112.fasta HTTP/1.1" 400 None
-18:42:11 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0A110, P0A112 (400)
-M-CSA sites+PDB:  13%|█▎        | 130/1000 [00:09<02:12,  6.57it/s]18:42:11 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:12 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P07740,%20P07739.fasta HTTP/1.1" 400 None
-18:42:12 DEBUG catalyst_atlas.data.mcsa: UniProt miss P07740, P07739 (400)
-M-CSA sites+PDB:  13%|█▎        | 132/1000 [00:09<02:22,  6.10it/s]M-CSA sites+PDB:  14%|█▎        | 136/1000 [00:10<01:37,  8.83it/s]M-CSA sites+PDB:  14%|█▍        | 139/1000 [00:10<01:19, 10.90it/s]18:42:12 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-18:42:12 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:13 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P09788,%20P09787.fasta HTTP/1.1" 400 None
-18:42:13 DEBUG catalyst_atlas.data.mcsa: UniProt miss P09788, P09787 (400)
-M-CSA sites+PDB:  14%|█▍        | 141/1000 [00:10<01:43,  8.33it/s]18:42:13 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:13 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q7SIF4,%20Q7SIF3.fasta HTTP/1.1" 400 None
-18:42:13 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q7SIF4, Q7SIF3 (400)
-M-CSA sites+PDB:  14%|█▍        | 144/1000 [00:11<01:54,  7.47it/s]18:42:13 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:42:14 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4V4E.pdb HTTP/1.1" 404 None
-18:42:14 WARNING catalyst_atlas.data.structures: Failed to fetch PDB 4v4e (HTTP 404)
-M-CSA sites+PDB:  15%|█▍        | 146/1000 [00:11<02:43,  5.21it/s]M-CSA sites+PDB:  15%|█▍        | 149/1000 [00:11<01:59,  7.14it/s]18:42:14 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:14 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P96618,%20P80643.fasta HTTP/1.1" 400 None
-18:42:14 DEBUG catalyst_atlas.data.mcsa: UniProt miss P96618, P80643 (400)
-M-CSA sites+PDB:  15%|█▌        | 152/1000 [00:12<02:03,  6.87it/s]18:42:14 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:14 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:14 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:15 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P11558,%20P11560,%20P11562.fasta HTTP/1.1" 400 None
-18:42:15 DEBUG catalyst_atlas.data.mcsa: UniProt miss P11558, P11560, P11562 (400)
-M-CSA sites+PDB:  16%|█▌        | 156/1000 [00:12<01:56,  7.27it/s]18:42:15 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  16%|█▌        | 160/1000 [00:13<01:23, 10.07it/s]M-CSA sites+PDB:  16%|█▋        | 164/1000 [00:13<01:02, 13.36it/s]M-CSA sites+PDB:  17%|█▋        | 168/1000 [00:13<00:49, 16.75it/s]18:42:15 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  17%|█▋        | 172/1000 [00:13<00:42, 19.61it/s]18:42:15 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-M-CSA sites+PDB:  18%|█▊        | 176/1000 [00:13<00:35, 22.97it/s]18:42:16 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:16 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P19483,%20P00829,%20P05631,%20P01096.fasta HTTP/1.1" 400 None
-18:42:16 DEBUG catalyst_atlas.data.mcsa: UniProt miss P19483, P00829, P05631, P01096 (400)
-M-CSA sites+PDB:  18%|█▊        | 180/1000 [00:14<01:04, 12.78it/s]M-CSA sites+PDB:  18%|█▊        | 184/1000 [00:14<00:52, 15.65it/s]M-CSA sites+PDB:  19%|█▉        | 188/1000 [00:14<00:43, 18.76it/s]M-CSA sites+PDB:  19%|█▉        | 191/1000 [00:14<00:39, 20.60it/s]18:42:16 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  20%|█▉        | 196/1000 [00:14<00:32, 25.10it/s]M-CSA sites+PDB:  20%|██        | 200/1000 [00:14<00:29, 26.87it/s]M-CSA sites+PDB:  20%|██        | 204/1000 [00:14<00:28, 28.28it/s]18:42:17 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:17 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P08067,%20P07143,%20P00163.fasta HTTP/1.1" 400 None
-18:42:17 DEBUG catalyst_atlas.data.mcsa: UniProt miss P08067, P07143, P00163 (400)
-M-CSA sites+PDB:  21%|██        | 208/1000 [00:15<00:48, 16.23it/s]18:42:17 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:17 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:18 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P07328,%20P07329,%20P00459.fasta HTTP/1.1" 400 None
-18:42:18 DEBUG catalyst_atlas.data.mcsa: UniProt miss P07328, P07329, P00459 (400)
-M-CSA sites+PDB:  21%|██        | 211/1000 [00:15<01:07, 11.69it/s]M-CSA sites+PDB:  22%|██▏       | 215/1000 [00:15<00:53, 14.59it/s]M-CSA sites+PDB:  22%|██▏       | 219/1000 [00:16<00:50, 15.56it/s]18:42:18 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  22%|██▏       | 222/1000 [00:16<00:45, 16.96it/s]M-CSA sites+PDB:  23%|██▎       | 226/1000 [00:16<00:37, 20.50it/s]M-CSA sites+PDB:  23%|██▎       | 230/1000 [00:16<00:32, 23.59it/s]18:42:18 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  23%|██▎       | 233/1000 [00:16<00:30, 24.88it/s]M-CSA sites+PDB:  24%|██▎       | 237/1000 [00:16<00:28, 26.87it/s]M-CSA sites+PDB:  24%|██▍       | 241/1000 [00:16<00:27, 27.36it/s]M-CSA sites+PDB:  24%|██▍       | 245/1000 [00:17<00:26, 28.97it/s]M-CSA sites+PDB:  25%|██▍       | 249/1000 [00:17<00:24, 30.75it/s]M-CSA sites+PDB:  25%|██▌       | 253/1000 [00:17<00:23, 31.35it/s]M-CSA sites+PDB:  26%|██▌       | 257/1000 [00:17<00:22, 32.43it/s]M-CSA sites+PDB:  26%|██▌       | 261/1000 [00:17<00:22, 32.23it/s]M-CSA sites+PDB:  26%|██▋       | 265/1000 [00:17<00:22, 32.62it/s]M-CSA sites+PDB:  27%|██▋       | 269/1000 [00:17<00:22, 32.96it/s]18:42:20 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  27%|██▋       | 273/1000 [00:17<00:22, 31.84it/s]M-CSA sites+PDB:  28%|██▊       | 277/1000 [00:18<00:27, 26.22it/s]18:42:20 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:20 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P12694,%20P21953.fasta HTTP/1.1" 400 None
-18:42:20 DEBUG catalyst_atlas.data.mcsa: UniProt miss P12694, P21953 (400)
-M-CSA sites+PDB:  28%|██▊       | 280/1000 [00:18<00:46, 15.36it/s]18:42:20 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:21 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P05041,%20P00903.fasta HTTP/1.1" 400 None
-18:42:21 DEBUG catalyst_atlas.data.mcsa: UniProt miss P05041, P00903 (400)
-18:42:21 DEBUG catalyst_atlas.data.structures: Missing 3 catalytic residues in structure mapping
-18:42:21 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:21 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/O66188,%20O66187,%20O66186.fasta HTTP/1.1" 400 110
-18:42:21 DEBUG catalyst_atlas.data.mcsa: UniProt miss O66188, O66187, O66186 (400)
-M-CSA sites+PDB:  28%|██▊       | 283/1000 [00:19<01:26,  8.25it/s]M-CSA sites+PDB:  29%|██▊       | 286/1000 [00:19<01:09, 10.25it/s]M-CSA sites+PDB:  29%|██▉       | 290/1000 [00:19<00:53, 13.30it/s]M-CSA sites+PDB:  29%|██▉       | 294/1000 [00:19<00:42, 16.62it/s]M-CSA sites+PDB:  30%|██▉       | 297/1000 [00:19<00:39, 17.58it/s]18:42:22 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-M-CSA sites+PDB:  30%|███       | 301/1000 [00:19<00:33, 20.65it/s]M-CSA sites+PDB:  30%|███       | 304/1000 [00:20<00:31, 22.11it/s]18:42:22 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:22 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P22515,%20P06104.fasta HTTP/1.1" 400 None
-18:42:22 DEBUG catalyst_atlas.data.mcsa: UniProt miss P22515, P06104 (400)
-M-CSA sites+PDB:  31%|███       | 307/1000 [00:20<00:52, 13.17it/s]M-CSA sites+PDB:  31%|███       | 311/1000 [00:20<00:41, 16.63it/s]18:42:23 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:23 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q06128,%20Q06129.fasta HTTP/1.1" 400 None
-18:42:23 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q06128, Q06129 (400)
-M-CSA sites+PDB:  31%|███▏      | 314/1000 [00:21<00:59, 11.48it/s]18:42:23 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  32%|███▏      | 319/1000 [00:21<00:43, 15.78it/s]M-CSA sites+PDB:  32%|███▏      | 323/1000 [00:21<00:35, 18.95it/s]M-CSA sites+PDB:  33%|███▎      | 328/1000 [00:21<00:28, 23.52it/s]M-CSA sites+PDB:  33%|███▎      | 332/1000 [00:21<00:26, 25.16it/s]M-CSA sites+PDB:  34%|███▎      | 336/1000 [00:21<00:23, 27.69it/s]18:42:24 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  34%|███▍      | 340/1000 [00:21<00:22, 28.78it/s]M-CSA sites+PDB:  34%|███▍      | 344/1000 [00:22<00:22, 29.13it/s]18:42:24 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  35%|███▍      | 348/1000 [00:22<00:22, 28.66it/s]18:42:24 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  35%|███▌      | 352/1000 [00:22<00:21, 29.49it/s]M-CSA sites+PDB:  36%|███▌      | 356/1000 [00:22<00:20, 31.10it/s]M-CSA sites+PDB:  36%|███▌      | 360/1000 [00:22<00:20, 31.75it/s]M-CSA sites+PDB:  36%|███▋      | 364/1000 [00:22<00:19, 32.73it/s]M-CSA sites+PDB:  37%|███▋      | 368/1000 [00:22<00:20, 31.34it/s]M-CSA sites+PDB:  37%|███▋      | 373/1000 [00:22<00:18, 33.80it/s]M-CSA sites+PDB:  38%|███▊      | 377/1000 [00:23<00:19, 31.89it/s]M-CSA sites+PDB:  38%|███▊      | 381/1000 [00:23<00:19, 32.42it/s]18:42:25 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:25 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00929,%20P0A2K1.fasta HTTP/1.1" 400 None
-18:42:25 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00929, P0A2K1 (400)
-M-CSA sites+PDB:  38%|███▊      | 385/1000 [00:23<00:35, 17.56it/s]M-CSA sites+PDB:  39%|███▉      | 389/1000 [00:23<00:29, 20.42it/s]M-CSA sites+PDB:  39%|███▉      | 393/1000 [00:23<00:25, 23.49it/s]M-CSA sites+PDB:  40%|███▉      | 397/1000 [00:24<00:23, 26.13it/s]M-CSA sites+PDB:  40%|████      | 401/1000 [00:24<00:21, 27.44it/s]18:42:26 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:26 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0A786,%20P0A7F3.fasta HTTP/1.1" 400 None
-18:42:26 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0A786, P0A7F3 (400)
-18:42:27 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:27 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q08209,%20P63098.fasta HTTP/1.1" 400 None
-18:42:27 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q08209, P63098 (400)
-M-CSA sites+PDB:  40%|████      | 405/1000 [00:24<00:52, 11.23it/s]18:42:27 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  41%|████      | 409/1000 [00:25<00:42, 13.83it/s]M-CSA sites+PDB:  41%|████▏     | 413/1000 [00:25<00:35, 16.72it/s]M-CSA sites+PDB:  42%|████▏     | 417/1000 [00:25<00:30, 19.16it/s]M-CSA sites+PDB:  42%|████▏     | 420/1000 [00:25<00:28, 20.29it/s]18:42:27 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:42:28 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4V40.pdb HTTP/1.1" 404 None
-18:42:28 WARNING catalyst_atlas.data.structures: Failed to fetch PDB 4v40 (HTTP 404)
-M-CSA sites+PDB:  42%|████▏     | 423/1000 [00:25<00:45, 12.56it/s]M-CSA sites+PDB:  43%|████▎     | 427/1000 [00:26<00:35, 16.07it/s]M-CSA sites+PDB:  43%|████▎     | 431/1000 [00:26<00:29, 19.61it/s]18:42:28 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:29 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00968,%20P0A6F1.fasta HTTP/1.1" 400 None
-18:42:29 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00968, P0A6F1 (400)
-M-CSA sites+PDB:  43%|████▎     | 434/1000 [00:26<00:46, 12.22it/s]18:42:29 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:29 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q05086,%20P68036.fasta HTTP/1.1" 400 110
-18:42:29 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q05086, P68036 (400)
-M-CSA sites+PDB:  44%|████▎     | 437/1000 [00:27<00:55, 10.06it/s]M-CSA sites+PDB:  44%|████▍     | 441/1000 [00:27<00:42, 13.11it/s]18:42:29 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:30 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P13065,%20P13063.fasta HTTP/1.1" 400 None
-18:42:30 DEBUG catalyst_atlas.data.mcsa: UniProt miss P13065, P13063 (400)
-M-CSA sites+PDB:  44%|████▍     | 444/1000 [00:27<00:53, 10.36it/s]18:42:30 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  45%|████▍     | 448/1000 [00:27<00:41, 13.39it/s]M-CSA sites+PDB:  45%|████▌     | 451/1000 [00:27<00:35, 15.67it/s]M-CSA sites+PDB:  46%|████▌     | 455/1000 [00:28<00:28, 19.18it/s]M-CSA sites+PDB:  46%|████▌     | 459/1000 [00:28<00:24, 21.72it/s]M-CSA sites+PDB:  46%|████▌     | 462/1000 [00:28<00:27, 19.73it/s]M-CSA sites+PDB:  47%|████▋     | 466/1000 [00:28<00:23, 22.69it/s]M-CSA sites+PDB:  47%|████▋     | 470/1000 [00:28<00:21, 25.21it/s]18:42:31 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:31 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0AGE9,%20P0A836.fasta HTTP/1.1" 400 None
-18:42:31 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0AGE9, P0A836 (400)
-M-CSA sites+PDB:  47%|████▋     | 474/1000 [00:29<00:35, 14.79it/s]M-CSA sites+PDB:  48%|████▊     | 478/1000 [00:29<00:28, 18.01it/s]18:42:31 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:32 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q04631,%20Q02293,%20P01116.fasta HTTP/1.1" 400 None
-18:42:32 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q04631, Q02293, P01116 (400)
-M-CSA sites+PDB:  48%|████▊     | 482/1000 [00:29<00:39, 13.22it/s]M-CSA sites+PDB:  49%|████▊     | 486/1000 [00:29<00:32, 15.98it/s]M-CSA sites+PDB:  49%|████▉     | 490/1000 [00:30<00:26, 19.26it/s]18:42:32 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:32 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q59470,%20Q59471,%20Q59472.fasta HTTP/1.1" 400 None
-18:42:32 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q59470, Q59471, Q59472 (400)
-M-CSA sites+PDB:  49%|████▉     | 493/1000 [00:30<00:38, 13.16it/s]M-CSA sites+PDB:  50%|████▉     | 496/1000 [00:30<00:32, 15.36it/s]M-CSA sites+PDB:  50%|█████     | 501/1000 [00:30<00:24, 19.97it/s]18:42:33 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:33 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:33 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P68699,%20P0AB98.fasta HTTP/1.1" 400 None
-18:42:33 DEBUG catalyst_atlas.data.mcsa: UniProt miss P68699, P0AB98 (400)
-M-CSA sites+PDB:  50%|█████     | 504/1000 [00:31<00:36, 13.44it/s]M-CSA sites+PDB:  51%|█████     | 508/1000 [00:31<00:29, 16.79it/s]M-CSA sites+PDB:  51%|█████     | 512/1000 [00:31<00:24, 19.85it/s]M-CSA sites+PDB:  52%|█████▏    | 516/1000 [00:31<00:21, 22.58it/s]M-CSA sites+PDB:  52%|█████▏    | 520/1000 [00:31<00:19, 25.22it/s]M-CSA sites+PDB:  52%|█████▏    | 524/1000 [00:31<00:17, 27.55it/s]18:42:34 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:34 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00646,%20P02984.fasta HTTP/1.1" 400 None
-18:42:34 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00646, P02984 (400)
-M-CSA sites+PDB:  53%|█████▎    | 528/1000 [00:32<00:28, 16.76it/s]18:42:34 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:35 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0CE47,%20Q7M0J8.fasta HTTP/1.1" 400 None
-18:42:35 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0CE47, Q7M0J8 (400)
-M-CSA sites+PDB:  53%|█████▎    | 532/1000 [00:32<00:36, 12.85it/s]18:42:35 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:35 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P27001,%20P27002.fasta HTTP/1.1" 400 None
-18:42:35 DEBUG catalyst_atlas.data.mcsa: UniProt miss P27001, P27002 (400)
-M-CSA sites+PDB:  54%|█████▎    | 536/1000 [00:33<00:41, 11.20it/s]M-CSA sites+PDB:  54%|█████▍    | 539/1000 [00:33<00:35, 13.10it/s]M-CSA sites+PDB:  54%|█████▍    | 543/1000 [00:33<00:28, 16.13it/s]M-CSA sites+PDB:  55%|█████▍    | 547/1000 [00:33<00:23, 19.32it/s]M-CSA sites+PDB:  55%|█████▌    | 550/1000 [00:33<00:21, 20.90it/s]M-CSA sites+PDB:  55%|█████▌    | 554/1000 [00:33<00:19, 22.47it/s]M-CSA sites+PDB:  56%|█████▌    | 558/1000 [00:33<00:17, 25.00it/s]18:42:36 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:36 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P24183,%20P0AAJ3,%20P0AEK7.fasta HTTP/1.1" 400 None
-18:42:36 DEBUG catalyst_atlas.data.mcsa: UniProt miss P24183, P0AAJ3, P0AEK7 (400)
-18:42:36 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:37 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P13489,%20P03950.fasta HTTP/1.1" 400 None
-18:42:37 DEBUG catalyst_atlas.data.mcsa: UniProt miss P13489, P03950 (400)
-M-CSA sites+PDB:  56%|█████▌    | 561/1000 [00:34<00:46,  9.45it/s]M-CSA sites+PDB:  57%|█████▋    | 566/1000 [00:34<00:32, 13.28it/s]M-CSA sites+PDB:  57%|█████▋    | 569/1000 [00:34<00:28, 15.22it/s]18:42:37 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  57%|█████▋    | 572/1000 [00:35<00:24, 17.20it/s]M-CSA sites+PDB:  58%|█████▊    | 576/1000 [00:35<00:20, 20.49it/s]M-CSA sites+PDB:  58%|█████▊    | 580/1000 [00:35<00:17, 23.34it/s]M-CSA sites+PDB:  58%|█████▊    | 584/1000 [00:35<00:15, 26.50it/s]18:42:37 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:38 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P17655,%20P04632.fasta HTTP/1.1" 400 None
-18:42:38 DEBUG catalyst_atlas.data.mcsa: UniProt miss P17655, P04632 (400)
-M-CSA sites+PDB:  59%|█████▉    | 588/1000 [00:35<00:26, 15.77it/s]M-CSA sites+PDB:  59%|█████▉    | 592/1000 [00:36<00:21, 19.20it/s]M-CSA sites+PDB:  60%|█████▉    | 596/1000 [00:36<00:18, 22.06it/s]18:42:38 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:38 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P27354,%20P27353,%20P27355.fasta HTTP/1.1" 400 None
-18:42:38 DEBUG catalyst_atlas.data.mcsa: UniProt miss P27354, P27353, P27355 (400)
-M-CSA sites+PDB:  60%|██████    | 600/1000 [00:36<00:27, 14.29it/s]M-CSA sites+PDB:  60%|██████    | 603/1000 [00:36<00:25, 15.83it/s]18:42:39 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:39 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00777,%20P68390.fasta HTTP/1.1" 400 None
-18:42:39 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00777, P68390 (400)
-M-CSA sites+PDB:  61%|██████    | 606/1000 [00:37<00:33, 11.87it/s]M-CSA sites+PDB:  61%|██████    | 611/1000 [00:37<00:24, 16.17it/s]M-CSA sites+PDB:  62%|██████▏   | 615/1000 [00:37<00:20, 18.93it/s]M-CSA sites+PDB:  62%|██████▏   | 619/1000 [00:37<00:17, 22.17it/s]M-CSA sites+PDB:  62%|██████▏   | 623/1000 [00:37<00:15, 24.61it/s]18:42:40 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  63%|██████▎   | 628/1000 [00:37<00:13, 28.49it/s]M-CSA sites+PDB:  63%|██████▎   | 632/1000 [00:37<00:12, 29.87it/s]M-CSA sites+PDB:  64%|██████▎   | 636/1000 [00:38<00:11, 31.20it/s]M-CSA sites+PDB:  64%|██████▍   | 640/1000 [00:38<00:11, 30.94it/s]M-CSA sites+PDB:  64%|██████▍   | 644/1000 [00:38<00:13, 26.68it/s]M-CSA sites+PDB:  65%|██████▍   | 648/1000 [00:38<00:11, 29.55it/s]18:42:40 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:41 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P51016,%20Q52060.fasta HTTP/1.1" 400 None
-18:42:41 DEBUG catalyst_atlas.data.mcsa: UniProt miss P51016, Q52060 (400)
-M-CSA sites+PDB:  65%|██████▌   | 652/1000 [00:39<00:21, 16.16it/s]18:42:41 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:41 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P11914,%20P10507.fasta HTTP/1.1" 400 None
-18:42:41 DEBUG catalyst_atlas.data.mcsa: UniProt miss P11914, P10507 (400)
-M-CSA sites+PDB:  66%|██████▌   | 655/1000 [00:39<00:29, 11.74it/s]18:42:41 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  66%|██████▌   | 659/1000 [00:39<00:23, 14.66it/s]M-CSA sites+PDB:  66%|██████▋   | 663/1000 [00:39<00:19, 17.50it/s]M-CSA sites+PDB:  67%|██████▋   | 667/1000 [00:39<00:16, 20.29it/s]18:42:42 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:42 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P22635,%20P22636.fasta HTTP/1.1" 400 None
-18:42:42 DEBUG catalyst_atlas.data.mcsa: UniProt miss P22635, P22636 (400)
-M-CSA sites+PDB:  67%|██████▋   | 670/1000 [00:40<00:24, 13.43it/s]M-CSA sites+PDB:  67%|██████▋   | 673/1000 [00:40<00:20, 15.59it/s]18:42:42 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:43 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0A7B8,%20P0A6H5.fasta HTTP/1.1" 400 None
-18:42:43 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0A7B8, P0A6H5 (400)
-18:42:43 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:43 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P03252,%20P03274.fasta HTTP/1.1" 400 None
-18:42:43 DEBUG catalyst_atlas.data.mcsa: UniProt miss P03252, P03274 (400)
-M-CSA sites+PDB:  68%|██████▊   | 676/1000 [00:41<00:39,  8.21it/s]M-CSA sites+PDB:  68%|██████▊   | 680/1000 [00:41<00:28, 11.18it/s]M-CSA sites+PDB:  68%|██████▊   | 684/1000 [00:41<00:22, 14.30it/s]18:42:43 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:44 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q8X225,%20P61830.fasta HTTP/1.1" 400 None
-18:42:44 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q8X225, P61830 (400)
-M-CSA sites+PDB:  69%|██████▉   | 688/1000 [00:41<00:26, 11.79it/s]M-CSA sites+PDB:  69%|██████▉   | 693/1000 [00:42<00:19, 15.97it/s]18:42:44 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:44 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/O54050,%20O54051.fasta HTTP/1.1" 400 None
-18:42:44 DEBUG catalyst_atlas.data.mcsa: UniProt miss O54050, O54051 (400)
-M-CSA sites+PDB:  70%|██████▉   | 696/1000 [00:42<00:26, 11.47it/s]M-CSA sites+PDB:  70%|███████   | 700/1000 [00:42<00:20, 14.39it/s]M-CSA sites+PDB:  70%|███████   | 704/1000 [00:42<00:17, 17.40it/s]M-CSA sites+PDB:  71%|███████   | 708/1000 [00:42<00:14, 20.02it/s]18:42:45 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:45 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0ABI8,%20P0ABJ1,%20P0ABJ3.fasta HTTP/1.1" 400 None
-18:42:45 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0ABI8, P0ABJ1, P0ABJ3 (400)
-M-CSA sites+PDB:  71%|███████   | 711/1000 [00:43<00:21, 13.39it/s]M-CSA sites+PDB:  72%|███████▏  | 715/1000 [00:43<00:17, 16.75it/s]M-CSA sites+PDB:  72%|███████▏  | 719/1000 [00:43<00:14, 20.04it/s]M-CSA sites+PDB:  72%|███████▏  | 723/1000 [00:43<00:11, 23.10it/s]18:42:46 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:46 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q9X006,%20Q9X005.fasta HTTP/1.1" 400 None
-18:42:46 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q9X006, Q9X005 (400)
-M-CSA sites+PDB:  73%|███████▎  | 727/1000 [00:44<00:17, 15.44it/s]M-CSA sites+PDB:  73%|███████▎  | 730/1000 [00:44<00:17, 15.70it/s]18:42:46 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:46 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:47 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0AEG4,%20P0A6M2.fasta HTTP/1.1" 400 None
-18:42:47 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0AEG4, P0A6M2 (400)
-18:42:47 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:47 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q5SJ79,%20Q5SJ80,%20P82543.fasta HTTP/1.1" 400 None
-18:42:47 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q5SJ79, Q5SJ80, P82543 (400)
-M-CSA sites+PDB:  73%|███████▎  | 733/1000 [00:45<00:31,  8.52it/s]18:42:47 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:47 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/E3PRJ5,%20E3PRJ4.fasta HTTP/1.1" 400 None
-18:42:47 DEBUG catalyst_atlas.data.mcsa: UniProt miss E3PRJ5, E3PRJ4 (400)
-M-CSA sites+PDB:  74%|███████▎  | 735/1000 [00:45<00:36,  7.33it/s]M-CSA sites+PDB:  74%|███████▍  | 739/1000 [00:45<00:25, 10.24it/s]18:42:48 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:48 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0AES4,%20P0AES7.fasta HTTP/1.1" 400 None
-18:42:48 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0AES4, P0AES7 (400)
-M-CSA sites+PDB:  74%|███████▍  | 742/1000 [00:46<00:28,  8.91it/s]M-CSA sites+PDB:  75%|███████▍  | 747/1000 [00:46<00:19, 12.70it/s]M-CSA sites+PDB:  75%|███████▌  | 751/1000 [00:46<00:15, 15.98it/s]18:42:48 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:48 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:49 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00517,%20P61926.fasta HTTP/1.1" 400 None
-18:42:49 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00517, P61926 (400)
-M-CSA sites+PDB:  75%|███████▌  | 754/1000 [00:46<00:20, 12.05it/s]18:42:49 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:49 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:49 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/O32727,%20O32728.fasta HTTP/1.1" 400 None
-18:42:49 DEBUG catalyst_atlas.data.mcsa: UniProt miss O32727, O32728 (400)
-M-CSA sites+PDB:  76%|███████▌  | 757/1000 [00:47<00:24,  9.93it/s]M-CSA sites+PDB:  76%|███████▌  | 761/1000 [00:47<00:18, 12.91it/s]M-CSA sites+PDB:  76%|███████▋  | 765/1000 [00:47<00:14, 16.44it/s]M-CSA sites+PDB:  77%|███████▋  | 771/1000 [00:47<00:09, 22.94it/s]18:42:50 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:50 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P27958,%20O39914.fasta HTTP/1.1" 400 None
-18:42:50 DEBUG catalyst_atlas.data.mcsa: UniProt miss P27958, O39914 (400)
-18:42:50 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  78%|███████▊  | 775/1000 [00:48<00:14, 15.52it/s]M-CSA sites+PDB:  78%|███████▊  | 779/1000 [00:48<00:11, 18.49it/s]M-CSA sites+PDB:  78%|███████▊  | 783/1000 [00:48<00:10, 21.37it/s]18:42:50 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:51 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P0CG48,%20Q93009.fasta HTTP/1.1" 400 None
-18:42:51 DEBUG catalyst_atlas.data.mcsa: UniProt miss P0CG48, Q93009 (400)
-M-CSA sites+PDB:  79%|███████▊  | 787/1000 [00:48<00:14, 14.39it/s]18:42:51 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:51 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P13479,%20P09883.fasta HTTP/1.1" 400 None
-18:42:51 DEBUG catalyst_atlas.data.mcsa: UniProt miss P13479, P09883 (400)
-M-CSA sites+PDB:  79%|███████▉  | 790/1000 [00:49<00:18, 11.33it/s]18:42:51 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  79%|███████▉  | 794/1000 [00:49<00:14, 14.23it/s]M-CSA sites+PDB:  80%|███████▉  | 797/1000 [00:49<00:13, 15.46it/s]M-CSA sites+PDB:  80%|████████  | 800/1000 [00:49<00:11, 17.21it/s]M-CSA sites+PDB:  80%|████████  | 804/1000 [00:49<00:09, 20.45it/s]M-CSA sites+PDB:  81%|████████  | 807/1000 [00:49<00:08, 21.62it/s]18:42:52 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:52 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P98170,%20P55211.fasta HTTP/1.1" 400 None
-18:42:52 DEBUG catalyst_atlas.data.mcsa: UniProt miss P98170, P55211 (400)
-M-CSA sites+PDB:  81%|████████▏ | 813/1000 [00:50<00:11, 16.45it/s]18:42:52 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:53 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q96LD8,%20Q15843.fasta HTTP/1.1" 400 None
-18:42:53 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q96LD8, Q15843 (400)
-M-CSA sites+PDB:  82%|████████▏ | 817/1000 [00:50<00:14, 12.65it/s]M-CSA sites+PDB:  82%|████████▏ | 821/1000 [00:51<00:11, 15.39it/s]M-CSA sites+PDB:  82%|████████▎ | 825/1000 [00:51<00:09, 18.59it/s]M-CSA sites+PDB:  83%|████████▎ | 828/1000 [00:51<00:08, 20.08it/s]M-CSA sites+PDB:  83%|████████▎ | 832/1000 [00:51<00:07, 22.69it/s]18:42:53 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:53 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:54 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/Q03708,%20Q47112.fasta HTTP/1.1" 400 None
-18:42:54 DEBUG catalyst_atlas.data.mcsa: UniProt miss Q03708, Q47112 (400)
-M-CSA sites+PDB:  84%|████████▎ | 835/1000 [00:51<00:11, 14.22it/s]M-CSA sites+PDB:  84%|████████▍ | 839/1000 [00:51<00:09, 17.27it/s]M-CSA sites+PDB:  84%|████████▍ | 842/1000 [00:52<00:08, 18.66it/s]M-CSA sites+PDB:  85%|████████▍ | 846/1000 [00:52<00:07, 21.77it/s]18:42:54 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  85%|████████▌ | 850/1000 [00:52<00:05, 25.06it/s]M-CSA sites+PDB:  85%|████████▌ | 854/1000 [00:52<00:05, 26.01it/s]M-CSA sites+PDB:  86%|████████▌ | 857/1000 [00:52<00:05, 26.79it/s]18:42:55 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  86%|████████▌ | 861/1000 [00:52<00:04, 29.33it/s]M-CSA sites+PDB:  86%|████████▋ | 865/1000 [00:52<00:04, 29.48it/s]18:42:55 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  87%|████████▋ | 869/1000 [00:52<00:04, 31.17it/s]M-CSA sites+PDB:  87%|████████▋ | 873/1000 [00:52<00:04, 31.50it/s]M-CSA sites+PDB:  88%|████████▊ | 877/1000 [00:53<00:03, 32.12it/s]M-CSA sites+PDB:  88%|████████▊ | 881/1000 [00:53<00:03, 33.16it/s]M-CSA sites+PDB:  89%|████████▊ | 886/1000 [00:53<00:03, 35.25it/s]M-CSA sites+PDB:  89%|████████▉ | 890/1000 [00:53<00:03, 35.89it/s]18:42:55 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  89%|████████▉ | 894/1000 [00:53<00:03, 35.27it/s]18:42:56 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-M-CSA sites+PDB:  90%|████████▉ | 898/1000 [00:53<00:03, 32.78it/s]M-CSA sites+PDB:  90%|█████████ | 902/1000 [00:53<00:03, 32.63it/s]18:42:56 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:56 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00880,%20P04716.fasta HTTP/1.1" 400 None
-18:42:56 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00880, P04716 (400)
-M-CSA sites+PDB:  91%|█████████ | 906/1000 [00:54<00:05, 15.74it/s]M-CSA sites+PDB:  91%|█████████ | 909/1000 [00:54<00:05, 17.76it/s]M-CSA sites+PDB:  91%|█████████▏| 913/1000 [00:54<00:04, 21.33it/s]18:42:57 DEBUG catalyst_atlas.data.structures: Missing 2 catalytic residues in structure mapping
-18:42:57 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:57 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00452,%20P69924.fasta HTTP/1.1" 400 None
-18:42:57 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00452, P69924 (400)
-18:42:57 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:57 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P01555,%20P01556.fasta HTTP/1.1" 400 None
-18:42:57 DEBUG catalyst_atlas.data.mcsa: UniProt miss P01555, P01556 (400)
-M-CSA sites+PDB:  92%|█████████▏| 916/1000 [00:55<00:08,  9.45it/s]18:42:57 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  92%|█████████▏| 920/1000 [00:55<00:06, 12.36it/s]M-CSA sites+PDB:  92%|█████████▏| 924/1000 [00:55<00:04, 15.41it/s]M-CSA sites+PDB:  93%|█████████▎| 929/1000 [00:55<00:03, 20.01it/s]18:42:58 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:58 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:58 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P00436,%20P00437.fasta HTTP/1.1" 400 None
-18:42:58 DEBUG catalyst_atlas.data.mcsa: UniProt miss P00436, P00437 (400)
-M-CSA sites+PDB:  93%|█████████▎| 933/1000 [00:56<00:04, 13.97it/s]18:42:58 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-18:42:58 DEBUG urllib3.connectionpool: Resetting dropped connection: rest.uniprot.org
-18:42:59 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/P22515,%20P06104.fasta HTTP/1.1" 400 None
-18:42:59 DEBUG catalyst_atlas.data.mcsa: UniProt miss P22515, P06104 (400)
-M-CSA sites+PDB:  94%|█████████▎| 936/1000 [00:56<00:05, 10.88it/s]M-CSA sites+PDB:  94%|█████████▍| 938/1000 [00:56<00:05, 11.85it/s]M-CSA sites+PDB:  94%|█████████▍| 944/1000 [00:57<00:03, 17.76it/s]M-CSA sites+PDB:  95%|█████████▍| 947/1000 [00:57<00:02, 18.67it/s]M-CSA sites+PDB:  95%|█████████▌| 951/1000 [00:57<00:02, 21.44it/s]M-CSA sites+PDB:  95%|█████████▌| 954/1000 [00:57<00:02, 22.75it/s]M-CSA sites+PDB:  96%|█████████▌| 958/1000 [00:57<00:01, 25.14it/s]M-CSA sites+PDB:  96%|█████████▌| 961/1000 [00:57<00:01, 25.19it/s]M-CSA sites+PDB:  96%|█████████▋| 964/1000 [00:57<00:01, 24.49it/s]M-CSA sites+PDB:  97%|█████████▋| 968/1000 [00:57<00:01, 26.50it/s]M-CSA sites+PDB:  97%|█████████▋| 971/1000 [00:58<00:01, 23.60it/s]M-CSA sites+PDB:  98%|█████████▊| 975/1000 [00:58<00:00, 26.00it/s]M-CSA sites+PDB:  98%|█████████▊| 978/1000 [00:58<00:00, 25.27it/s]M-CSA sites+PDB:  98%|█████████▊| 982/1000 [00:58<00:00, 24.66it/s]18:43:00 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB:  98%|█████████▊| 985/1000 [00:58<00:00, 25.39it/s]M-CSA sites+PDB:  99%|█████████▉| 989/1000 [00:58<00:00, 27.14it/s]M-CSA sites+PDB:  99%|█████████▉| 992/1000 [00:58<00:00, 27.83it/s]18:43:01 DEBUG catalyst_atlas.data.structures: Missing 1 catalytic residues in structure mapping
-M-CSA sites+PDB: 100%|█████████▉| 995/1000 [00:58<00:00, 26.49it/s]M-CSA sites+PDB: 100%|█████████▉| 998/1000 [00:59<00:00, 27.13it/s]M-CSA sites+PDB: 100%|██████████| 1000/1000 [00:59<00:00, 16.89it/s]
-18:43:55 INFO catalyst_atlas.data.cluster: Sequence clustering: 959 sequences → 926 clusters (jaccard≥0.15, k=3)
-18:43:55 INFO catalyst_atlas.data.mcsa: M-CSA atlas: 959 enzymes (41 PDB/map failures skipped); 7 chemistry families; 324 with cofactors; 926 seq clusters; 246 fold clusters
-18:43:55 INFO catalyst_atlas.data.download: Expanding beyond M-CSA with UniProt ACT_SITE sites (n_extra=200, allow_alphafold=True)
-18:43:55 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): rest.uniprot.org:443
-18:43:55 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?query=%28ft_act_site%3A%2A%29+AND+%28database%3Apdb%29&format=json&size=50&fields=accession%2Cid%2Cec%2Csequence%2Cft_act_site%2Cxref_pdb%2Cprotein_name HTTP/1.1" 200 29000
-18:43:56 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=1q25awc2b43xtm12i9lc6p12xm6dpwg40gtt&size=50 HTTP/1.1" 200 29501
-18:43:56 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=bc4hnkgsgmiobbrlivmj6a780o4rdqi4qi1ps&size=50 HTTP/1.1" 200 30054
-18:43:56 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=bcaboe6of4kc5soqk7bv9fnbxat0wn0nivsdz&size=50 HTTP/1.1" 200 28537
-18:43:56 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=bkf6tu31j3a6ular5ag28b0if57ihwoyflttg&size=50 HTTP/1.1" 200 29910
-18:43:56 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=bkl0unsxhlbup27w6mzhk5hiuvtwoftc17ref&size=50 HTTP/1.1" 200 34294
-18:43:57 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=bspw03palk1pdutws2i13e6y6updjwm6rwm5s&size=50 HTTP/1.1" 200 30260
-18:43:57 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=bsvq0xf6k23d8br1t28rk0369g631eqqa65ix&size=50 HTTP/1.1" 200 30928
-18:43:57 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28database%3Apdb%29&cursor=c10l6dbjo0t7x4d2fp3oypoz97oz4yunmrcqa&size=50 HTTP/1.1" 200 35858
-18:43:57 INFO catalyst_atlas.data.uniprot_expand: Fetched 450 UniProt candidates (uniprot_act_site_pdb_n450.json)
-18:43:58 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?query=%28ft_act_site%3A%2A%29+AND+%28reviewed%3Atrue%29+NOT+%28database%3Apdb%29&format=json&size=50&fields=accession%2Cid%2Cec%2Csequence%2Cft_act_site%2Cxref_pdb%2Cprotein_name HTTP/1.1" 200 None
-18:43:58 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28reviewed%3Atrue%29%20NOT%20%28database%3Apdb%29&cursor=1q25awc2b43xtmnkymqdmtyztrwh46kqcby2&size=50 HTTP/1.1" 200 None
-18:43:59 DEBUG urllib3.connectionpool: https://rest.uniprot.org:443 "GET /uniprotkb/search?format=json&fields=accession,id,ec,sequence,ft_act_site,xref_pdb,protein_name&query=%28ft_act_site%3A%2A%29%20AND%20%28reviewed%3Atrue%29%20NOT%20%28database%3Apdb%29&cursor=bc4hnkgsgmiobbs82vgicryjocfrq1h36aagn&size=50 HTTP/1.1" 200 None
-18:43:59 INFO catalyst_atlas.data.uniprot_expand: Fetched 150 UniProt candidates (uniprot_act_site_afdb_n150.json)
-18:43:59 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): alphafold.ebi.ac.uk:443
-18:43:59 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75808-F1-model_v4.pdb HTTP/1.1" 404 127
-18:43:59 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q13724-F1-model_v4.pdb HTTP/1.1" 404 127
-18:43:59 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6P4A8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:00 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9HBH5-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:00 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P34949-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:00 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q5VWC8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:00 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O00116-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:00 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P98198-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:00 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6SJ93-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:01 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9UF33-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:01 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75185-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:01 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P52961-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:01 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75951-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:02 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P14060-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:02 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75061-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:02 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O00748-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:02 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9UKP4-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:03 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6XPS3-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:03 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P07202-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:03 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q8IY17-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:03 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-A6NNY8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:03 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q01814-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:03 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O00115-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O14735-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9NXF8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9H0K1-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6XUX3-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P0DMN0-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q96MV8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:04 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O43283-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:05 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q63ZY6-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:05 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q5VZY2-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:05 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q86X76-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:05 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P50993-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:05 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P49895-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:06 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P51817-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:06 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9NX52-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:06 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q96TA2-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:06 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6ZNC8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:07 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P16870-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:07 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75355-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:07 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:08 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/8VF6.pdb HTTP/1.1" 404 None
-18:44:08 WARNING catalyst_atlas.data.structures: Failed to fetch PDB 8vf6 (HTTP 404)
-18:44:08 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9BYT3-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:08 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O95394-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:09 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9BUB4-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:09 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q86WU2-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:09 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O94808-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:09 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O95672-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:10 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P23786-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:10 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-B0YJ81-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:10 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P54707-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:10 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9Y646-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:10 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9NZP8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:10 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P11801-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:11 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P08910-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:11 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O15466-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:12 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P08218-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:12 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9H0E7-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:12 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q8IWQ3-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:12 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O60294-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:12 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9NUE0-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:13 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P08217-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:13 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q7Z410-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:13 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9Y315-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:13 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q14520-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:13 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:14 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2G6Z.pdb HTTP/1.1" 200 None
-18:44:14 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:14 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3MDZ.pdb HTTP/1.1" 200 None
-18:44:14 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:15 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/5IY4.pdb HTTP/1.1" 200 None
-18:44:15 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:15 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/6KCZ.pdb HTTP/1.1" 200 None
-18:44:15 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75648-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:15 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:16 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/7M4M.pdb HTTP/1.1" 200 None
-18:44:16 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:16 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2PLA.pdb HTTP/1.1" 200 None
-18:44:16 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:16 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3U12.pdb HTTP/1.1" 200 None
-18:44:16 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:17 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/5W45.pdb HTTP/1.1" 200 None
-18:44:17 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:17 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4R30.pdb HTTP/1.1" 200 None
-18:44:17 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:18 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/8ZDB.pdb HTTP/1.1" 200 None
-18:44:18 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-A0A1B0GTW7-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:18 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:19 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3ZNV.pdb HTTP/1.1" 200 None
-18:44:19 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:19 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3TJU.pdb HTTP/1.1" 200 None
-18:44:19 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q8TE60-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:19 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:20 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2L5C.pdb HTTP/1.1" 200 None
-18:44:20 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:20 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/5LUZ.pdb HTTP/1.1" 200 None
-18:44:20 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9UKP5-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:20 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:21 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2CN1.pdb HTTP/1.1" 200 None
-18:44:21 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:21 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3LM0.pdb HTTP/1.1" 200 None
-18:44:22 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:22 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/8IJQ.pdb HTTP/1.1" 200 None
-18:44:22 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:22 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3VM8.pdb HTTP/1.1" 200 None
-18:44:23 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9H6B9-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:23 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:23 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3L4H.pdb HTTP/1.1" 200 None
-18:44:23 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6ZMZ0-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:23 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:23 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/9VDK.pdb HTTP/1.1" 200 None
-18:44:23 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:24 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2Y6E.pdb HTTP/1.1" 200 None
-18:44:24 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:24 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2VSW.pdb HTTP/1.1" 200 None
-18:44:24 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:25 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/7Z5G.pdb HTTP/1.1" 200 None
-18:44:25 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O00743-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:25 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O00462-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:25 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:26 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2HKY.pdb HTTP/1.1" 200 None
-18:44:26 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:26 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/8V3M.pdb HTTP/1.1" 200 None
-18:44:26 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:27 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1WOU.pdb HTTP/1.1" 200 None
-18:44:27 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9UKQ2-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:27 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:27 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/8Q06.pdb HTTP/1.1" 200 None
-18:44:27 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:28 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/9UET.pdb HTTP/1.1" 200 None
-18:44:28 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:28 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/6PGV.pdb HTTP/1.1" 200 None
-18:44:28 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:28 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2I7P.pdb HTTP/1.1" 200 None
-18:44:29 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O75676-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:29 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q15034-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:29 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:29 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3G5K.pdb HTTP/1.1" 200 None
-18:44:29 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:29 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/5IXC.pdb HTTP/1.1" 200 None
-18:44:30 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q3I5F7-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:30 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:30 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3WO3.pdb HTTP/1.1" 200 None
-18:44:30 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:31 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2CHL.pdb HTTP/1.1" 200 None
-18:44:31 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q4KWH8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:31 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:31 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1OP8.pdb HTTP/1.1" 200 None
-18:44:31 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:32 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/5JJ4.pdb HTTP/1.1" 200 None
-18:44:32 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O95237-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:32 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:32 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2YPT.pdb HTTP/1.1" 200 None
-18:44:32 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q5VXI9-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:32 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:33 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/7OD1.pdb HTTP/1.1" 200 None
-18:44:33 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q6XZB0-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:33 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q86WA8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:33 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:33 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/6MO6.pdb HTTP/1.1" 200 None
-18:44:34 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9UHK6-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:34 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:34 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2JYW.pdb HTTP/1.1" 200 None
-18:44:34 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:34 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4AGU.pdb HTTP/1.1" 200 None
-18:44:35 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:35 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4MEL.pdb HTTP/1.1" 200 None
-18:44:35 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:35 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2M76.pdb HTTP/1.1" 200 None
-18:44:35 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:36 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1WMK.pdb HTTP/1.1" 200 None
-18:44:37 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:37 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1R54.pdb HTTP/1.1" 200 None
-18:44:37 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9Y6R4-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:37 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O95677-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:37 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:38 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/5GVC.pdb HTTP/1.1" 200 None
-18:44:38 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P49641-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:39 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P37059-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:39 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:39 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2JAM.pdb HTTP/1.1" 200 None
-18:44:39 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:40 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2P5X.pdb HTTP/1.1" 200 None
-18:44:40 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:40 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1FLH.pdb HTTP/1.1" 200 None
-18:44:40 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q96GR4-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:40 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:41 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4BOU.pdb HTTP/1.1" 200 None
-18:44:41 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:41 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4JOB.pdb HTTP/1.1" 200 None
-18:44:41 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:42 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3ZDU.pdb HTTP/1.1" 200 None
-18:44:42 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:42 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3S4E.pdb HTTP/1.1" 200 None
-18:44:42 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:42 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2NYT.pdb HTTP/1.1" 200 None
-18:44:42 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:43 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1I7K.pdb HTTP/1.1" 200 None
-18:44:43 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-O43548-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:43 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:44 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2NBQ.pdb HTTP/1.1" 200 None
-18:44:44 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:45 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/6KD5.pdb HTTP/1.1" 200 None
-18:44:45 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:45 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2OOQ.pdb HTTP/1.1" 200 None
-18:44:45 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:45 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/4A6D.pdb HTTP/1.1" 200 None
-18:44:46 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:46 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3TKJ.pdb HTTP/1.1" 200 None
-18:44:46 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:46 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1U2H.pdb HTTP/1.1" 200 None
-18:44:46 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:47 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/8HF3.pdb HTTP/1.1" 200 None
-18:44:47 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:47 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/3PB4.pdb HTTP/1.1" 200 None
-18:44:47 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q9NPA2-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:47 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-C9JRZ8-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:47 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:48 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/1OHC.pdb HTTP/1.1" 200 None
-18:44:48 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-Q7L8S5-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:48 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:48 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2XIK.pdb HTTP/1.1" 200 None
-18:44:48 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:49 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2LKT.pdb HTTP/1.1" 200 None
-18:44:49 DEBUG urllib3.connectionpool: https://alphafold.ebi.ac.uk:443 "GET /files/AF-P52849-F1-model_v4.pdb HTTP/1.1" 404 127
-18:44:49 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): files.rcsb.org:443
-18:44:49 DEBUG urllib3.connectionpool: https://files.rcsb.org:443 "GET /download/2Y4I.pdb HTTP/1.1" 200 None
-18:44:52 INFO catalyst_atlas.data.cluster: Sequence clustering: 200 sequences → 199 clusters (jaccard≥0.50, k=3)
-18:44:52 INFO catalyst_atlas.data.uniprot_expand: UniProt expand: 200 enzymes (125 failures); experimental=200 alphafold=0
-18:46:12 INFO catalyst_atlas.data.cluster: Sequence clustering: 1157 sequences → 1141 clusters (jaccard≥0.50, k=3)
-18:46:12 INFO catalyst_atlas.data.uniprot_expand: Expanded atlas: 1157 total (base=959 extra=198); sources={'mcsa': 959, 'uniprot': 198}
-18:46:12 INFO catalyst_atlas.data.download: Wrote /Users/ericsnow/code/catalyst_atlas/data/raw/catalytic_atlas.parquet (1157 enzymes, sources={'mcsa': 959, 'uniprot': 198})
