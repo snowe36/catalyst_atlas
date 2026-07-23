@@ -26,3 +26,4 @@ out/*
 out/figures/*
 !out/figures/.gitkeep
 !out/figures/*.png
+/docs
