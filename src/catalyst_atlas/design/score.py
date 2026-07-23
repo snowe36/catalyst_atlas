@@ -24,8 +24,12 @@ W_STRUCTURE = 0.3
 W_ESM = 0.3
 
 
-def reference_geometry_vector(pocket: dict[str, Any]) -> np.ndarray:
-    """Catalytic pairwise distances + ligand-contact distances (atlas-style constraints)."""
+def reference_geometry_vector(pocket: dict[str, Any], *, catalytic_only: bool = False) -> np.ndarray:
+    """Catalytic pairwise distances (+ ligand contacts unless catalytic_only).
+
+    AF models have no ligand — use ``catalytic_only=True`` when comparing to
+    geometry_vector extracted from ColabFold PDBs.
+    """
     cat = pocket.get("catalytic_residues") or []
     pairs: list[float] = []
     for i in range(len(cat)):
@@ -33,8 +37,9 @@ def reference_geometry_vector(pocket: dict[str, Any]) -> np.ndarray:
             a = np.array(cat[i]["xyz"], dtype=float)
             b = np.array(cat[j]["xyz"], dtype=float)
             pairs.append(float(np.linalg.norm(a - b)))
-    contacts = [float(c["distance"]) for c in (pocket.get("ligand_contacts") or [])]
-    # Stable padded vector for RMSE comparison.
+    contacts: list[float] = []
+    if not catalytic_only:
+        contacts = [float(c["distance"]) for c in (pocket.get("ligand_contacts") or [])]
     vec = np.array(pairs + contacts, dtype=float)
     if vec.size == 0:
         return np.zeros(1, dtype=float)
@@ -123,21 +128,26 @@ def _geometry_for_design(
     use_mock_jitter: bool,
     rng: np.random.Generator,
 ) -> float:
-    """Compare design geometry to WT pocket reference.
+    """Compare design AF catalytic geometry to WT AF (preferred) or crystal pocket.
 
-    Without a predicted structure, ProteinMPNN fixed-backbone implies catalytic
-    coordinates unchanged → geometry ≈ 1. In mock mode we add a mild mutation-
-    linked penalty so WT-relative figures are not flat.
+    AF models are ranked against the WT AF distance vector so WT = 1.0 and
+    shell edits are scored by catalytic CA drift relative to the same predictor.
     """
-    ref = reference_geometry_vector(pocket)
     metrics = load_prediction_metrics(pocket["enzyme_id"], design_id)
     if metrics and metrics.get("geometry_vector") is not None:
         query = np.asarray(metrics["geometry_vector"], dtype=float)
+        if design_id == "WT":
+            return 1.0
+        wt_metrics = load_prediction_metrics(pocket["enzyme_id"], "WT")
+        if wt_metrics and wt_metrics.get("geometry_vector") is not None:
+            ref = np.asarray(wt_metrics["geometry_vector"], dtype=float)
+            return geometry_preservation(query, ref)
+        ref = reference_geometry_vector(pocket, catalytic_only=True)
         return geometry_preservation(query, ref)
 
+    ref = reference_geometry_vector(pocket)
     if use_mock_jitter:
         n_red = max(int(pocket.get("n_redesignable") or 1), 1)
-        # Soft penalty: more shell edits → slightly worse proxy geometry.
         noise = 0.15 * (n_mutations / n_red) + 0.02 * float(rng.random())
         query = ref * (1.0 + rng.normal(scale=noise, size=ref.shape))
         return geometry_preservation(query, ref)
@@ -162,7 +172,13 @@ def score_enzyme_designs(
         mock_prediction_metrics(enzyme_id, "WT", mean_plddt=90.0, pocket_pae=4.0)
 
     wt_metrics = load_prediction_metrics(enzyme_id, "WT")
-    wt_geom = 1.0  # self-reference
+    wt_geom = _geometry_for_design(
+        pocket,
+        design_id="WT",
+        n_mutations=0,
+        use_mock_jitter=mock_predictions,
+        rng=rng,
+    )
     wt_struct = structure_confidence_from_metrics(wt_metrics)
     wt_emb = embed_sequences([wt_seq])[0]
     wt_esm = 1.0

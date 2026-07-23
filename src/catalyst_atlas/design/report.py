@@ -289,6 +289,10 @@ def write_design_case_study(
     n_enz = scores["enzyme_id"].nunique()
     n_des = int((~scores["is_wt"]).sum())
 
+    from catalyst_atlas.design.findings import build_findings, findings_markdown
+
+    findings = build_findings(scores)
+
     lines = [
         "# Design case study — shell redesign with fixed catalytic chemistry",
         "",
@@ -300,8 +304,9 @@ def write_design_case_study(
         "(0.4 geometry + 0.3 structure confidence + 0.3 ESM plausibility) — "
         "**proxies for constraint satisfaction, not measured catalysis**.",
         "",
-        "ProteinMPNN proposes sequences; the chemistry-aware evaluator determines "
-        "whether designs satisfy mechanistic constraints.",
+        "ProteinMPNN (or any sequence generator) proposes shell variants; the chemistry-aware "
+        "evaluator — hard constraints, cheap ranking, AF geometry / confidence / ESM — decides "
+        "which candidates are mechanistically and structurally plausible.",
         "",
         f"- Enzymes: **{n_enz}**",
         f"- Designs scored: **{n_des}**",
@@ -310,9 +315,14 @@ def write_design_case_study(
         f"- Geometry vs WT: `{fig_geom_rel}`",
         f"- Score scatter: `{fig_scatter_rel}`",
         "",
+    ]
+    lines.extend(findings_markdown(findings))
+    lines.extend(
+        [
         "## Panel",
         "",
-    ]
+        ]
+    )
     if panel:
         lines.append("| enzyme_id | role | chemistry | redesignable |")
         lines.append("|---|---|---|---:|")
@@ -372,7 +382,8 @@ def write_design_case_study(
             "- The generator is a proposal mechanism, not an oracle.",
             "- Hard invariants: catalytic sequence identity; mutations ⊆ redesignable shell.",
             "- WT is scored with the same axes before any design comparison.",
-            "- ProteinMPNN / AF2 are external runners; this report may use imported or mock predictions.",
+            "- ProteinMPNN + ColabFold (reuse_wt MSA: WT MSA → design A3Ms); "
+            "geometry = catalytic CA pairwise distances of design AF vs WT AF.",
             "- Scope ends at mechanistic ranking after AF — no MD in this repo.",
             "",
         ]
@@ -385,6 +396,7 @@ def write_design_case_study(
         "n_designs": n_des,
         "figures": [fig_pocket_rel, fig_landscape_rel, fig_geom_rel, fig_scatter_rel],
         "top_designs": top,
+        "findings": findings,
     }
     (REPORTS / "design_case_study_summary.json").write_text(json.dumps(summary, indent=2))
     logger.info("Wrote design case study → %s", out)
