@@ -35,7 +35,7 @@ W_CHEAP_ESM = 0.5
 W_CHEAP_CHEM = 0.5
 
 DEFAULT_TOP_K = 10
-DEFAULT_MAX_MUTATIONS = 12
+DEFAULT_MAX_MUTATIONS = 40  # shell redesign can touch many of 8–40 redesignable sites
 
 
 def _charge(aa: str) -> int:

@@ -130,6 +130,8 @@ def generate_mock_designs(
 def validate_records(
     records: list[dict[str, str]],
     pocket: dict[str, Any],
+    *,
+    skip_invalid: bool = True,
 ) -> list[dict[str, str]]:
     wt = pocket["sequence"]
     eid = pocket["enzyme_id"]
@@ -139,10 +141,37 @@ def validate_records(
         if rec.get("enzyme_id") and rec["enzyme_id"] not in {"", eid}:
             # Allow blank enzyme_id from FASTA; otherwise must match.
             if rec["enzyme_id"] != eid:
-                raise DesignInvariantError(
-                    f"FASTA enzyme_id {rec['enzyme_id']} != pocket {eid}"
-                )
-        assert_design_invariants(seq, wt, pocket)
+                msg = f"FASTA enzyme_id {rec['enzyme_id']} != pocket {eid}"
+                if skip_invalid:
+                    logger.warning("skip %s: %s", rec.get("design_id"), msg)
+                    continue
+                raise DesignInvariantError(msg)
+        # ProteinMPNN sometimes emits ±1 length vs our CA map; try trim/pad sync.
+        if len(seq) == len(wt) + 1:
+            # Drop a terminal gap residue if catalytic/shell still match after trim.
+            for candidate in (seq[:-1], seq[1:]):
+                try:
+                    assert_design_invariants(candidate, wt, pocket)
+                    seq = candidate
+                    break
+                except DesignInvariantError:
+                    continue
+        elif len(seq) == len(wt) - 1:
+            logger.warning(
+                "skip %s: designed shorter than WT (%d < %d)",
+                rec.get("design_id"),
+                len(seq),
+                len(wt),
+            )
+            if skip_invalid:
+                continue
+        try:
+            assert_design_invariants(seq, wt, pocket)
+        except DesignInvariantError as exc:
+            if skip_invalid:
+                logger.warning("skip %s: %s", rec.get("design_id"), exc)
+                continue
+            raise
         out.append(
             {
                 "enzyme_id": eid,

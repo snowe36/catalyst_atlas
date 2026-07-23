@@ -9,8 +9,7 @@ __pycache__/
 data/raw/
 data/processed/
 !data/processed/.gitkeep
-artifacts/*
-!artifacts/.gitkeep
+artifacts/
 data/raw/*
 !data/raw/.gitkeep
 *.parquet

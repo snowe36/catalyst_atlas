@@ -514,7 +514,7 @@ def design_funnel_main(argv: list[str] | None = None) -> int:
         default=10,
         help="Designs per enzyme to carry into AF (default: 10)",
     )
-    parser.add_argument("--max-mutations", type=int, default=12)
+    parser.add_argument("--max-mutations", type=int, default=40)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
