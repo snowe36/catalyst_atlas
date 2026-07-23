@@ -57,19 +57,42 @@ cat-download --demo
 cat-design-run --panel-size 10 --n-sequences 100 --mock
 ```
 
-Case study writeup: [`reports/design_case_study.md`](reports/design_case_study.md) · plan: [`docs/plans/v0.6_generative_design.md`](docs/plans/v0.6_generative_design.md).
+---
+
+## Shell redesign case study
+
+Offline demo panel — mock ProteinMPNN sequences + mock AF metrics — to exercise the funnel, invariants, and `chemistry_preservation_score` end-to-end. Not a wet-lab or ProteinMPNN bake-off claim.
+
+| Check | Result |
+|-------|--------|
+| Panel enzymes | **8** (demo metalloprotease / redox / transferase / cofactor pairs) |
+| Designs scored | **160** |
+| Score | `0.4·geometry + 0.3·structure + 0.3·ESM` vs WT |
+| Hard invariants | catalytic aa fixed; mutations ⊆ redesignable shell |
+
+On this mock shortlist, top designs sit slightly below WT on the composite proxy (typical Δ ≈ −0.02 to −0.05) — expected until real ProteinMPNN / ColabFold metrics are imported. The product here is the **chemistry-constrained funnel**, not “mock sequences beat WT.”
+
+Full writeup: [`reports/design_case_study.md`](reports/design_case_study.md).
 
 <p align="center">
   <img src="reports/figures/fig_design_pocket_map.png" alt="Fixed catalytic residues vs redesignable shell" width="640"/>
 </p>
 
-<p align="center"><em>Fixed catalytic core vs redesignable first-/second-shell positions.</em></p>
+<p align="center"><em>Figure D1. Fixed catalytic core vs redesignable first-/second-shell positions.</em></p>
 
 <p align="center">
   <img src="reports/figures/fig_design_geometry_vs_wt.png" alt="Design geometry relative to WT baseline" width="720"/>
 </p>
 
-<p align="center"><em>Designs scored relative to a WT baseline — improved vs worse geometry preservation.</em></p>
+<p align="center"><em>Figure D2. Designs scored relative to a WT geometry baseline.</em></p>
+
+<p align="center">
+  <img src="reports/figures/fig_design_score_scatter.png" alt="Chemistry preservation score vs geometry" width="720"/>
+</p>
+
+<p align="center"><em>Figure D3. Composite chemistry-preservation score vs geometry axis (WT marked).</em></p>
+
+External runners: export `data/processed/design/mpnn_jobs/`, run ProteinMPNN with catalytic positions fixed, funnel to `af_queue.fasta`, run ColabFold/AF2 on the shortlist only, import metrics, then `cat-design-score --af-queue-only`.
 
 ---
 
@@ -152,6 +175,7 @@ The artifact is **prediction + why** — chemistry family, mechanistic pattern, 
 
 | Check | Result |
 |-------|--------|
+| Shell redesign demo | **8** enzymes · **160** designs · funnel + `chemistry_preservation_score` |
 | Expanded atlas sites (M-CSA + UniProt) | **1157** |
 | Fold-disconnected Catalyst / MMseqs / Foldseek | **0.37** / 0.04 / 0.13 |
 | Chemistry Recall@5 (fold_cluster) | **0.67** |
@@ -187,7 +211,7 @@ cat-download → cat-design-run
 cat-download → cat-enrich → cat-sites → cat-embed → cat-eval → cat-cases → cat-figures
 ```
 
-Optional: **MMseqs2** / **Foldseek** on `PATH` for retrieval baselines; ProteinMPNN / ColabFold externally for real designs (see [`docs/plans/v0.6_generative_design.md`](docs/plans/v0.6_generative_design.md)).
+Optional: **MMseqs2** / **Foldseek** on `PATH` for retrieval baselines; ProteinMPNN / ColabFold externally for real designs (export `mpnn_jobs/`, funnel to `af_queue.fasta`, import metrics, then `cat-design-score --af-queue-only`).
 
 ---
 
@@ -286,40 +310,15 @@ Narrative case studies: `cat-cases` → [`reports/case_studies/`](reports/case_s
 
 ## Limitations
 
+- Design case study currently ships with **mock** generator / AF metrics unless external ProteinMPNN + ColabFold outputs are imported — do not read mock Δ-vs-WT as catalytic improvement
+- Score axes are **proxies** (geometry / pLDDT-like confidence / ESM plausibility), not measured catalysis
+- Redesign panel is small (~8–10 enzymes), not a full-atlas ProteinMPNN campaign
 - Expanded atlas is still curated-scale (n=1157), not proteome-wide
 - Fold-cluster scores are **split-sensitive** (ESM-2 and ESM+GNN both move ±0.06 across three seeds)
 - Random-graph ablation: geometry-specific gains are **not yet established** (shuffled nodes ≥ catalytic graphs on seed 7)
 - Convergent-chemistry audit is small (**n≈26–29**) — useful, not decisive
 - Labels are ontology families / patterns, not full kinetic schemes
 - Chemistry cards cite pattern / cofactor / fold-span evidence — not full mechanistic checklists
-
----
-
-## Versions / thesis
-
-Catalyst Atlas is an AI-guided enzyme redesign workflow that preserves mechanistic chemistry while exploring shell sequence space. Learned catalytic representations (leakage-aware holdouts) support the scoring features; they are not the product claim.
-
-| Version | Claim |
-|---------|--------|
-| v0.2 | Catalytic microenvironments contain chemistry signal under fold holdout |
-| v0.3 | Learned representations require leakage-aware evaluation |
-| v0.4 | Expanded atlas + controls separate chemistry from annotation shortcuts |
-| v0.5 | ESM+GNN can improve a fold holdout on individual splits; multi-seed / random-graph controls limit geometry claims |
-| v0.6 | Shell redesign with fixed catalysts + `chemistry_preservation_score` vs WT |
-
-| Step | Command | Role |
-|------|---------|------|
-| Reaction-center graphs | `cat-graphs` | Explicit catalytic-machine graphs |
-| Frozen ESM-2 | `cat-esm` | Sequence foundation-model control |
-| ESM + GNN fusion | `cat-train-encoder --fusion-esm` | Sequence + local structure |
-| Annotation controls | `cat-eval` | Same-residue / same-cofactor / shuffled shell / decoy |
-| Expanded atlas | `cat-download --public --expanded` | UniProt ACT_SITE + EC; AFDB as `structure_source=alphafold` |
-| Multi-seed bake-off | `scripts/v05_seed_bakeoff.py` / `v05_parallel_bakeoff.py` | Split variance |
-| Random-graph ablation | `scripts/v05_ablation_run.py` | Geometry vs capacity control |
-
-Design plan: [`v0.6`](docs/plans/v0.6_generative_design.md). Representation summaries: [`v05_seed`](reports/v05_seed_summary.json), [`v05_ablation`](reports/v05_ablation_summary.json). Earlier plans: [`v0.3`](docs/plans/v0.3_learn_catalytic_language.md), [`v0.4`](docs/plans/v0.4_rigor_and_scale.md), [`v0.5`](docs/plans/v0.5_expanded_learned.md).
-
-Out of scope: full-atlas ProteinMPNN, new generative model training, generator bake-offs, wet-lab validation claims.
 
 ---
 
@@ -344,6 +343,20 @@ cat-cases && cat-figures
 cat-search --enzyme-id MCSA00176
 ```
 
+Representation / control CLIs (optional):
+
+| Step | Command |
+|------|---------|
+| Reaction-center graphs | `cat-graphs` |
+| Frozen ESM-2 | `cat-esm` |
+| ESM + GNN fusion | `cat-train-encoder --fusion-esm` |
+| Annotation controls | `cat-eval` |
+| Expanded atlas | `cat-download --public --expanded` |
+| Multi-seed bake-off | `scripts/v05_seed_bakeoff.py` |
+| Random-graph ablation | `scripts/v05_ablation_run.py` |
+
+Out of scope: full-atlas ProteinMPNN, new generative model training, generator bake-offs, wet-lab validation claims.
+
 | Artifact | Path |
 |----------|------|
 | Design case study | `reports/design_case_study.md` |
@@ -366,9 +379,8 @@ src/catalyst_atlas/
   design/             pocket, panel, generate, mpnn, predict, score, report
   data/ site/ featurize/ models/ eval/ explain/ viz/
 scripts/              reproduce.sh, embed_esm.py, runpod_train.sh
-docs/plans/           v0.3–v0.6 (design case study in v0.6)
 data/processed/design/ pockets, designs, scores, mpnn_jobs
-reports/              design_case_study.md + figures
+reports/              design_case_study.md + figures + eval summaries
 tests/                unit + design invariants + pipeline smoke
 ```
 

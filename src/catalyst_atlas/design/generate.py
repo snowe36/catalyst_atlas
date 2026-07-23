@@ -196,7 +196,7 @@ def run_generate(
         else:
             raise FileNotFoundError(
                 "No designs provided. Pass --from-sequences PATH or --mock "
-                "(ProteinMPNN is an external runner; see docs/plans/v0.6_generative_design.md)."
+                "(ProteinMPNN is an external runner: export mpnn_jobs/, import FASTA)."
             )
 
         for rec in records:

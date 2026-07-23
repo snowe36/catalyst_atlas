@@ -25,6 +25,5 @@ data/raw/*
 tools/mmseqs/
 tools/foldseek/
 tools/*.tar.gz
-/docs
-/reports
+reports/*.log
 

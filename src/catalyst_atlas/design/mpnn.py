@@ -18,21 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def fixed_positions_from_pocket(pocket: dict[str, Any]) -> dict[str, Any]:
-    """Map catalytic residues to sequence indices for ProteinMPNN fixed positions.
+    """Map catalytic residues for ProteinMPNN fixed positions.
 
-    Uses pocket JSON as the indexing source of truth (chain/resnum/seq_index).
+    ProteinMPNN expects **PDB residue numbers** per chain (not 0-based seq
+    indices). Pocket JSON remains the source of truth for both.
     """
     chain_to_fixed: dict[str, list[int]] = {}
     for r in pocket.get("catalytic_residues") or []:
-        idx = r.get("seq_index")
-        if idx is None:
-            raise ValueError(
-                f"{pocket.get('enzyme_id')}: catalytic residue "
-                f"{r.get('chain')}{r.get('resnum')} lacks seq_index"
-            )
-        # ProteinMPNN uses 1-based residue indices within the designed chain.
         chain = str(r.get("chain") or "A")
-        chain_to_fixed.setdefault(chain, []).append(int(idx) + 1)
+        chain_to_fixed.setdefault(chain, []).append(int(r["resnum"]))
     for chain, idxs in chain_to_fixed.items():
         chain_to_fixed[chain] = sorted(set(idxs))
     return {
@@ -45,6 +39,16 @@ def fixed_positions_from_pocket(pocket: dict[str, Any]) -> dict[str, Any]:
                 if r.get("seq_index") is not None
             }
         ),
+        "redesignable_pdb_resnums": {
+            chain: sorted(
+                {
+                    int(r["resnum"])
+                    for r in (pocket.get("redesignable") or [])
+                    if str(r.get("chain") or "A") == chain
+                }
+            )
+            for chain in chain_to_fixed
+        },
     }
 
 

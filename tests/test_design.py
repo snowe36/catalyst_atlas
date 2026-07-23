@@ -134,11 +134,11 @@ def test_design_invariants_reject_outside_shell():
         assert_design_invariants("".join(bad), wt, pocket)
 
 
-def test_fixed_positions_are_1based_catalytic():
+def test_fixed_positions_use_pdb_resnums():
     pocket = build_pocket(_toy_atlas_row())
     fixed = fixed_positions_from_pocket(pocket)
     assert fixed["fixed_positions"]["A"] == sorted(
-        r["seq_index"] + 1 for r in pocket["catalytic_residues"]
+        r["resnum"] for r in pocket["catalytic_residues"]
     )
 
 

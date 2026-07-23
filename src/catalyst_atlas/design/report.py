@@ -185,11 +185,20 @@ def write_design_case_study(
             raise FileNotFoundError(f"Missing {path}; run cat-design-score first")
         scores = pd.read_parquet(path)
 
-    fig_pocket = None
     first_eid = sorted(scores["enzyme_id"].unique())[0]
     fig_pocket = render_pocket_map(first_eid)
     fig_geom = render_geometry_vs_wt(scores)
     fig_scatter = render_score_scatter(scores)
+
+    def _rel(path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(REPORTS.parent.resolve()))
+        except ValueError:
+            return str(path)
+
+    fig_pocket_rel = _rel(fig_pocket)
+    fig_geom_rel = _rel(fig_geom)
+    fig_scatter_rel = _rel(fig_scatter)
 
     top = _top_designs_table(scores, k=3)
     n_enz = scores["enzyme_id"].nunique()
@@ -208,9 +217,9 @@ def write_design_case_study(
         "",
         f"- Enzymes: **{n_enz}**",
         f"- Designs scored: **{n_des}**",
-        f"- Pocket example figure: `{fig_pocket}`",
-        f"- Geometry vs WT: `{fig_geom}`",
-        f"- Score scatter: `{fig_scatter}`",
+        f"- Pocket example figure: `{fig_pocket_rel}`",
+        f"- Geometry vs WT: `{fig_geom_rel}`",
+        f"- Score scatter: `{fig_scatter_rel}`",
         "",
         "## Panel",
         "",
@@ -284,7 +293,7 @@ def write_design_case_study(
     summary = {
         "n_enzymes": n_enz,
         "n_designs": n_des,
-        "figures": [str(fig_pocket), str(fig_geom), str(fig_scatter)],
+        "figures": [fig_pocket_rel, fig_geom_rel, fig_scatter_rel],
         "top_designs": top,
     }
     (REPORTS / "design_case_study_summary.json").write_text(json.dumps(summary, indent=2))

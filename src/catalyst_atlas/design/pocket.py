@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from catalyst_atlas.data.structures import fetch_pdb_text, parse_ca_atoms
 from catalyst_atlas.paths import PROCESSED, RAW, ensure_dirs
 from catalyst_atlas.site.extract import FIRST_SHELL_RADIUS
 
@@ -17,6 +18,53 @@ logger = logging.getLogger(__name__)
 
 SECOND_SHELL_RADIUS = 12.0
 LIGAND_CONTACT_RADIUS = 6.0
+
+
+def _expand_shell_from_pdb(
+    residues: list[dict[str, Any]],
+    *,
+    pdb_id: str,
+    catalytic: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge CA atoms from the PDB into site residues out to second-shell radius."""
+    if not pdb_id or not catalytic:
+        return residues
+    cache = RAW / "pdb"
+    text = fetch_pdb_text(str(pdb_id).lower(), cache)
+    if not text:
+        return residues
+    center = np.array([r["xyz"] for r in catalytic], dtype=float).mean(axis=0)
+    by_key = {
+        (str(r.get("chain") or "A"), int(r["resnum"])): r for r in residues
+    }
+    cat_keys = {(str(r.get("chain") or "A"), int(r["resnum"])) for r in catalytic}
+    for atom in parse_ca_atoms(text):
+        key = (str(atom["chain"]), int(atom["resnum"]))
+        if key in cat_keys:
+            continue
+        d = float(np.linalg.norm(np.array(atom["xyz"], dtype=float) - center))
+        if d > SECOND_SHELL_RADIUS:
+            continue
+        role = "first_shell" if d <= FIRST_SHELL_RADIUS else "second_shell"
+        if key in by_key:
+            # Prefer keeping annotated residue; refresh coords/role if useful.
+            existing = by_key[key]
+            if existing.get("role") == "catalytic":
+                continue
+            existing.setdefault("xyz", atom["xyz"])
+            if existing.get("role") not in {"first_shell", "second_shell"}:
+                existing["role"] = role
+            continue
+        rec = {
+            "chain": atom["chain"],
+            "resnum": atom["resnum"],
+            "aa": atom["aa"],
+            "role": role,
+            "xyz": atom["xyz"],
+        }
+        residues.append(rec)
+        by_key[key] = rec
+    return residues
 
 
 def _parse_json(cell: Any) -> list[dict[str, Any]]:
@@ -52,7 +100,46 @@ def _residue_record(
     return rec
 
 
-def _seq_index_for(resnum: int, sequence: str) -> int | None:
+def _pdb_chain_map(
+    pdb_id: str,
+    chain: str,
+) -> tuple[str, dict[int, int]]:
+    """Return (chain_sequence, resnum→seq_index) from CA atoms.
+
+    Design indexing must follow the structure chain — PDB resnums are not
+    UniProt offsets.
+    """
+    if not pdb_id:
+        return "", {}
+    text = fetch_pdb_text(str(pdb_id).lower(), RAW / "pdb")
+    if not text:
+        return "", {}
+    atoms = [a for a in parse_ca_atoms(text) if str(a["chain"]) == str(chain)]
+    if not atoms:
+        # Fall back to first chain present.
+        all_atoms = parse_ca_atoms(text)
+        if not all_atoms:
+            return "", {}
+        chain = str(all_atoms[0]["chain"])
+        atoms = [a for a in all_atoms if str(a["chain"]) == chain]
+    # Stable unique residues ordered by resnum.
+    by_res: dict[int, str] = {}
+    for a in atoms:
+        by_res[int(a["resnum"])] = str(a["aa"])
+    resnums = sorted(by_res)
+    seq = "".join(by_res[n] for n in resnums)
+    mapping = {n: i for i, n in enumerate(resnums)}
+    return seq, mapping
+
+
+def _seq_index_for(
+    resnum: int,
+    sequence: str,
+    *,
+    resnum_to_idx: dict[int, int] | None = None,
+) -> int | None:
+    if resnum_to_idx is not None:
+        return resnum_to_idx.get(int(resnum))
     if not sequence:
         return None
     idx = int(resnum) - 1
@@ -68,14 +155,33 @@ def build_pocket(row: pd.Series) -> dict[str, Any]:
     - first:  <= FIRST_SHELL_RADIUS (8 Å)
     - second: (8, SECOND_SHELL_RADIUS] Å
     Catalytic residues are never redesignable.
+
+    When a PDB is available, ``sequence`` is the structure chain sequence and
+    ``seq_index`` maps via PDB resnum (not UniProt numbering).
     """
     residues = _parse_json(row.get("site_residues_json"))
     ligands = _parse_json(row.get("ligands_json"))
-    sequence = str(row.get("sequence") or "")
+    uniprot_sequence = str(row.get("sequence") or "")
 
     catalytic_raw = [r for r in residues if r.get("role") == "catalytic"]
     if not catalytic_raw:
         catalytic_raw = list(residues)
+
+    # Expand first/second shell from the experimental PDB when available.
+    residues = _expand_shell_from_pdb(
+        list(residues),
+        pdb_id=str(row.get("pdb_id") or ""),
+        catalytic=catalytic_raw,
+    )
+    # Refresh catalytic list after expansion (unchanged, but keep order stable).
+    catalytic_raw = [r for r in residues if r.get("role") == "catalytic"]
+    if not catalytic_raw:
+        catalytic_raw = [r for r in residues if r.get("role") != "first_shell"]
+
+    design_chain = str((catalytic_raw[0].get("chain") if catalytic_raw else "A") or "A")
+    pdb_seq, resnum_to_idx = _pdb_chain_map(str(row.get("pdb_id") or ""), design_chain)
+    sequence = pdb_seq or uniprot_sequence
+    index_map = resnum_to_idx if pdb_seq else None
 
     core = np.array([r["xyz"] for r in catalytic_raw], dtype=float)
     center = core.mean(axis=0)
@@ -84,7 +190,7 @@ def build_pocket(row: pd.Series) -> dict[str, Any]:
         _residue_record(
             r,
             shell=None,
-            seq_index=_seq_index_for(int(r["resnum"]), sequence),
+            seq_index=_seq_index_for(int(r["resnum"]), sequence, resnum_to_idx=index_map),
         )
         for r in catalytic_raw
     ]
@@ -102,11 +208,19 @@ def build_pocket(row: pd.Series) -> dict[str, Any]:
             shell = "second"
         else:
             continue
+        # Only redesign residues on the design chain with a seq_index.
+        if str(r.get("chain") or "A") != design_chain:
+            continue
+        seq_index = _seq_index_for(
+            int(r["resnum"]), sequence, resnum_to_idx=index_map
+        )
+        if seq_index is None:
+            continue
         redesignable.append(
             _residue_record(
                 r,
                 shell=shell,
-                seq_index=_seq_index_for(int(r["resnum"]), sequence),
+                seq_index=seq_index,
                 dist_to_core=d,
             )
         )
@@ -139,7 +253,10 @@ def build_pocket(row: pd.Series) -> dict[str, Any]:
         "pdb_id": str(row.get("pdb_id") or ""),
         "uniprot_id": str(row.get("uniprot_id") or ""),
         "enzyme_name": str(row.get("enzyme_name") or row.get("family_id") or ""),
+        "design_chain": design_chain,
         "sequence": sequence,
+        "uniprot_sequence": uniprot_sequence,
+        "sequence_source": "pdb_chain" if pdb_seq else "uniprot",
         "reaction": {
             "chemistry_family": str(chem_family),
             "mechanistic_pattern": str(mech),

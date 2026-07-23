@@ -103,12 +103,15 @@ def build_site_from_structure(
     pdb_text: str,
     catalytic_spec: list[dict[str, Any]],
     first_shell_radius: float = 8.0,
+    second_shell_radius: float = 12.0,
     cofactor_radius: float = 8.0,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], str]:
-    """Map catalytic residues, first-shell neighbors, and nearby cofactors/metals.
+    """Map catalytic residues, shell neighbors, and nearby cofactors/metals.
 
     ``catalytic_spec`` entries need ``chain``, ``resnum``, and ``aa`` (1-letter).
-    Returns ``(catalytic, neighbors, ligands, cofactor_tags)``.
+    Neighbors within ``first_shell_radius`` get role ``first_shell``; those in
+    (first, second] get ``second_shell``. Returns
+    ``(catalytic, neighbors, ligands, cofactor_tags)``.
     """
     from catalyst_atlas.data.cofactors import cofactors_near_site
 
@@ -156,15 +159,20 @@ def build_site_from_structure(
             continue
         d = float(np.linalg.norm(np.array(atom["xyz"], dtype=float) - center))
         if d <= first_shell_radius:
-            neighbors.append(
-                {
-                    "chain": atom["chain"],
-                    "resnum": atom["resnum"],
-                    "aa": atom["aa"],
-                    "role": "first_shell",
-                    "xyz": atom["xyz"],
-                }
-            )
+            role = "first_shell"
+        elif d <= second_shell_radius:
+            role = "second_shell"
+        else:
+            continue
+        neighbors.append(
+            {
+                "chain": atom["chain"],
+                "resnum": atom["resnum"],
+                "aa": atom["aa"],
+                "role": role,
+                "xyz": atom["xyz"],
+            }
+        )
 
     ligands, cofactor_tags = cofactors_near_site(
         pdb_text,
