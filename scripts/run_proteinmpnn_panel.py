@@ -20,10 +20,27 @@ OUT_FASTA = ROOT / "data" / "processed" / "design" / "mpnn_designs.fasta"
 MPNN_DIR = Path(os.environ.get("MPNN_DIR", "/workspace/ProteinMPNN"))
 
 
+def _extract_chain_pdb(src: Path, chain: str, dest: Path) -> Path:
+    """Write a single-chain PDB so ProteinMPNN length matches our fixed map."""
+    lines_out: list[str] = []
+    for line in src.read_text(errors="replace").splitlines():
+        if line.startswith(("ATOM", "HETATM")):
+            if len(line) > 21 and line[21] == chain:
+                lines_out.append(line)
+        elif line.startswith("END"):
+            break
+        elif line.startswith(("HEADER", "TITLE", "CRYST", "SCALE", "ORIGX", "REMARK")):
+            lines_out.append(line)
+    lines_out.append("END")
+    dest.write_text("\n".join(lines_out) + "\n")
+    return dest
+
+
 def _run_one(job: Path, n_seq: int) -> list[dict[str, str]]:
     pocket = json.loads((job / "pocket.json").read_text())
     fixed = json.loads((job / "fixed_positions.json").read_text())
     eid = pocket["enzyme_id"]
+    chain = str(fixed.get("chain") or pocket.get("design_chain") or "A")
     pdb_id = str(pocket.get("pdb_id") or "").lower()
     pdb = job / f"{pdb_id}.pdb"
     if not pdb.exists():
@@ -36,15 +53,19 @@ def _run_one(job: Path, n_seq: int) -> list[dict[str, str]]:
 
     out_dir = job / "mpnn_out"
     out_dir.mkdir(exist_ok=True)
+    chain_pdb = job / f"{pdb_id}_{chain}.pdb"
+    _extract_chain_pdb(pdb, chain, chain_pdb)
     # ProteinMPNN jsonl: one JSON object per line keyed by pdb stem.
     fp_path = job / "fixed_positions.jsonl"
-    fp_path.write_text(json.dumps({pdb.stem: fixed["fixed_positions"]}) + "\n")
+    fp_path.write_text(json.dumps({chain_pdb.stem: fixed["fixed_positions"]}) + "\n")
 
     cmd = [
         sys.executable,
         str(runner),
         "--pdb_path",
-        str(pdb),
+        str(chain_pdb),
+        "--pdb_path_chains",
+        chain,
         "--out_folder",
         str(out_dir),
         "--num_seq_per_target",
