@@ -66,16 +66,33 @@ def fixed_positions_from_pocket(pocket: dict[str, Any]) -> dict[str, Any]:
     # contiguous indices if we can invert a dense map; else fix catalytic +
     # everything except redesignable among known positions and rely on the
     # runner to fix the full chain from the PDB.
-    chain_resnums = pocket.get("chain_resnums")
+    chain_resnums = [int(n) for n in (pocket.get("chain_resnums") or [])]
     if chain_resnums:
-        full = [int(n) for n in chain_resnums]
-        fixed = [n for n in full if n not in redesignable]
+        full = list(chain_resnums)
+        fixed_pdb = [n for n in full if n not in redesignable]
+        designed_pdb = [n for n in full if n in redesignable]
+    else:
+        fixed_pdb = sorted(set(fixed))
+        designed_pdb = sorted(redesignable)
+
+    # ProteinMPNN applies ``fixed_pos_list - 1`` as a NumPy index into the
+    # parsed chain (length L). That only matches PDB numbering when residues
+    # are contiguous 1..L. Convert PDB resnums → sequential 1-based indices.
+    resnum_to_seq1 = {n: i + 1 for i, n in enumerate(chain_resnums)} if chain_resnums else {}
+    if resnum_to_seq1:
+        fixed_mpnn = [resnum_to_seq1[n] for n in fixed_pdb if n in resnum_to_seq1]
+        designed_mpnn = [resnum_to_seq1[n] for n in designed_pdb if n in resnum_to_seq1]
+    else:
+        fixed_mpnn = fixed_pdb
+        designed_mpnn = designed_pdb
 
     return {
         "enzyme_id": pocket["enzyme_id"],
         "chain": chain,
-        "fixed_positions": {chain: sorted(set(fixed))},
-        "designed_positions": {chain: sorted(redesignable)},
+        "fixed_positions": {chain: sorted(set(fixed_mpnn))},
+        "designed_positions": {chain: sorted(set(designed_mpnn))},
+        "fixed_positions_pdb": {chain: sorted(set(fixed_pdb))},
+        "designed_positions_pdb": {chain: sorted(set(designed_pdb))},
         "redesignable_seq_indices_0based": sorted(
             {
                 int(r["seq_index"])
@@ -83,7 +100,10 @@ def fixed_positions_from_pocket(pocket: dict[str, Any]) -> dict[str, Any]:
                 if r.get("seq_index") is not None
             }
         ),
-        "note": "Fix everything except redesignable shell (Option B).",
+        "note": (
+            "Fix everything except redesignable shell (Option B). "
+            "fixed_positions use sequential 1-based ProteinMPNN indices."
+        ),
     }
 
 
