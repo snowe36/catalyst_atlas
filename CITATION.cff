@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite this repository.
+title: "Catalyst Atlas: AI-guided redesign of catalytic microenvironments"
+type: software
+version: "0.6.0"
+authors:
+  - family-names: Snow
+    given-names: Eric
+license: MIT
+repository-code: "https://github.com/snowe36/catalyst_atlas"
+abstract: >-
+  A leakage-aware benchmark and design toolkit for identifying enzyme chemistry
+  from catalytic microenvironments, and for generative redesign of catalytic
+  shells constrained by mechanistic chemistry.
+keywords:
+  - protein design
+  - enzyme catalysis
+  - machine learning
+  - benchmark
+  - structural biology
+  - catalytic microenvironment
