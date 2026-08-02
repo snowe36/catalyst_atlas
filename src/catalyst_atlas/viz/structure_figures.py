@@ -18,21 +18,24 @@ from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from catalyst_atlas.paths import FIGURES, PROCESSED, REPORTS, ensure_dirs
+from catalyst_atlas.viz.palette import FACE, GRID, MUTED
+from catalyst_atlas.viz.palette import PALETTE as ATLAS
+from catalyst_atlas.viz.palette import TEXT
 
 logger = logging.getLogger(__name__)
 
 PALETTE = {
-    "bg": "#FFFFFF",
-    "panel": "#FAFBFC",
-    "ink": "#0F172A",
-    "muted": "#64748B",
-    "catalytic": "#0F766E",  # teal — catalytic residues
-    "catalytic_edge": "#99F6E4",  # soft geometry between residues
-    "first_shell": "#CBD5E1",  # quiet slate
-    "cofactor": "#0369A1",  # blue organic cofactors
-    "metal": "#EA580C",  # vivid orange metal (high contrast)
-    "coord": "#F59E0B",  # metal–residue coordination
-    "grid": "#E2E8F0",
+    "bg": FACE,
+    "panel": "#F7FAF9",
+    "ink": TEXT,
+    "muted": MUTED,
+    "catalytic": ATLAS["teal"],
+    "catalytic_edge": ATLAS["sage"],
+    "first_shell": GRID,
+    "cofactor": ATLAS["lavender"],
+    "metal": ATLAS["peach"],
+    "coord": ATLAS["mustard"],
+    "grid": GRID,
 }
 
 METALS = {"Zn", "Fe", "Mg", "Mn", "Cu", "Ni", "Co", "Ca"}
@@ -119,10 +122,10 @@ def _style_axes(
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
     for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
-        axis.pane.set_edgecolor("#F8FAFC")
+        axis.pane.set_edgecolor("#F7FAF9")
         axis.pane.set_alpha(0.15)
-        axis.line.set_color("#CBD5E1")
-        axis._axinfo["grid"]["color"] = "#EEF2F7"
+        axis.line.set_color(GRID)
+        axis._axinfo["grid"]["color"] = GRID
         axis._axinfo["grid"]["linewidth"] = 0.25
         axis._axinfo["grid"]["linestyle"] = "-"
     ax.grid(True, alpha=0.25)
@@ -301,7 +304,7 @@ def _draw_site(
             c=PALETTE["catalytic"],
             alpha=1.0,
             depthshade=False,
-            edgecolors="#042F2E",
+            edgecolors="#264653",
             linewidths=1.2,
             zorder=5,
         )
@@ -401,7 +404,7 @@ def _legend_handles(*, metal_focus: bool = False) -> list[Line2D]:
             marker="o",
             color="w",
             markerfacecolor=PALETTE["catalytic"],
-            markeredgecolor="#042F2E",
+            markeredgecolor="#264653",
             markersize=9,
             label="Catalytic residues",
         ),
@@ -580,7 +583,7 @@ def _render_metal_coordination_2d(
         res_2d[:, 1],
         s=520,
         c=PALETTE["catalytic"],
-        edgecolors="#042F2E",
+        edgecolors="#264653",
         linewidths=1.4,
         zorder=4,
     )
@@ -903,8 +906,9 @@ def generate_structure_figures(
     written: list[Path] = []
 
     hero_id = _hero_enzyme_id(df)
-    if hero_id is not None:
-        hero_row = df[df["enzyme_id"] == hero_id].iloc[0]
+    hero_hits = df[df["enzyme_id"] == hero_id] if hero_id is not None else df.iloc[0:0]
+    if len(hero_hits):
+        hero_row = hero_hits.iloc[0]
         path = render_microenvironment(
             hero_row,
             dest / "fig_microenv_hero_cryptic.png",
