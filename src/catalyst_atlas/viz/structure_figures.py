@@ -18,9 +18,8 @@ from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from catalyst_atlas.paths import FIGURES, PROCESSED, REPORTS, ensure_dirs
-from catalyst_atlas.viz.palette import FACE, GRID, MUTED
+from catalyst_atlas.viz.palette import FACE, GRID, MUTED, TEXT
 from catalyst_atlas.viz.palette import PALETTE as ATLAS
-from catalyst_atlas.viz.palette import TEXT
 
 logger = logging.getLogger(__name__)
 
