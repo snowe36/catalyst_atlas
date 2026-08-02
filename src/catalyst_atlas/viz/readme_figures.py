@@ -12,14 +12,12 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import FancyBboxPatch
 
 from catalyst_atlas.paths import FIGURES, ensure_dirs
+from catalyst_atlas.viz.palette import CARD_BG, GRID, MUTED, TEAL, TEXT
 
 logger = logging.getLogger(__name__)
 
-TEAL = "#0E7490"
-INK = "#1B2A2F"
-MUTED = "#4B5563"
-RULE = "#D1D5DB"
-CARD_BG = "#F8FAFB"
+INK = TEXT
+RULE = GRID
 
 
 def render_pipeline_figure(path: Path | None = None, *, dpi: int = 180) -> Path:
@@ -44,7 +42,7 @@ def render_pipeline_figure(path: Path | None = None, *, dpi: int = 180) -> Path:
     for i, (title, sub) in enumerate(steps):
         x0 = gap + i * (box_w + gap)
         color = TEAL if i == n - 1 else INK
-        face = "#E6F4F7" if i == n - 1 else "#F3F4F6"
+        face = "#E8F4F2" if i == n - 1 else "#F3F5F4"
         box = FancyBboxPatch(
             (x0, y0),
             box_w,
@@ -73,7 +71,7 @@ def render_pipeline_figure(path: Path | None = None, *, dpi: int = 180) -> Path:
             ha="center",
             va="center",
             fontsize=8,
-            color="#374151",
+            color=MUTED,
             linespacing=1.25,
         )
         if i < n - 1:
@@ -81,7 +79,7 @@ def render_pipeline_figure(path: Path | None = None, *, dpi: int = 180) -> Path:
                 "",
                 xy=(x0 + box_w + gap * 0.55, y0 + box_h / 2),
                 xytext=(x0 + box_w + gap * 0.1, y0 + box_h / 2),
-                arrowprops=dict(arrowstyle="->", color="#6B7280", lw=1.6),
+                arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.6),
             )
     ax.set_title(
         "Structure → reaction center → chemistry",
@@ -131,7 +129,7 @@ def _draw_score_card(ax, card: dict) -> None:
             0.08,
             boxstyle="round,pad=0.008,rounding_size=0.02",
             linewidth=0,
-            facecolor="#DCF5F9",
+            facecolor="#E8F4F2",
         )
         ax.add_patch(badge)
         ax.text(
@@ -146,7 +144,7 @@ def _draw_score_card(ax, card: dict) -> None:
         )
 
     ax.text(
-        0.07, 0.49, f"Top analog · {card['analog']}", fontsize=8.2, color="#374151", va="center"
+        0.07, 0.49, f"Top analog · {card['analog']}", fontsize=8.2, color=MUTED, va="center"
     )
 
     ax.plot([0.07, 0.93], [0.44, 0.44], color=RULE, lw=0.9)

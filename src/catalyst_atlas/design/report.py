@@ -16,14 +16,11 @@ import pandas as pd
 
 from catalyst_atlas.design.pocket import load_pocket
 from catalyst_atlas.paths import FIGURES, PROCESSED, REPORTS, ensure_dirs
+from catalyst_atlas.viz.palette import ACCENT, MUTED, RULE, TEAL, TEXT
 
 logger = logging.getLogger(__name__)
 
-TEAL = "#0E7490"
-INK = "#1B2A2F"
-MUTED = "#6B7280"
-RULE = "#D1D5DB"
-ACCENT = "#B45309"
+INK = TEXT
 
 
 def render_pocket_map(enzyme_id: str, path: Path | None = None) -> Path:

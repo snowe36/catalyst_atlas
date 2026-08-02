@@ -27,3 +27,6 @@ out/figures/*
 !out/figures/.gitkeep
 !out/figures/*.png
 /docs
+
+# Demo scratch (outputs may be committed)
+demo/scratch/

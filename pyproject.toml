@@ -51,6 +51,7 @@ cat-design-generate = "catalyst_atlas.cli:design_generate_main"
 cat-design-funnel = "catalyst_atlas.cli:design_funnel_main"
 cat-design-score = "catalyst_atlas.cli:design_score_main"
 cat-design-run = "catalyst_atlas.cli:design_run_main"
+cat-demo = "catalyst_atlas.demo:run_demo_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
