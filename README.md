@@ -6,12 +6,32 @@
 
 > Catalytic function is encoded not only by global fold but by local geometric and chemical environments that can be computationally optimized.
 
+Suite: [BGC](https://github.com/snowe36/bgc_atlas) (encode) → **Catalyst (catalyze)** → [Metabo](https://github.com/snowe36/metabo_atlas) (observe) → [ABX](https://github.com/snowe36/abx_atlas) (function).
+
 [![CI](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/snowe36/catalyst_atlas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Design](https://img.shields.io/badge/design-shell%20redesign-0E7490)
+![Design](https://img.shields.io/badge/design-shell%20redesign-5FA8A8)
+[![Demo](https://img.shields.io/badge/demo-5%20min-5FA8A8.svg)](demo/)
+[![Citation](https://img.shields.io/badge/CITATION-cff-E9C46A.svg)](CITATION.cff)
 
 Repo: [github.com/snowe36/catalyst_atlas](https://github.com/snowe36/catalyst_atlas)
+
+---
+
+## 5-minute demo
+
+No M-CSA dump, ProteinMPNN, or ColabFold required:
+
+```bash
+git clone https://github.com/snowe36/catalyst_atlas.git && cd catalyst_atlas
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+cat-demo
+# or: bash demo/run_demo.sh
+```
+
+Outputs: `demo/outputs/` (pipeline figure, mock redesign landscape, case-study write-up). Proxies ≠ measured catalysis.
 
 ---
 

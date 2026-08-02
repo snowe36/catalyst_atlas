@@ -17,12 +17,11 @@ from matplotlib.patches import FancyBboxPatch
 from sklearn.neighbors import NearestNeighbors
 
 from catalyst_atlas.paths import FIGURES, PROCESSED, ensure_dirs
+from catalyst_atlas.viz.palette import GRID, MUTED, PALETTE, TEAL, TEXT
 
 logger = logging.getLogger(__name__)
 
-TEAL = "#0E7490"
-INK = "#1B2A2F"
-MUTED = "#4B5563"
+INK = TEXT
 
 
 def _load_emb(stem: str, meta: pd.DataFrame) -> np.ndarray | None:
@@ -157,7 +156,7 @@ def _card(
         fontweight="bold",
         color=INK,
     )
-    ax.plot([x + 0.18, x + w - 0.18], [y + h - 0.55, y + h - 0.55], color="#D1D5DB", lw=0.8)
+    ax.plot([x + 0.18, x + w - 0.18], [y + h - 0.55, y + h - 0.55], color=GRID, lw=0.8)
     for k, (label, value) in enumerate(rows[:4]):
         yy = y + h - 0.95 - 0.42 * k
         ax.text(x + 0.22, yy, label, ha="left", va="top", fontsize=7.8, color=MUTED)
@@ -211,7 +210,7 @@ def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Pa
             ("Fold / CATH", _fold(q)),
             ("Seq cluster", str(q.get("seq_cluster", "?"))),
         ],
-        fc="#EEF6FF",
+        fc="#E8F4F2",
         ec=TEAL,
     )
 
@@ -231,8 +230,8 @@ def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Pa
             ("Distance", dist_e),
             ("Note", "often same neighborhood"),
         ],
-        fc="#F8FAFC",
-        ec="#64748B",
+        fc="#F7FAF9",
+        ec=MUTED,
     )
     _card(
         ax,
@@ -247,8 +246,8 @@ def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Pa
             ("Distance", dist_g),
             ("Note", "same chemistry, different fold"),
         ],
-        fc="#ECFDF5",
-        ec=TEAL,
+        fc="#EEF6EF",
+        ec=PALETTE["sage"],
     )
 
     # Arrows: query → each neighbor (clear vertical drop, no crossing boxes).
@@ -256,7 +255,7 @@ def generate_retrieval_figure(*, dpi: int = 180, path: Path | None = None) -> Pa
         "",
         xy=(2.55, 3.45),
         xytext=(4.2, 4.35),
-        arrowprops=dict(arrowstyle="->", color="#64748B", lw=1.6, connectionstyle="arc3,rad=0.08"),
+        arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.6, connectionstyle="arc3,rad=0.08"),
     )
     ax.annotate(
         "",
