@@ -28,7 +28,7 @@ dev = ["pytest>=7.4", "ruff>=0.6"]
 structure = ["biopython>=1.83"]
 gpu = [
   # Torch wheels commonly lag NumPy 2; keep <2 for a working Tensor bridge.
-  "numpy>=1.24,<2",
+  "numpy>=1.24,<3",
   "torch>=2.1",
   "fair-esm>=2.0.0",
   "transformers>=4.38",
