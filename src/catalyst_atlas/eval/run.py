@@ -369,9 +369,9 @@ def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
     fold = results.get("splits", {}).get("fold_cluster", {})
     methods = fold.get("methods") or {}
     order = [
-        ("foldseek_transfer", "Foldseek", "#6B7280"),
-        ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
-        ("catalyst_microenvironment", "Catalyst Atlas", "#0E7490"),
+        ("foldseek_transfer", "Foldseek", "#5A6F74"),
+        ("mmseqs_transfer", "MMseqs2", "#A8B8B5"),
+        ("catalyst_microenvironment", "Catalyst Atlas", "#5FA8A8"),
     ]
     labels, values, colors = [], [], []
     for key, label, color in order:
@@ -392,7 +392,7 @@ def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
     ax.set_xlabel("Chemistry-family accuracy")
     ax.set_title("Chemistry transfer under fold-disconnected evaluation")
     for yi, v in zip(y, values, strict=True):
-        ax.text(v + 0.012, yi, f"{v:.2f}", va="center", ha="left", fontsize=12, color="#1B2A2F")
+        ax.text(v + 0.012, yi, f"{v:.2f}", va="center", ha="left", fontsize=12, color="#264653")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.text(
@@ -401,7 +401,7 @@ def _plot_fold_disconnected_hero(results: dict[str, Any]) -> None:
         "When homologous folds are unavailable, catalytic microenvironment "
         "representations preserve chemistry information.",
         fontsize=9,
-        color="#374151",
+        color="#5A6F74",
         wrap=True,
     )
     fig.tight_layout(rect=(0, 0.08, 1, 1))
@@ -413,9 +413,9 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
     """Catalyst vs MMseqs vs Foldseek by nearest-train sequence identity."""
     methods_payload = identity_results.get("methods") or {}
     keep = [
-        ("catalyst_microenvironment", "Catalyst Atlas", "#0E7490"),
-        ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
-        ("foldseek_transfer", "Foldseek", "#6B7280"),
+        ("catalyst_microenvironment", "Catalyst Atlas", "#5FA8A8"),
+        ("mmseqs_transfer", "MMseqs2", "#A8B8B5"),
+        ("foldseek_transfer", "Foldseek", "#5A6F74"),
     ]
     bin_order = [name for name, _, _ in IDENTITY_BINS]
     counts = identity_results.get("bin_counts") or {}
@@ -441,9 +441,9 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
     sns.set_theme(style="whitegrid", context="talk")
     fig, ax = plt.subplots(figsize=(9.8, 5.2))
     palette = {
-        "Catalyst Atlas": "#0E7490",
-        "MMseqs2": "#9CA3AF",
-        "Foldseek": "#6B7280",
+        "Catalyst Atlas": "#5FA8A8",
+        "MMseqs2": "#A8B8B5",
+        "Foldseek": "#5A6F74",
     }
     sns.barplot(
         data=plot_df,
@@ -466,7 +466,7 @@ def _plot_identity_stratified(identity_results: dict[str, Any]) -> None:
         ax.bar_label(container, fmt="%.2f", fontsize=8, padding=2)
     src = identity_results.get("identity_source") or ""
     if src:
-        fig.text(0.98, 0.01, f"identity: {src}", fontsize=8, color="#6B7280", ha="right")
+        fig.text(0.98, 0.01, f"identity: {src}", fontsize=8, color="#5A6F74", ha="right")
     fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig.savefig(FIGURES / "fig_chemistry_by_seq_identity.png", dpi=180)
     plt.close(fig)
@@ -543,10 +543,10 @@ def _plot_annotation_style_audits(audits: dict[str, Any]) -> None:
         for k in labels
         if k in audits
     )
-    fig.text(0.02, 0.02, n_note, fontsize=8, color="#374151")
+    fig.text(0.02, 0.02, n_note, fontsize=8, color="#5A6F74")
     chance = (audits.get("decoy_reaction_centers") or {}).get("chance_majority")
     if chance is not None:
-        ax.axhline(float(chance), color="#9CA3AF", ls="--", lw=1, label=f"chance={chance:.2f}")
+        ax.axhline(float(chance), color="#A8B8B5", ls="--", lw=1, label=f"chance={chance:.2f}")
     ax.legend(title="", loc="upper right", fontsize=8)
     fig.tight_layout(rect=(0, 0.08, 1, 1))
     fig.savefig(FIGURES / "fig_annotation_style_controls.png", dpi=180)
@@ -568,15 +568,15 @@ def _plot_fold_chemistry_audits(audits: dict[str, Any]) -> None:
         ),
     ]
     method_order = [
-        ("catalyst_microenvironment", "Catalyst", "#0E7490"),
-        ("catalyst_hybrid", "Hybrid", "#047857"),
-        ("esm_gnn_fusion", "ESM+GNN", "#065F46"),
-        ("learned_fusion_encoder", "Fusion", "#B45309"),
-        ("learned_catalytic_encoder", "Learned RC", "#D97706"),
-        ("esm2_transfer", "ESM-2", "#475569"),
-        ("foldseek_transfer", "Foldseek", "#6B7280"),
-        ("mmseqs_transfer", "MMseqs2", "#9CA3AF"),
-        ("fold_cluster_transfer", "CATH fold", "#D1D5DB"),
+        ("catalyst_microenvironment", "Catalyst", "#5FA8A8"),
+        ("catalyst_hybrid", "Hybrid", "#8FB996"),
+        ("esm_gnn_fusion", "ESM+GNN", "#5FA8A8"),
+        ("learned_fusion_encoder", "Fusion", "#F4A261"),
+        ("learned_catalytic_encoder", "Learned RC", "#E9C46A"),
+        ("esm2_transfer", "ESM-2", "#5A6F74"),
+        ("foldseek_transfer", "Foldseek", "#5A6F74"),
+        ("mmseqs_transfer", "MMseqs2", "#A8B8B5"),
+        ("fold_cluster_transfer", "CATH fold", "#D9E2E0"),
     ]
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2), sharey=True)
     for ax, (key, title, subtitle) in zip(axes, panels, strict=True):
